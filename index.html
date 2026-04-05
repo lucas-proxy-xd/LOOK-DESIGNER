@@ -336,6 +336,13 @@
             transform: translateX(-2px);
         }
 
+        /* Agenda Grid Container */
+        .agenda-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
         #dateTitle {
             font-family: 'Cormorant Garamond', serif;
             font-size: 1.5rem;
@@ -812,8 +819,10 @@
                     <button class="btn-nav" id="btnMulti" onclick="toggleMultiSelect()"
                         style="font-size: 0.6rem; padding: 6px 12px;">MULTI: OFF</button>
                     <button class="btn-nav" id="btnConfig" onclick="showSettingsModal()"
-                        style="font-size: 0.6rem; padding: 6px 12px; margin-left: 5px; color: var(--emerald);">⚙️ CONFIG</button>
-                    <div style="color: var(--pink); font-size: 0.6rem; font-weight: 700; letter-spacing: 1px;">ADMIN</div>
+                        style="font-size: 0.6rem; padding: 6px 12px; margin-left: 5px; color: var(--emerald);">⚙️
+                        CONFIG</button>
+                    <div style="color: var(--pink); font-size: 0.6rem; font-weight: 700; letter-spacing: 1px;">ADMIN
+                    </div>
                 </div>
                 <div id="headerSpacer" style="width: 60px;"></div>
             </div>
@@ -869,7 +878,7 @@
         let refreshTimer = null;
         let viewingHistory = false;
         let serverTimeOffset = 0;
-        
+
         // Configurações da Agenda (recebe do backend)
         let scheduleConfig = { start: '08:00', end: '20:00', duration: 90 };
 
@@ -978,7 +987,7 @@
             // Geração Dinâmica da Grade baseada na Configuração
             const [startHH, startMM] = scheduleConfig.start.split(':').map(Number);
             const [endHH, endMM] = scheduleConfig.end.split(':').map(Number);
-            
+
             let curTotal = startHH * 60 + startMM;
             const endTotal = endHH * 60 + endMM;
 
@@ -1003,7 +1012,7 @@
                 const tel = reg ? (reg.telefone || '') : '';
                 const slotCodigo = reg ? (reg.codigo || '') : '';
                 const isSelected = selectedSlots.includes(tLabel);
-                
+
                 // Duração do bloco: se tiver registro, usa a duração dele, senão usa o padrão (30)
                 const blockDur = reg ? parseInt(reg.duration || scheduleConfig.duration || 30) : (scheduleConfig.duration || 30);
 
@@ -1026,7 +1035,7 @@
                     const dataFmt = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
                     const customMsg = `Olá, ${cl}! Bem-vinda ao LOOK DESIGNER. Passando para confirmar o seu agendamento para o dia ${dataFmt} às ${tLabel}. Qualquer dúvida, estou à disposição!\n\n${CONFIG.WA_MANAGER} - GERENTE`;
 
-                    const telNum = tel.replace(/\D/g, ''); 
+                    const telNum = tel.replace(/\D/g, '');
                     clHtml += `<br><a href="https://wa.me/55${telNum}?text=${encodeURIComponent(customMsg)}" target="_blank" onclick="event.stopPropagation()" class="whatsapp-btn">📱 Enviar WhatsApp</a>`;
                 }
 
@@ -1063,7 +1072,7 @@
 
                 const div = document.createElement('div');
                 div.className = `slot-card ${styleClass}${isSelected ? ' selected' : ''}`;
-                
+
                 // Se o bloco for maior que 30 min, aumenta um pouco o padding visual
                 if (blockDur > 30) {
                     div.style.minHeight = '100px';
@@ -1081,7 +1090,7 @@
                 }
 
                 div.onclick = () => onSlotClick(iso, tLabel, st);
-                
+
                 // Exibe o horário de término se for um bloco longo
                 let labelFinal = tLabel;
                 if (blockDur > (scheduleConfig.duration || 30)) {
@@ -1147,11 +1156,11 @@
                 const hasCollision = agendaData.some(reg => {
                     if (normalizeDate(reg.data) !== normalizeDate(d)) return false;
                     if (reg.status === 'Livre') return false;
-                    
+
                     const rStart = parseInt(reg.horario.split(':')[0]) * 60 + parseInt(reg.horario.split(':')[1]);
                     const rDur = parseInt(reg.duration || scheduleConfig.duration || 30);
                     const rEnd = rStart + rDur;
-                    
+
                     // Colisão se o intervalo [start, end] intersecta [rStart, rEnd]
                     return (startMins < rEnd && endMins > rStart);
                 });
@@ -1197,7 +1206,7 @@
                     ];
                 } else {
                     actChoices = [
-                        { label: st === 'Livre' ? '🔒 Bloquear Horário' : '🔓 Liberar Horário', value: st === 'Livre' ? 'bloquear' : 'liberar' },
+                        { label: s === 'Livre' ? '🔒 Bloquear Horário' : '🔓 Liberar Horário', value: s === 'Livre' ? 'bloquear' : 'liberar' },
                         { label: '📝 Agendar Cliente (Admin)', value: 'agendar_admin' }
                     ];
                 }
@@ -1212,12 +1221,23 @@
                 } else if (action === 'agendar_admin') {
                     const res = await showBookingPrompt('Agendamento Manual', 'Dados do cliente:');
                     if (res) {
-                        await saveUpdates([{ data: d, horario: t, status: 'Ocupado', cliente: res.nome, telefone: res.telefone, password: adminPass }]);
+                        await saveUpdates([{
+                            data: d, horario: t, status: 'Ocupado',
+                            cliente: res.nome, telefone: res.telefone,
+                            duration: res.duration,
+                            password: adminPass
+                        }]);
                     }
                 } else if (action === 'confirmar_pagamento') {
-                    // Busca dados atuais para não perder nome/tel
+                    // Busca dados atuais para não perder nome/tel/duration
                     const r = agendaData.find(x => normalizeDate(x.data) === d && normalizeTime(x.horario) === t);
-                    await saveUpdates([{ data: d, horario: t, status: 'Ocupado', cliente: r ? r.cliente : 'Cliente', telefone: r ? r.telefone : '', password: adminPass }]);
+                    await saveUpdates([{
+                        data: d, horario: t, status: 'Ocupado',
+                        cliente: r ? r.cliente : 'Cliente',
+                        telefone: r ? r.telefone : '',
+                        duration: r ? r.duration : 60,
+                        password: adminPass
+                    }]);
                 }
             }
         }
@@ -1458,8 +1478,9 @@
 
         function genTimeOptions() {
             let h = '';
-            for (let i = 0; i < 16; i++) {
-                const mins = i * 90;
+            const pulse = 30; // Sempre 30 para flexibilidade no bloqueio
+            for (let i = 0; i < 32; i++) {
+                const mins = i * pulse;
                 const hh = Math.floor(mins / 60).toString().padStart(2, '0');
                 const mm = (mins % 60).toString().padStart(2, '0');
                 h += `<option value="${i}">${hh}:${mm}</option>`;
@@ -1587,6 +1608,7 @@
                     agendaData[idx].cliente = up.cliente;
                     agendaData[idx].telefone = up.telefone;
                     if (up.codigo) agendaData[idx].codigo = up.codigo;
+                    if (up.duration) agendaData[idx].duration = up.duration;
                 }
             });
             renderSlots(selectedDayIso);
@@ -1683,7 +1705,7 @@
         // =============================================
         async function showSettingsModal() {
             _setupModal('Ajustes da Agenda', 'Configure o horário de funcionamento e a duração de cada vaga.');
-            
+
             document.getElementById('modalBody').innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:12px;">
                     <div>
@@ -1727,7 +1749,7 @@
                     end: document.getElementById('cfgEnd').value,
                     duration: parseInt(document.getElementById('cfgDuration').value)
                 };
-                
+
                 await saveConfig(newCfg);
                 document.getElementById('modalOverlay').classList.add('hidden');
             };
