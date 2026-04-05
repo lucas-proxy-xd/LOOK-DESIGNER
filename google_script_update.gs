@@ -48,7 +48,9 @@ function formatTimeValue(val, tz) {
       return Utilities.formatDate(val, tz, "HH:mm");
     }
   } catch(e) {}
-  return (val || "").toString().trim();
+  const s = (val || "").toString().trim();
+  const match = s.match(/(\d{1,2}:\d{2})/);
+  return match ? match[1].padStart(5, '0') : s;
 }
 
 function maskString(str) {
@@ -307,8 +309,8 @@ function getScheduleConfig(ss) {
   if (data.length < 2) return defaults;
   
   return {
-    start: (data[1][0] || defaults.start).toString(),
-    end: (data[1][1] || defaults.end).toString(),
+    start: formatTimeValue(data[1][0], ss.getSpreadsheetTimeZone()) || defaults.start,
+    end: formatTimeValue(data[1][1], ss.getSpreadsheetTimeZone()) || defaults.end,
     duration: parseInt(data[1][2] || defaults.duration)
   };
 }
