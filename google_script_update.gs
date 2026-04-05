@@ -11,6 +11,7 @@
  *   Coluna F: Código        (código único de rastreio, ex: a3f2:8b1d:4c09:e7a1)
  *   Coluna G: BookingTime   (ISO string - quando o cliente clicou)
  *   Coluna H: ReservedUntil (ISO string - expiração, ex: +20 min)
+ *   Coluna I: Auditoria     (Mensagens de log sobre expiração ou eventos importantes)
  */
 
 const ADMIN_PASSWORD = "borboletas";
@@ -40,6 +41,27 @@ function formatTimeValue(val, tz) {
     }
   } catch(e) {}
   return (val || "").toString().trim();
+}
+
+function maskString(str) {
+  if (!str) return "";
+  if (str === "RESERVADO" || str === "INDISPONÍVEL") return str;
+  const parts = str.split(' ');
+  const maskedParts = parts.map(p => {
+    if (p.length <= 1) return p;
+    if (p.length === 2) return p[0] + "*";
+    return p[0] + "*".repeat(p.length - 2) + p[p.length - 1];
+  });
+  return maskedParts.join(' ');
+}
+
+function maskPhone(str) {
+  if (!str) return "";
+  const clean = str.replace(/\D/g, '');
+  if (clean.length < 4) return str;
+  const init = clean.substring(0, clean.length - 4);
+  const end = clean.substring(clean.length - 2);
+  return `(${clean.substring(0, 2)}) ${clean.substring(2, 3)}****-**${end}`;
 }
 
 // ============================================================
@@ -81,6 +103,7 @@ function doGet(e) {
     var codigo   = ((row[5] || "")      + "").trim(); // Coluna F
     var bTime    = ((row[6] || "")      + "").trim(); // Coluna G
     var rUntil   = ((row[7] || "")      + "").trim(); // Coluna H
+    var log      = ((row[8] || "")      + "").trim(); // Coluna I
 
     var clienteExibicao = "";
     var telefoneExibicao = "";
@@ -95,13 +118,9 @@ function doGet(e) {
       bookingTimeExibicao = bTime;
       reservedUntilExibicao = rUntil;
     } else if (status === "Ocupado" || status === "Bloqueado" || status === "Aguardando Pagamento") {
-      clienteExibicao = "INDISPONÍVEL";
-      telefoneExibicao = ""; // Esconde telefone para não-admin
-      if (status === "Aguardando Pagamento") {
-          // Cliente final pode ver o token dele se for o que ele acabou de gerar (frontend lida com isso via localStorage)
-          // Mas enviamos vazio por segurança aqui, o frontend usa o que salvou no ato da reserva.
-          codigoExibicao = ""; 
-      }
+      clienteExibicao = maskString(client);
+      telefoneExibicao = maskPhone(telefone);
+      codigoExibicao = codigo; // Agora liberado para todos verem o token v6
     }
 
     agenda.push({
@@ -209,11 +228,13 @@ function doPost(e) {
         
         // Limpa campos de tempo se liberado ou ocupado definitivamente
         if (newStatus === "Livre" || newStatus === "Ocupado" || newStatus === "Bloqueado") {
-            if (newStatus === "Livre") {
-              sheet.getRange(foundRow + 1, 6, 1, 3).clearContent(); // Limpa F, G e H
-            } else if (newStatus === "Ocupado" || newStatus === "Bloqueado") {
-              // Se ocupado, podemos querer manter o BookingTime mas limpar a expiração
-              sheet.getRange(foundRow + 1, 8).clearContent(); // Limpa expiração (H)
+            if (newStatus === "Livre" && !callerIsAdmin) {
+               // Se "Livre" não foi por admin (improvável via app, mas para segurança), apenas limpa
+               sheet.getRange(foundRow + 1, 6, 1, 3).clearContent();
+            } else if (newStatus === "Livre" && callerIsAdmin) {
+                sheet.getRange(foundRow + 1, 6, 1, 3).clearContent();
+            } else if (newStatus === "Ocupado") {
+                sheet.getRange(foundRow + 1, 8).clearContent(); // Limpa expiração (H)
             }
         }
 
@@ -244,15 +265,21 @@ function autoReleaseExpiredSlots() {
 
   for (let i = 1; i < data.length; i++) {
     const status = (data[i][2] || "").toString();
+    const client = (data[i][3] || "").toString();
+    const token  = (data[i][5] || "").toString(); // Col F
     const expiryStr = (data[i][7] || "").toString(); // Coluna H
     
     if (status === "Aguardando Pagamento" && expiryStr) {
       const expiryDate = new Date(expiryStr);
       if (expiryDate < now) {
-        // Libera a vaga
+        // Libera a vaga e gera o Log de Auditoria na Coluna I
+        const logMsg = "[SISTEMA " + Utilities.formatDate(now, "GMT-4", "HH:mm") + "] Vaga liberada por falta de confirmação. Cliente: " + client + " / Token: " + token;
+        
         sheet.getRange(i + 1, 3).setValue("Livre");
         sheet.getRange(i + 1, 4, 1, 5).clearContent(); // Limpa D, E, F, G, H
-        Logger.log("Vaga liberada: " + data[i][0] + " " + data[i][1]);
+        sheet.getRange(i + 1, 9).setValue(logMsg); // Coluna I
+        
+        Logger.log(logMsg);
       }
     }
   }
