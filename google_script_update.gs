@@ -3,12 +3,14 @@
  * Planilha: TRONCO (única aba)
  *
  * Estrutura da aba TRONCO:
- *   Coluna A: Data       (ex: 2026-04-05 ou Date)
- *   Coluna B: Horário    (ex: 09:00 ou Time)
- *   Coluna C: Status     (Livre | Ocupado | Bloqueado)
- *   Coluna D: Cliente    (nome do cliente ou RESERVADO)
- *   Coluna E: Telefone   (telefone do cliente)
- *   Coluna F: Código     (código único de rastreio, ex: a3f2:8b1d:4c09:e7a1)
+ *   Coluna A: Data          (ex: 2026-04-05 ou Date)
+ *   Coluna B: Horário       (ex: 09:00 ou Time)
+ *   Coluna C: Status        (Livre | Ocupado | Bloqueado | Aguardando Pagamento)
+ *   Coluna D: Cliente       (nome do cliente ou RESERVADO)
+ *   Coluna E: Telefone      (telefone do cliente)
+ *   Coluna F: Código        (código único de rastreio, ex: a3f2:8b1d:4c09:e7a1)
+ *   Coluna G: BookingTime   (ISO string - quando o cliente clicou)
+ *   Coluna H: ReservedUntil (ISO string - expiração, ex: +20 min)
  */
 
 const ADMIN_PASSWORD = "borboletas";
@@ -59,6 +61,7 @@ function doGet(e) {
   const passProvided = ((e && e.parameter && e.parameter.pass) ? e.parameter.pass : "").toString().trim();
   const isAdmin      = (passProvided.length > 0 && passProvided === ADMIN_PASSWORD.trim());
 
+  // Garante que o cabeçalho existe ou expande a área se necessário
   const data   = sheet.getDataRange().getValues();
   const agenda = [];
 
@@ -76,18 +79,29 @@ function doGet(e) {
     var client   = ((row[3] || "")      + "").trim();
     var telefone = ((row[4] || "")      + "").trim(); // Coluna E
     var codigo   = ((row[5] || "")      + "").trim(); // Coluna F
+    var bTime    = ((row[6] || "")      + "").trim(); // Coluna G
+    var rUntil   = ((row[7] || "")      + "").trim(); // Coluna H
 
     var clienteExibicao = "";
     var telefoneExibicao = "";
     var codigoExibicao = "";
+    var bookingTimeExibicao = "";
+    var reservedUntilExibicao = "";
     
     if (isAdmin) {
       clienteExibicao = client;
       telefoneExibicao = telefone;
       codigoExibicao = codigo;
+      bookingTimeExibicao = bTime;
+      reservedUntilExibicao = rUntil;
     } else if (status === "Ocupado" || status === "Bloqueado" || status === "Aguardando Pagamento") {
       clienteExibicao = "INDISPONÍVEL";
       telefoneExibicao = ""; // Esconde telefone para não-admin
+      if (status === "Aguardando Pagamento") {
+          // Cliente final pode ver o token dele se for o que ele acabou de gerar (frontend lida com isso via localStorage)
+          // Mas enviamos vazio por segurança aqui, o frontend usa o que salvou no ato da reserva.
+          codigoExibicao = ""; 
+      }
     }
 
     agenda.push({
@@ -96,11 +110,13 @@ function doGet(e) {
       status:  status,
       cliente: clienteExibicao,
       telefone: telefoneExibicao,
-      codigo: codigoExibicao
+      codigo: codigoExibicao,
+      bookingTime: bookingTimeExibicao,
+      reservedUntil: reservedUntilExibicao
     });
   }
 
-  var result = JSON.stringify({ status: "OK", agenda: agenda, isAdmin: isAdmin });
+  var result = JSON.stringify({ status: "OK", agenda: agenda, isAdmin: isAdmin, serverTime: new Date().toISOString() });
 
   return callback
     ? ContentService.createTextOutput(callback + "(" + result + ")").setMimeType(ContentService.MimeType.JAVASCRIPT)
@@ -159,6 +175,8 @@ function doPost(e) {
       var newClient  = (update.cliente || "").toString().trim();
       var newPhone   = (update.telefone || "").toString().trim();
       var newCodigo  = (update.codigo   || "").toString().trim();
+      var bTime      = (update.bookingTime || "").toString().trim();
+      var rUntil     = (update.reservedUntil || "").toString().trim();
 
       if (!targetDate || !targetTime || !newStatus) continue;
 
@@ -185,9 +203,22 @@ function doPost(e) {
         sheet.getRange(foundRow + 1, 3).setValue(newStatus);
         sheet.getRange(foundRow + 1, 4).setValue(newClient);
         sheet.getRange(foundRow + 1, 5).setValue(newPhone);
-        if (newCodigo) sheet.getRange(foundRow + 1, 6).setValue(newCodigo); // Coluna F
+        if (newCodigo) sheet.getRange(foundRow + 1, 6).setValue(newCodigo);
+        if (bTime)     sheet.getRange(foundRow + 1, 7).setValue(bTime);
+        if (rUntil)    sheet.getRange(foundRow + 1, 8).setValue(rUntil);
+        
+        // Limpa campos de tempo se liberado ou ocupado definitivamente
+        if (newStatus === "Livre" || newStatus === "Ocupado" || newStatus === "Bloqueado") {
+            if (newStatus === "Livre") {
+              sheet.getRange(foundRow + 1, 6, 1, 3).clearContent(); // Limpa F, G e H
+            } else if (newStatus === "Ocupado" || newStatus === "Bloqueado") {
+              // Se ocupado, podemos querer manter o BookingTime mas limpar a expiração
+              sheet.getRange(foundRow + 1, 8).clearContent(); // Limpa expiração (H)
+            }
+        }
+
       } else {
-        sheet.appendRow([targetDate, targetTime, newStatus, newClient, newPhone, newCodigo]);
+        sheet.appendRow([targetDate, targetTime, newStatus, newClient, newPhone, newCodigo, bTime, rUntil]);
       }
 
       savedCount++;
@@ -197,6 +228,33 @@ function doPost(e) {
 
   } catch (err) {
     return jsonResponse("ERRO", "Erro interno: " + err.message);
+  }
+}
+
+// ============================================================
+// AUTO-RELEASE (Deve ser ativado por Trigger de Tempo)
+// ============================================================
+function autoReleaseExpiredSlots() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) return;
+
+  const data = sheet.getDataRange().getValues();
+  const now = new Date();
+
+  for (let i = 1; i < data.length; i++) {
+    const status = (data[i][2] || "").toString();
+    const expiryStr = (data[i][7] || "").toString(); // Coluna H
+    
+    if (status === "Aguardando Pagamento" && expiryStr) {
+      const expiryDate = new Date(expiryStr);
+      if (expiryDate < now) {
+        // Libera a vaga
+        sheet.getRange(i + 1, 3).setValue("Livre");
+        sheet.getRange(i + 1, 4, 1, 5).clearContent(); // Limpa D, E, F, G, H
+        Logger.log("Vaga liberada: " + data[i][0] + " " + data[i][1]);
+      }
+    }
   }
 }
 
