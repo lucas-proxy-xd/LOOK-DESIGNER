@@ -764,6 +764,25 @@
             font-weight: 600;
             opacity: 0.8;
         }
+
+        .pend-timer {
+            margin-top: 8px;
+            font-size: 0.7rem;
+            color: var(--status-pend);
+            font-weight: 600;
+            background: rgba(179, 134, 0, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .reserve-cta {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: var(--pink);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 
@@ -882,6 +901,15 @@
         // Configurações da Agenda (recebe do backend)
         let scheduleConfig = { start: '08:00', end: '20:00', duration: 90 };
 
+        /**
+         * VALIDADOR DE RESILIÊNCIA
+         * Impede que o sistema trave caso uma configuração manual seja inválida.
+         */
+        const VALIDATOR = {
+            time: (t) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t) ? t : "08:00",
+            duration: (d) => [30, 60, 90, 120, 180].includes(Number(d)) ? Number(d) : 60
+        };
+
         // Gera um código único no formato visual IPv6 (4 grupos de 4 hex)
         function generateSlotCode() {
             const hex = () => Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0');
@@ -977,142 +1005,138 @@
 
         // =============================================
         function renderSlots(iso) {
-            const container = document.getElementById('slotsContainer');
-            container.innerHTML = '';
+            try {
+                const container = document.getElementById('slotsContainer');
+                container.innerHTML = '';
 
-            const now = new Date();
-            const todayIso = toLocalISO(now);
-            const currentMins = now.getHours() * 60 + now.getMinutes();
+                const now = new Date();
+                const todayIso = toLocalISO(now);
+                const currentMins = now.getHours() * 60 + now.getMinutes();
 
-            // Geração Dinâmica da Grade baseada na Configuração
-            const [startHH, startMM] = scheduleConfig.start.split(':').map(Number);
-            const [endHH, endMM] = scheduleConfig.end.split(':').map(Number);
+                // Geração Dinâmica da Grade baseada na Configuração (com Fallback de Segurança)
+                const sStart = VALIDATOR.time(scheduleConfig.start);
+                const sEnd = VALIDATOR.time(scheduleConfig.end);
+                
+                const [startHH, startMM] = sStart.split(':').map(Number);
+                const [endHH, endMM] = sEnd.split(':').map(Number);
 
-            let curTotal = startHH * 60 + startMM;
-            const endTotal = endHH * 60 + endMM;
+                let curTotal = startHH * 60 + startMM;
+                const endTotal = endHH * 60 + endMM;
 
-            const grid = document.createElement('div');
-            grid.className = 'agenda-grid';
+                const grid = document.createElement('div');
+                grid.className = 'agenda-grid';
 
-            while (curTotal < endTotal) {
-                const hh = Math.floor(curTotal / 60).toString().padStart(2, '0');
-                const mm = (curTotal % 60).toString().padStart(2, '0');
-                const tLabel = `${hh}:${mm}`;
+                while (curTotal < endTotal) {
+                    const hh = Math.floor(curTotal / 60).toString().padStart(2, '0');
+                    const mm = (curTotal % 60).toString().padStart(2, '0');
+                    const tLabel = `${hh}:${mm}`;
 
-                const isPast = (iso < todayIso) || (iso === todayIso && curTotal < currentMins);
+                    const isPast = (iso < todayIso) || (iso === todayIso && curTotal < currentMins);
 
-                const reg = agendaData.find(r => {
-                    const rData = normalizeDate(r.data);
-                    const rTime = normalizeTime(r.horario);
-                    return rData === iso && rTime === tLabel;
-                });
+                    const reg = agendaData.find(r => {
+                        const rData = normalizeDate(r.data);
+                        const rTime = normalizeTime(r.horario);
+                        return rData === iso && rTime === tLabel;
+                    });
 
-                const st = reg ? reg.status : 'Livre';
-                const cl = reg ? reg.cliente : '';
-                const tel = reg ? (reg.telefone || '') : '';
-                const slotCodigo = reg ? (reg.codigo || '') : '';
-                const isSelected = selectedSlots.includes(tLabel);
+                    const st = reg ? reg.status : 'Livre';
+                    const cl = reg ? reg.cliente : '';
+                    const tel = reg ? (reg.telefone || '') : '';
+                    const slotCodigo = reg ? (reg.codigo || '') : '';
+                    const isSelected = selectedSlots.includes(tLabel);
 
-                // Duração do bloco: se tiver registro, usa a duração dele, senão usa o padrão (30)
-                const blockDur = reg ? parseInt(reg.duration || scheduleConfig.duration || 30) : (scheduleConfig.duration || 30);
+                    // Duração do bloco: se tiver registro, usa a duração dele, senão usa o padrão
+                    const blockDur = reg ? parseInt(reg.duration || scheduleConfig.duration || 30) : (scheduleConfig.duration || 30);
 
-                let styleClass = 'b-free', colorClass = 'c-free';
-                if (st === 'Ocupado') { styleClass = 'b-busy'; colorClass = 'c-busy'; }
-                else if (st === 'Bloqueado') { styleClass = 'b-lock'; colorClass = 'c-lock'; }
-                else if (st === 'Aguardando Pagamento') { styleClass = 'b-pend'; colorClass = 'c-pend'; }
+                    let styleClass = 'b-free', colorClass = 'c-free';
+                    if (st === 'Ocupado') { styleClass = 'b-busy'; colorClass = 'c-busy'; }
+                    else if (st === 'Bloqueado') { styleClass = 'b-lock'; colorClass = 'c-lock'; }
+                    else if (st === 'Aguardando Pagamento') { styleClass = 'b-pend'; colorClass = 'c-pend'; }
 
-                let clHtml = cl;
-                if (!clHtml) {
-                    if (!isPast && st === 'Livre') {
-                        clHtml = 'Toque para reservar';
-                    } else if (isPast && isAdminActive && st === 'Livre') {
-                        clHtml = '<span style="font-size:0.8rem; font-style:italic; opacity:0.85;">Não houve atendimento ou não foi registrado pelo ADMIN</span>';
+                    let clHtml = cl;
+                    if (!clHtml) {
+                        if (!isPast && st === 'Livre') {
+                            clHtml = '<span class="reserve-cta">✦ Reservar agora</span>';
+                        } else if (isPast && isAdminActive && st === 'Livre') {
+                            clHtml = '<span style="font-size:0.7rem; font-style:italic; opacity:0.6;">Sem registro (Admin)</span>';
+                        }
                     }
-                }
 
-                if (isAdminActive && tel) {
-                    const dateParts = iso.split('-');
-                    const dataFmt = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-                    const customMsg = `Olá, ${cl}! Bem-vinda ao LOOK DESIGNER. Passando para confirmar o seu agendamento para o dia ${dataFmt} às ${tLabel}. Qualquer dúvida, estou à disposição!\n\n${CONFIG.WA_MANAGER} - GERENTE`;
-
-                    const telNum = tel.replace(/\D/g, '');
-                    clHtml += `<br><a href="https://wa.me/55${telNum}?text=${encodeURIComponent(customMsg)}" target="_blank" onclick="event.stopPropagation()" class="whatsapp-btn">📱 Enviar WhatsApp</a>`;
-                }
-
-                if (isAdminActive && st === 'Aguardando Pagamento') {
-                    const bTime = reg ? reg.bookingTime : '';
-                    if (bTime) {
-                        const bDate = new Date(bTime);
-                        const nowServer = new Date(Date.now() + serverTimeOffset);
-                        const diffMs = nowServer - bDate;
-                        const diffMin = Math.floor(diffMs / 60000);
-                        const timeStr = bDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-                        clHtml += `<div style="margin-top:8px; font-size:0.7rem; color:var(--status-pend); font-weight:600; background:rgba(179,134,0,0.1); padding:4px 8px; border-radius:6px; display:inline-block;">`;
-                        clHtml += `⏳ Aguardando há ${diffMin} min (desde ${timeStr})`;
-                        clHtml += `</div>`;
+                    if (isAdminActive && tel) {
+                        const dateParts = iso.split('-');
+                        const dataFmt = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                        const customMsg = `Olá, ${cl}! Bem-vinda ao LOOK DESIGNER. Passando para confirmar o seu agendamento para o dia ${dataFmt} às ${tLabel}. Qualquer dúvida, estou à disposição!\n\n${CONFIG.WA_MANAGER} - GERENTE`;
+                        const telNum = tel.replace(/\D/g, '');
+                        clHtml += `<br><a href="https://wa.me/55${telNum}?text=${encodeURIComponent(customMsg)}" target="_blank" onclick="event.stopPropagation()" class="whatsapp-btn">📱 Enviar WhatsApp</a>`;
                     }
-                }
 
-                if (isAdminActive && slotCodigo) {
-                    clHtml += `
-                        <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
-                            <span style="font-family:monospace; font-size:0.65rem; opacity:0.6; letter-spacing:1px; background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:4px;">🔑 ${slotCodigo}</span>
-                            <button onclick="event.stopPropagation(); copyToClipboard('${slotCodigo}', this)" style="background:transparent; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">📋</button>
+                    if (isAdminActive && st === 'Aguardando Pagamento') {
+                        const bTime = reg ? reg.bookingTime : '';
+                        if (bTime) {
+                            const bDate = new Date(bTime);
+                            const nowServer = new Date(Date.now() + serverTimeOffset);
+                            const diffMin = Math.floor((nowServer - bDate) / 60000);
+                            const timeStr = bDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                            clHtml += `<div class="pend-timer">⏳ Pendente há ${diffMin}m (${timeStr})</div>`;
+                        }
+                    }
+
+                    // Simplificação: Ocultar o código técnico para clientes, mostrar apenas para Admin
+                    if (isAdminActive && slotCodigo) {
+                        clHtml += `
+                            <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
+                                <span style="font-family:monospace; font-size:0.65rem; opacity:0.6; letter-spacing:1px; background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:4px;">🔑 ${slotCodigo}</span>
+                                <button onclick="event.stopPropagation(); copyToClipboard('${slotCodigo}', this)" style="background:transparent; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">📋</button>
+                            </div>
+                        `;
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = `slot-card ${styleClass}${isSelected ? ' selected' : ''}`;
+                    if (blockDur > 30) div.style.minHeight = '100px';
+
+                    let stHtml = `<div class="slot-st ${colorClass}">${st}</div>`;
+                    if (isPast) {
+                        div.style.opacity = '0.35';
+                        div.style.filter = 'grayscale(0.8)';
+                        if (!isAdminActive) {
+                            div.style.pointerEvents = 'none';
+                            stHtml = '';
+                            clHtml = '<span style="opacity:0.6;">Encerrado</span>';
+                        }
+                    }
+
+                    div.onclick = () => onSlotClick(iso, tLabel, st);
+
+                    let labelFinal = tLabel;
+                    if (blockDur > (scheduleConfig.duration || 30)) {
+                        const finalMins = curTotal + blockDur;
+                        const fH = Math.floor(finalMins / 60).toString().padStart(2, '0');
+                        const fM = (finalMins % 60).toString().padStart(2, '0');
+                        labelFinal += ` - ${fH}:${fM}`;
+                    }
+
+                    div.innerHTML = `
+                        <div class="slot-time">${labelFinal}</div>
+                        <div class="slot-body">
+                            ${stHtml}
+                            <div class="slot-cl" style="margin-top:${stHtml ? '5px' : '0'};">${clHtml}</div>
                         </div>
                     `;
-                } else if (!isAdminActive && slotCodigo && (st === 'Ocupado' || st === 'Aguardando Pagamento')) {
-                    clHtml += `
-                        <div style="margin-top:8px; display:flex; align-items:center; gap:5px; background:rgba(205,139,139,0.05); padding:6px 10px; border-radius:10px; border:1px solid rgba(205,139,139,0.15); width:fit-content;">
-                            <span style="font-size:0.7rem; color:var(--pink); font-weight:700; letter-spacing:0.5px;">🔑 CÓDIGO:</span>
-                            <span style="font-family:monospace; font-size:0.8rem; color:var(--text); font-weight:600;">${slotCodigo}</span>
-                        </div>
-                    `;
+                    grid.appendChild(div);
+                    curTotal += blockDur;
                 }
-
-                const div = document.createElement('div');
-                div.className = `slot-card ${styleClass}${isSelected ? ' selected' : ''}`;
-
-                // Se o bloco for maior que 30 min, aumenta um pouco o padding visual
-                if (blockDur > 30) {
-                    div.style.minHeight = '100px';
-                }
-
-                let stHtml = `<div class="slot-st ${colorClass}">${st}</div>`;
-                if (isPast) {
-                    div.style.opacity = '0.35';
-                    div.style.filter = 'grayscale(0.8)';
-                    if (!isAdminActive) {
-                        div.style.pointerEvents = 'none';
-                        stHtml = '';
-                        clHtml = '<span style="opacity:0.8; font-weight:500;">Horário encerrado</span>';
-                    }
-                }
-
-                div.onclick = () => onSlotClick(iso, tLabel, st);
-
-                // Exibe o horário de término se for um bloco longo
-                let labelFinal = tLabel;
-                if (blockDur > (scheduleConfig.duration || 30)) {
-                    const finalMins = curTotal + blockDur;
-                    const fH = Math.floor(finalMins / 60).toString().padStart(2, '0');
-                    const fM = (finalMins % 60).toString().padStart(2, '0');
-                    labelFinal += ` - ${fH}:${fM}`;
-                }
-
-                div.innerHTML = `
-                    <div class="slot-time">${labelFinal}</div>
-                    <div class="slot-body">
-                        ${stHtml}
-                        <div class="slot-cl" style="margin-top:${stHtml ? '5px' : '0'};">${clHtml}</div>
+                container.appendChild(grid);
+            } catch (err) {
+                console.error("Erro na renderização:", err);
+                document.getElementById('slotsContainer').innerHTML = `
+                    <div style="padding:40px; text-align:center; color:var(--pink);">
+                        <h3>⚠️ Erro ao carregar agenda</h3>
+                        <p style="font-size:0.8rem; margin-top:10px;">Verifique os horários configurados no menu Admin.</p>
+                        <button onclick="init()" class="btn-nav" style="margin-top:20px;">Tentar Novamente</button>
                     </div>
                 `;
-                grid.appendChild(div);
-
-                // Incrementa para o próximo bloco: pula o tempo de duração deste agendamento
-                curTotal += blockDur;
             }
-            container.appendChild(grid);
         }
 
         async function onSlotClick(d, t, s) {
@@ -1420,49 +1444,69 @@
 
         function showPixModal(nome, dataStr, slotCode) {
             return new Promise(resolve => {
-                _setupModal('Pagamento da Taxa', `Quase lá! Para garantir sua vaga, efetue o pagamento da taxa de reserva de ${CONFIG.PIX_VALUE} no PIX:`);
+                _setupModal('Finalizar Reserva', `Olá ${nome}! Siga os passos abaixo para garantir sua vaga.`);
 
                 const wpMsg = `Olá! Realizei o agendamento de ${nome} para o dia ${dataStr}. Fiz o pix para ${CONFIG.PIX_HOLDER}, banco ${CONFIG.PIX_BANK}, no valor de ${CONFIG.PIX_VALUE}, nesse pix que copiei no agendamento ${slotCode}`;
                 const wpLink = `https://wa.me/${CONFIG.WA_PHONE}?text=${encodeURIComponent(wpMsg)}`;
 
                 document.getElementById('modalBody').innerHTML = `
-                    <div style="background:var(--card); padding:10px; border-radius:12px; border:1px dashed var(--pink); text-align:center; font-weight:bold; letter-spacing:0.5px; margin-bottom:15px; color:var(--slate);">
-                        Chave PIX (${CONFIG.PIX_BANK}):<br>
-                        <div style="font-size:0.7rem; opacity:0.8; margin-bottom:4px;">Titular: ${CONFIG.PIX_HOLDER}</div>
-                        <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:5px;">
-                            <span style="font-size:1.1rem; color:var(--text);">${CONFIG.PIX_KEY}</span>
-                            <button id="btnCopyPix" style="background:transparent; border:1px solid var(--pink); color:var(--text); border-radius:4px; padding:2px 8px; cursor:pointer; font-size:0.7rem; transition:0.2s;">📋 Copiar</button>
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                        
+                        <!-- Passo 1 -->
+                        <div style="border: 1px solid var(--border); border-radius:16px; padding:16px; background:rgba(0,0,0,0.02);">
+                            <div style="font-size:0.6rem; text-transform:uppercase; font-weight:800; color:var(--pink); margin-bottom:10px; display:flex; align-items:center; gap:5px;">
+                                <span style="background:var(--pink); color:#fff; width:18px; height:18px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:0.5rem;">1</span>
+                                PAGAR VALOR DE ${CONFIG.PIX_VALUE}
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="font-size:0.7rem; color:var(--slate); margin-bottom:4px;">Chave (${CONFIG.PIX_BANK})</div>
+                                <div style="font-size:1.1rem; font-weight:700; color:var(--text); letter-spacing:1px; margin-bottom:10px;">${CONFIG.PIX_KEY}</div>
+                                <button id="btnCopyPix" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--pink); background:transparent; color:var(--pink); font-weight:700; font-size:0.8rem; cursor:pointer;">📋 COPIAR CHAVE PIX</button>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div style="background:rgba(205,139,139,0.05); padding:12px; border-radius:12px; border:1px solid var(--border); margin-bottom:15px; text-align:center;">
-                        <span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:1px; color:var(--slate); font-weight:700;">Seu Código de Rastreio (v6)</span>
-                        <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:4px;">
-                            <span style="font-family:monospace; font-size:1rem; color:var(--pink); font-weight:700;">${slotCode}</span>
-                            <button id="btnCopyToken" style="background:transparent; border:1px solid var(--pink); color:var(--text); border-radius:4px; padding:2px 8px; cursor:pointer; font-size:0.7rem;">📋</button>
-                        </div>
-                    </div>
 
-                    <p style="font-size:0.85rem; font-weight:bold; color:var(--pink); text-align:center; margin-bottom:10px;">
-                        ⚠️ IMPORTANTE: Você tem ${CONFIG.RESERVE_MINUTES} minutos para enviar o comprovante. Após esse prazo, sem confirmação, a vaga é liberada automaticamente.
-                    </p>
-                    <p style="font-size:0.75rem; color:var(--slate); text-align:center; margin-bottom:15px;">Copie a chave acima, faça o pagamento e envie o comprovante no WhatsApp.</p>
+                        <!-- Passo 2 -->
+                        <div style="border: 1px solid var(--border); border-radius:16px; padding:16px; background:rgba(0,0,0,0.02);">
+                            <div style="font-size:0.6rem; text-transform:uppercase; font-weight:800; color:var(--pink); margin-bottom:10px; display:flex; align-items:center; gap:5px;">
+                                <span style="background:var(--pink); color:#fff; width:18px; height:18px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:0.5rem;">2</span>
+                                SEU CÓDIGO DE RASTREIO
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-family:monospace; font-size:0.9rem; font-weight:700; color:var(--slate);">${slotCode}</span>
+                                <button id="btnCopyToken" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:white; cursor:pointer; font-size:0.7rem;">COPIAR</button>
+                            </div>
+                        </div>
+
+                        <!-- Passo 3 -->
+                        <div style="text-align:center; padding:5px;">
+                             <div style="font-size:0.6rem; text-transform:uppercase; font-weight:800; color:var(--emerald); margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:5px;">
+                                <span style="background:var(--emerald); color:#fff; width:18px; height:18px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:0.5rem;">3</span>
+                                ENVIAR COMPROVANTE
+                            </div>
+                            <a href="${wpLink}" target="_blank" id="btnWpFinal" class="modal-btn primary" style="text-decoration:none; display:block; text-align:center; font-size:1rem; font-weight:700; padding:18px;">ABRIR WHATSAPP</a>
+                            <p style="font-size:0.65rem; color:var(--slate); margin-top:10px; line-height:1.4;">
+                                Você tem <b>${CONFIG.RESERVE_MINUTES} minutos</b> para confirmar. Após isso, o horário volta a ficar livre.
+                            </p>
+                        </div>
+
+                    </div>
                 `;
+
                 document.getElementById('modalActions').innerHTML = `
-                    <a href="${wpLink}" target="_blank" onclick="document.getElementById('modalOverlay').classList.add('hidden');" class="modal-btn primary" style="text-decoration:none; text-align:center; width:100%; box-sizing:border-box;">Enviar Comprovante (WhatsApp)</a>
-                    <button class="modal-btn secondary" id="mCancel" style="margin-top:8px; width:100%;">Fechar</button>
+                    <button class="modal-btn secondary" id="mCancel" style="width:100%; opacity:0.6;">FECHAR JANELA</button>
                 `;
 
                 document.getElementById('modalOverlay').classList.remove('hidden');
 
                 document.getElementById('btnCopyPix').onclick = () => {
-                    copyToClipboard(pixKey, document.getElementById('btnCopyPix'));
+                    copyToClipboard(CONFIG.PIX_KEY, document.getElementById('btnCopyPix'));
                 };
-
                 document.getElementById('btnCopyToken').onclick = () => {
                     copyToClipboard(slotCode, document.getElementById('btnCopyToken'));
                 };
-
+                document.getElementById('btnWpFinal').onclick = () => {
+                    document.getElementById('modalOverlay').classList.add('hidden');
+                };
                 document.getElementById('mCancel').onclick = () => {
                     document.getElementById('modalOverlay').classList.add('hidden');
                     resolve();
