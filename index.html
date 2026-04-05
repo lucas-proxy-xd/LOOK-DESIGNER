@@ -95,7 +95,20 @@
         }
 
         body.admin-mode {
-            box-shadow: inset 0 0 100px rgba(205, 139, 139, 0.12);
+            --pink: #FF1493;
+            --pink-glow: rgba(255, 20, 147, 0.4);
+            box-shadow: inset 0 0 150px rgba(255, 20, 147, 0.25);
+            background-color: rgba(255, 20, 147, 0.02);
+            border: 5px solid #FF1493;
+        }
+
+        body.admin-mode #adminBadge {
+            background: #FF1493;
+            box-shadow: 0 0 20px rgba(255, 20, 147, 0.6);
+        }
+
+        body.admin-mode .slot-card {
+            border-color: rgba(255, 20, 147, 0.3);
         }
 
         .app {
@@ -1276,11 +1289,13 @@
                 _setupModal('Pagamento da Taxa', 'Quase lá! Para garantir sua vaga, efetue o pagamento da taxa de reserva de R$ 25,00 no PIX:');
                 
                 const pixKey = "62993362375";
+                const pixHolder = "Camila Alves de Lima";
                 const wpLink = `https://wa.me/559296150540?text=Ol%C3%A1!%20Realizei%20o%20agendamento%20de%20${encodeURIComponent(nome)}%20para%20o%20dia%20${encodeURIComponent(dataStr)}%20e%20este%20%C3%A9%20o%20meu%20comprovante%20de%20pagamento.%20C%C3%B3digo%20da%20Vaga:%20${slotCode}`;
 
                 document.getElementById('modalBody').innerHTML = `
-                    <div style="background:var(--card); padding:10px; border-radius:8px; border:1px dashed var(--pink); text-align:center; font-weight:bold; letter-spacing:1px; margin-bottom:15px; color:var(--slate);">
+                    <div style="background:var(--card); padding:10px; border-radius:12px; border:1px dashed var(--pink); text-align:center; font-weight:bold; letter-spacing:0.5px; margin-bottom:15px; color:var(--slate);">
                         Chave PIX (NU PAGAMENTOS - NUBANK):<br>
+                        <div style="font-size:0.7rem; opacity:0.8; margin-bottom:4px;">Titular: ${pixHolder}</div>
                         <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:5px;">
                             <span style="font-size:1.1rem; color:var(--text);">${pixKey}</span>
                             <button id="btnCopyPix" style="background:transparent; border:1px solid var(--pink); color:var(--text); border-radius:4px; padding:2px 8px; cursor:pointer; font-size:0.7rem; transition:0.2s;">📋 Copiar</button>
@@ -1526,6 +1541,7 @@
             const histBtn = document.getElementById('historyBtnContainer');
 
             if (isAdminActive) {
+                document.body.classList.add('admin-mode');
                 btn.innerHTML = '🔓 SAIR';
                 btn.classList.add('active');
                 admStatus.style.display = 'flex';
