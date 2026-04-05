@@ -112,19 +112,19 @@
         }
 
         .app {
-            max-width: 500px;
+            max-width: 450px;
             margin: 0 auto;
         }
 
         header {
             text-align: center;
-            margin: 35px 0;
+            margin: 25px 0;
             position: relative;
         }
 
         header h1 {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 3.6rem;
+            font-size: 2.8rem;
             letter-spacing: 5px;
             font-weight: 600;
             line-height: 1;
@@ -774,6 +774,7 @@
             padding: 4px 8px;
             border-radius: 6px;
             display: inline-block;
+            border: 1px solid rgba(179, 134, 0, 0.2);
         }
 
         .reserve-cta {
@@ -808,7 +809,7 @@
                     style="font-family:'Inter', sans-serif; font-size:1rem; letter-spacing:8px; font-weight:400; color:var(--slate); display:block; margin-top:5px;">DESIGNER</span>
             </h1>
             <div id="statusIndicator">
-                <span id="statusText">SINCRONIZANDO...</span>
+                <span id="statusText">CARREGANDO...</span>
                 <div id="statusBar"></div>
             </div>
         </header>
@@ -1016,7 +1017,7 @@
                 // Geração Dinâmica da Grade baseada na Configuração (com Fallback de Segurança)
                 const sStart = VALIDATOR.time(scheduleConfig.start);
                 const sEnd = VALIDATOR.time(scheduleConfig.end);
-                
+
                 const [startHH, startMM] = sStart.split(':').map(Number);
                 const [endHH, endMM] = sEnd.split(':').map(Number);
 
@@ -1050,14 +1051,14 @@
                     try {
                         const rawDur = reg ? (reg.duration || scheduleConfig.duration) : scheduleConfig.duration;
                         blockDur = Math.max(30, parseInt(rawDur) || 30);
-                    } catch(e) {
+                    } catch (e) {
                         blockDur = 30;
                     }
 
                     let styleClass = 'b-free', colorClass = 'c-free';
                     if (st === 'Ocupado') { styleClass = 'b-busy'; colorClass = 'c-busy'; }
                     else if (st === 'Bloqueado') { styleClass = 'b-lock'; colorClass = 'c-lock'; }
-                    else if (st === 'Aguardando Pagamento') { styleClass = 'b-pend'; colorClass = 'c-pend'; }
+                    else if (st === 'Aguardando Pagamento') { styleClass = 'b-pend'; colorClass = 'c-pend'; st = 'Reservado (PIX)'; }
 
                     let clHtml = cl;
                     if (!clHtml) {
@@ -1143,195 +1144,194 @@
                     </div>
                 `;
             }
-        }
 
-        async function onSlotClick(d, t, s) {
-            if (isMultiMode) {
-                const idx = selectedSlots.indexOf(t);
-                if (idx > -1) selectedSlots.splice(idx, 1);
-                else selectedSlots.push(t);
-                renderSlots(d);
-                return;
-            }
+            async function onSlotClick(d, t, s) {
+                if (isMultiMode) {
+                    const idx = selectedSlots.indexOf(t);
+                    if (idx > -1) selectedSlots.splice(idx, 1);
+                    else selectedSlots.push(t);
+                    renderSlots(d);
+                    return;
+                }
 
-            if (!isAdminActive) {
-                if (s !== 'Livre') {
-                    // Verificação: Se o usuário clica em algo que ele mesmo agendou e está pendente, mostra o PIX de novo
-                    if (s === 'Aguardando Pagamento') {
-                        const reg = agendaData.find(x => normalizeDate(x.data) === d && normalizeTime(x.horario) === t);
-                        const myToken = localStorage.getItem('look_last_token');
-                        if (reg && reg.codigo === myToken) {
-                            const dateParts = d.split('-');
-                            const dataFmt = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]} às ${t}`;
-                            await showPixModal(reg.cliente, dataFmt, reg.codigo);
+                if (!isAdminActive) {
+                    if (s !== 'Livre' && s !== 'Reservado (PIX)') {
+                        // Verificação: Se o usuário clica em algo que ele mesmo agendou e está pendente, mostra o PIX de novo
+                        if (s === 'Aguardando Pagamento' || s === 'Reservado (PIX)') {
+                            const reg = agendaData.find(x => normalizeDate(x.data) === d && normalizeTime(x.horario) === t);
+                            const myToken = localStorage.getItem('look_last_token');
+                            if (reg && reg.codigo === myToken) {
+                                const dateParts = d.split('-');
+                                const dataFmt = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]} às ${t}`;
+                                await showPixModal(reg.cliente, dataFmt, reg.codigo);
+                                return;
+                            }
+                        }
+                        await showAlert('Horário indisponível', 'Este horário já está ocupado ou bloqueado.');
+                        return;
+                    }
+
+                    const lastBookingTime = localStorage.getItem('look_booking_ts');
+                    const nowMs = Date.now();
+                    const limitMs = (CONFIG.RESERVE_MINUTES || 20) * 60000;
+
+                    if (localStorage.getItem('look_has_booked') === 'true') {
+                        // Se o tempo passou OU se não houver registro de tempo, limpamos o bloqueio
+                        if (!lastBookingTime || (nowMs - parseInt(lastBookingTime)) > limitMs) {
+                            localStorage.removeItem('look_has_booked');
+                            localStorage.removeItem('look_booking_ts');
+                        } else {
+                            const wpContato = `https://wa.me/${CONFIG.WA_PHONE}?text=Ol%C3%A1!%20Gostaria%20de%20reagendar%20ou%20fazer%20uma%20nova%20reserva.`;
+                            await _showContactAlert('Limite Alcançado', 'Você já possui uma solicitação de agendamento em andamento. Para alterar o horário ou realizar um novo agendamento, por favor entre em contato com a gerente.', wpContato);
                             return;
                         }
                     }
-                    await showAlert('Horário indisponível', 'Este horário já está ocupado ou bloqueado.');
-                    return;
-                }
 
-                const lastBookingTime = localStorage.getItem('look_booking_ts');
-                const nowMs = Date.now();
-                const limitMs = (CONFIG.RESERVE_MINUTES || 20) * 60000;
+                    const result = await showBookingPrompt('Reservar Horário', `Preencha seus dados para agendar às ${t}:`);
+                    if (!result) return;
 
-                if (localStorage.getItem('look_has_booked') === 'true') {
-                    // Se o tempo passou OU se não houver registro de tempo, limpamos o bloqueio
-                    if (!lastBookingTime || (nowMs - parseInt(lastBookingTime)) > limitMs) {
-                        localStorage.removeItem('look_has_booked');
-                        localStorage.removeItem('look_booking_ts');
-                    } else {
-                        const wpContato = `https://wa.me/${CONFIG.WA_PHONE}?text=Ol%C3%A1!%20Gostaria%20de%20reagendar%20ou%20fazer%20uma%20nova%20reserva.`;
-                        await _showContactAlert('Limite Alcançado', 'Você já possui uma solicitação de agendamento em andamento. Para alterar o horário ou realizar um novo agendamento, por favor entre em contato com a gerente.', wpContato);
+                    // VERIFICAÇÃO DE SOBREPOSIÇÃO (Collision Check)
+                    const startMins = parseInt(t.split(':')[0]) * 60 + parseInt(t.split(':')[1]);
+                    const endMins = startMins + result.duration;
+
+                    const hasCollision = agendaData.some(reg => {
+                        if (normalizeDate(reg.data) !== normalizeDate(d)) return false;
+                        if (reg.status === 'Livre') return false;
+
+                        const rStart = parseInt(reg.horario.split(':')[0]) * 60 + parseInt(reg.horario.split(':')[1]);
+                        const rDur = parseInt(reg.duration || scheduleConfig.duration || 30);
+                        const rEnd = rStart + rDur;
+
+                        // Colisão se o intervalo [start, end] intersecta [rStart, rEnd]
+                        return (startMins < rEnd && endMins > rStart);
+                    });
+
+                    if (hasCollision) {
+                        await showAlert('Conflito de Horário', 'Desculpe, o tempo escolhido para este procedimento ultrapassa outro agendamento já existente.');
                         return;
                     }
-                }
 
-                const result = await showBookingPrompt('Reservar Horário', `Preencha seus dados para agendar às ${t}:`);
-                if (!result) return;
+                    // Gera código único estilo IPv6 para rastreio
+                    const slotCode = generateSlotCode();
 
-                // VERIFICAÇÃO DE SOBREPOSIÇÃO (Collision Check)
-                const startMins = parseInt(t.split(':')[0]) * 60 + parseInt(t.split(':')[1]);
-                const endMins = startMins + result.duration;
+                    // Bloqueia no navegador para evitar spam
+                    localStorage.setItem('look_has_booked', 'true');
+                    localStorage.setItem('look_booking_ts', Date.now().toString());
+                    localStorage.setItem('look_last_token', slotCode);
 
-                const hasCollision = agendaData.some(reg => {
-                    if (normalizeDate(reg.data) !== normalizeDate(d)) return false;
-                    if (reg.status === 'Livre') return false;
+                    // Timestamps
+                    const nowTotal = new Date();
+                    const bTime = nowTotal.toISOString();
+                    const rUntil = new Date(nowTotal.getTime() + CONFIG.RESERVE_MINUTES * 60000).toISOString();
 
-                    const rStart = parseInt(reg.horario.split(':')[0]) * 60 + parseInt(reg.horario.split(':')[1]);
-                    const rDur = parseInt(reg.duration || scheduleConfig.duration || 30);
-                    const rEnd = rStart + rDur;
+                    // Salva como Pendente de maneira otimista
+                    await saveUpdates([{
+                        data: d, horario: t, status: 'Aguardando Pagamento',
+                        cliente: result.nome, telefone: result.telefone,
+                        codigo: slotCode, bookingTime: bTime, reservedUntil: rUntil,
+                        duration: result.duration,
+                        password: adminPass
+                    }]);
 
-                    // Colisão se o intervalo [start, end] intersecta [rStart, rEnd]
-                    return (startMins < rEnd && endMins > rStart);
-                });
+                    // Exibe Modal do PIX
+                    const dateParts = d.split('-'); // YYYY-MM-DD
+                    const dataFmt = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]} às ${t}`;
+                    await showPixModal(result.nome, dataFmt, slotCode);
 
-                if (hasCollision) {
-                    await showAlert('Conflito de Horário', 'Desculpe, o tempo escolhido para este procedimento ultrapassa outro agendamento já existente.');
-                    return;
-                }
-
-                // Gera código único estilo IPv6 para rastreio
-                const slotCode = generateSlotCode();
-
-                // Bloqueia no navegador para evitar spam
-                localStorage.setItem('look_has_booked', 'true');
-                localStorage.setItem('look_booking_ts', Date.now().toString());
-                localStorage.setItem('look_last_token', slotCode);
-
-                // Timestamps
-                const nowTotal = new Date();
-                const bTime = nowTotal.toISOString();
-                const rUntil = new Date(nowTotal.getTime() + CONFIG.RESERVE_MINUTES * 60000).toISOString();
-
-                // Salva como Pendente de maneira otimista
-                await saveUpdates([{
-                    data: d, horario: t, status: 'Aguardando Pagamento',
-                    cliente: result.nome, telefone: result.telefone,
-                    codigo: slotCode, bookingTime: bTime, reservedUntil: rUntil,
-                    duration: result.duration,
-                    password: adminPass
-                }]);
-
-                // Exibe Modal do PIX
-                const dateParts = d.split('-'); // YYYY-MM-DD
-                const dataFmt = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]} às ${t}`;
-                await showPixModal(result.nome, dataFmt, slotCode);
-
-            } else {
-                let actChoices = [];
-                if (s === 'Aguardando Pagamento') {
-                    actChoices = [
-                        { label: '✅ Confirmar Pagamento', value: 'confirmar_pagamento' },
-                        { label: '❌ Cancelar Falta Pgt.', value: 'liberar' }
-                    ];
                 } else {
-                    actChoices = [
-                        { label: s === 'Livre' ? '🔒 Bloquear Horário' : '🔓 Liberar Horário', value: s === 'Livre' ? 'bloquear' : 'liberar' },
-                        { label: '📝 Agendar Cliente (Admin)', value: 'agendar_admin' }
-                    ];
-                }
+                    let actChoices = [];
+                    if (s === 'Aguardando Pagamento' || s === 'Reservado (PIX)') {
+                        actChoices = [
+                            { label: '✅ Confirmar Pagamento', value: 'confirmar_pagamento' },
+                            { label: '❌ Cancelar Falta Pgt.', value: 'liberar' }
+                        ];
+                    } else {
+                        actChoices = [
+                            { label: s === 'Livre' ? '🔒 Bloquear Horário' : '🔓 Liberar Horário', value: s === 'Livre' ? 'bloquear' : 'liberar' },
+                            { label: '📝 Agendar Cliente (Admin)', value: 'agendar_admin' }
+                        ];
+                    }
 
-                const action = await showActionSheet('Gerenciar Horário', `O que deseja fazer com o horário das ${t}?`, actChoices);
-                if (!action) return;
+                    const action = await showActionSheet('Gerenciar Horário', `O que deseja fazer com o horário das ${t}?`, actChoices);
+                    if (!action) return;
 
-                if (action === 'bloquear') {
-                    await saveUpdates([{ data: d, horario: t, status: 'Bloqueado', cliente: 'RESERVADO', telefone: '', password: adminPass }]);
-                } else if (action === 'liberar') {
-                    await saveUpdates([{ data: d, horario: t, status: 'Livre', cliente: '', telefone: '', password: adminPass }]);
-                } else if (action === 'agendar_admin') {
-                    const res = await showBookingPrompt('Agendamento Manual', 'Dados do cliente:');
-                    if (res) {
+                    if (action === 'bloquear') {
+                        await saveUpdates([{ data: d, horario: t, status: 'Bloqueado', cliente: 'RESERVADO', telefone: '', password: adminPass }]);
+                    } else if (action === 'liberar') {
+                        await saveUpdates([{ data: d, horario: t, status: 'Livre', cliente: '', telefone: '', password: adminPass }]);
+                    } else if (action === 'agendar_admin') {
+                        const res = await showBookingPrompt('Agendamento Manual', 'Dados do cliente:');
+                        if (res) {
+                            await saveUpdates([{
+                                data: d, horario: t, status: 'Ocupado',
+                                cliente: res.nome, telefone: res.telefone,
+                                duration: res.duration,
+                                password: adminPass
+                            }]);
+                        }
+                    } else if (action === 'confirmar_pagamento') {
+                        // Busca dados atuais para não perder nome/tel/duration
+                        const r = agendaData.find(x => normalizeDate(x.data) === d && normalizeTime(x.horario) === t);
                         await saveUpdates([{
                             data: d, horario: t, status: 'Ocupado',
-                            cliente: res.nome, telefone: res.telefone,
-                            duration: res.duration,
+                            cliente: r ? r.cliente : 'Cliente',
+                            telefone: r ? r.telefone : '',
+                            duration: r ? r.duration : 60,
                             password: adminPass
                         }]);
                     }
-                } else if (action === 'confirmar_pagamento') {
-                    // Busca dados atuais para não perder nome/tel/duration
-                    const r = agendaData.find(x => normalizeDate(x.data) === d && normalizeTime(x.horario) === t);
-                    await saveUpdates([{
-                        data: d, horario: t, status: 'Ocupado',
-                        cliente: r ? r.cliente : 'Cliente',
-                        telefone: r ? r.telefone : '',
-                        duration: r ? r.duration : 60,
-                        password: adminPass
-                    }]);
                 }
             }
-        }
 
-        // =============================================
-        // MODAIS CUSTOMIZADOS
-        // =============================================
-        function _setupModal(title, msg) {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalMsg').textContent = msg;
-            document.getElementById('modalBody').innerHTML = '';
-            document.getElementById('modalActions').innerHTML = '';
-        }
+            // =============================================
+            // MODAIS CUSTOMIZADOS
+            // =============================================
+            function _setupModal(title, msg) {
+                document.getElementById('modalTitle').textContent = title;
+                document.getElementById('modalMsg').textContent = msg;
+                document.getElementById('modalBody').innerHTML = '';
+                document.getElementById('modalActions').innerHTML = '';
+            }
 
-        function showAlert(title, msg) {
-            return new Promise(resolve => {
-                _setupModal(title, msg);
-                document.getElementById('modalActions').innerHTML = `<button class="modal-btn primary" id="mOk">Entendi</button>`;
-                document.getElementById('modalOverlay').classList.remove('hidden');
-                document.getElementById('mOk').onclick = () => {
-                    document.getElementById('modalOverlay').classList.add('hidden');
-                    resolve();
-                };
-            });
-        }
+            function showAlert(title, msg) {
+                return new Promise(resolve => {
+                    _setupModal(title, msg);
+                    document.getElementById('modalActions').innerHTML = `<button class="modal-btn primary" id="mOk">Entendi</button>`;
+                    document.getElementById('modalOverlay').classList.remove('hidden');
+                    document.getElementById('mOk').onclick = () => {
+                        document.getElementById('modalOverlay').classList.add('hidden');
+                        resolve();
+                    };
+                });
+            }
 
-        function _showContactAlert(title, msg, wpLink) {
-            return new Promise(resolve => {
-                _setupModal(title, msg);
-                document.getElementById('modalActions').innerHTML = `
+            function _showContactAlert(title, msg, wpLink) {
+                return new Promise(resolve => {
+                    _setupModal(title, msg);
+                    document.getElementById('modalActions').innerHTML = `
                     <a href="${wpLink}" target="_blank" class="modal-btn primary" style="text-decoration:none; text-align:center;">Falar com a Gerente</a>
                     <button class="modal-btn secondary" id="mClose" style="margin-top:8px;">Fechar</button>
                 `;
-                document.getElementById('modalOverlay').classList.remove('hidden');
-                const close = () => {
-                    document.getElementById('modalOverlay').classList.add('hidden');
-                    resolve();
-                };
-                document.getElementById('mClose').onclick = close;
-            });
-        }
+                    document.getElementById('modalOverlay').classList.remove('hidden');
+                    const close = () => {
+                        document.getElementById('modalOverlay').classList.add('hidden');
+                        resolve();
+                    };
+                    document.getElementById('mClose').onclick = close;
+                });
+            }
 
-        function showBookingPrompt(title, msg) {
-            return new Promise(resolve => {
-                _setupModal(title, msg);
-                const showDur = isAdminActive;
-                document.getElementById('modalBody').innerHTML = `
+            function showBookingPrompt(title, msg) {
+                return new Promise(resolve => {
+                    _setupModal(title, msg);
+                    const showDur = isAdminActive;
+                    document.getElementById('modalBody').innerHTML = `
                     <input type="text" id="mNome" class="modal-input" placeholder="Seu nome completo" autocomplete="off">
                     <input type="tel" id="mTel" class="modal-input" placeholder="Telefone (WhatsApp)" autocomplete="off">
-                    <div style="margin-top:10px; ${showDur ? '' : 'display:none;'}">
+                    <div style="margin-top:10px;">
                         <label style="font-size:0.65rem; font-weight:700; color:var(--pink); display:block; margin-bottom:4px;">DURAÇÃO ESTIMADA</label>
-                        <select id="mDur" class="modal-input">
-                            <option value="30">30 minutos</option>
+                        <select id="mDur" class="modal-input" ${showDur ? '' : 'disabled style="opacity:0.7; background:#eee;"'}>
+                            <option value="30"  ${scheduleConfig.duration === 30 ? 'selected' : ''}>30 minutos</option>
                             <option value="60" ${scheduleConfig.duration === 60 ? 'selected' : ''}>1 hora</option>
                             <option value="90" ${scheduleConfig.duration === 90 ? 'selected' : ''}>1 hora e 30 min</option>
                             <option value="120">2 horas</option>
@@ -1339,124 +1339,124 @@
                         </select>
                     </div>
                 `;
-                document.getElementById('modalActions').innerHTML = `
+                    document.getElementById('modalActions').innerHTML = `
                     <button class="modal-btn secondary" id="mCancel">Cancelar</button>
                     <button class="modal-btn primary" id="mOk">Prosseguir</button>
                 `;
-                document.getElementById('modalOverlay').classList.remove('hidden');
+                    document.getElementById('modalOverlay').classList.remove('hidden');
 
-                const confirm = () => {
-                    const n = document.getElementById('mNome').value.trim();
-                    const t = document.getElementById('mTel').value.trim();
-                    // Se não for admin, usa a duração padrão da config ou 60m
-                    const d = showDur ? parseInt(document.getElementById('mDur').value) : (scheduleConfig.duration || 60);
+                    const confirm = () => {
+                        const n = document.getElementById('mNome').value.trim();
+                        const t = document.getElementById('mTel').value.trim();
+                        // Se não for admin, usa a duração padrão da config ou 60m
+                        const d = showDur ? parseInt(document.getElementById('mDur').value) : (scheduleConfig.duration || 60);
 
-                    if (!n || !t) { alert('Preencha nome e telefone!'); return; }
-                    document.getElementById('modalOverlay').classList.add('hidden');
-                    resolve({ nome: n, telefone: t, duration: d });
-                };
-                document.getElementById('mOk').onclick = confirm;
-                document.getElementById('mCancel').onclick = () => {
-                    document.getElementById('modalOverlay').classList.add('hidden');
-                    resolve(null);
-                };
-            });
-        }
+                        if (!n || !t) { alert('Preencha nome e telefone!'); return; }
+                        document.getElementById('modalOverlay').classList.add('hidden');
+                        resolve({ nome: n, telefone: t, duration: d });
+                    };
+                    document.getElementById('mOk').onclick = confirm;
+                    document.getElementById('mCancel').onclick = () => {
+                        document.getElementById('modalOverlay').classList.add('hidden');
+                        resolve(null);
+                    };
+                });
+            }
 
-        function showPrompt(title, msg, placeholder, isPassword = false) {
-            return new Promise(resolve => {
-                _setupModal(title, msg);
-                document.getElementById('modalBody').innerHTML = `
+            function showPrompt(title, msg, placeholder, isPassword = false) {
+                return new Promise(resolve => {
+                    _setupModal(title, msg);
+                    document.getElementById('modalBody').innerHTML = `
                     <input type="${isPassword ? 'password' : 'text'}" id="mInput" class="modal-input ${isPassword ? 'password' : ''}" placeholder="${placeholder}">
                 `;
-                document.getElementById('modalActions').innerHTML = `
+                    document.getElementById('modalActions').innerHTML = `
                     <button class="modal-btn secondary" id="mCancel">Cancelar</button>
                     <button class="modal-btn primary" id="mOk">Entrar</button>
                 `;
-                document.getElementById('modalOverlay').classList.remove('hidden');
+                    document.getElementById('modalOverlay').classList.remove('hidden');
 
-                const confirm = () => {
-                    const val = document.getElementById('mInput').value;
-                    document.getElementById('modalOverlay').classList.add('hidden');
-                    resolve(val);
-                };
-                document.getElementById('mOk').onclick = confirm;
-                document.getElementById('mCancel').onclick = () => {
-                    document.getElementById('modalOverlay').classList.add('hidden');
-                    resolve(null);
-                };
-            });
-        }
-
-        function showActionSheet(title, msg, choices) {
-            return new Promise(resolve => {
-                _setupModal(title, msg);
-                const container = document.createElement('div');
-                container.className = 'modal-choices';
-                choices.forEach(c => {
-                    const btn = document.createElement('div');
-                    btn.className = 'modal-choice';
-                    btn.textContent = c.label;
-                    btn.onclick = () => {
+                    const confirm = () => {
+                        const val = document.getElementById('mInput').value;
                         document.getElementById('modalOverlay').classList.add('hidden');
-                        resolve(c.value);
+                        resolve(val);
                     };
-                    container.appendChild(btn);
+                    document.getElementById('mOk').onclick = confirm;
+                    document.getElementById('mCancel').onclick = () => {
+                        document.getElementById('modalOverlay').classList.add('hidden');
+                        resolve(null);
+                    };
                 });
-                document.getElementById('modalBody').appendChild(container);
-                document.getElementById('modalActions').innerHTML = `<button class="modal-btn secondary" id="mCancel">Fechar</button>`;
-                document.getElementById('modalOverlay').classList.remove('hidden');
-                document.getElementById('mCancel').onclick = () => {
-                    document.getElementById('modalOverlay').classList.add('hidden');
-                    resolve(null);
-                };
-            });
-        }
+            }
 
-        function showAdminBlockModal() {
-            return new Promise(resolve => {
-                _setupModal('Bloqueio em Massa', 'Selecione o intervalo de horas:');
-                document.getElementById('modalBody').innerHTML = `
+            function showActionSheet(title, msg, choices) {
+                return new Promise(resolve => {
+                    _setupModal(title, msg);
+                    const container = document.createElement('div');
+                    container.className = 'modal-choices';
+                    choices.forEach(c => {
+                        const btn = document.createElement('div');
+                        btn.className = 'modal-choice';
+                        btn.textContent = c.label;
+                        btn.onclick = () => {
+                            document.getElementById('modalOverlay').classList.add('hidden');
+                            resolve(c.value);
+                        };
+                        container.appendChild(btn);
+                    });
+                    document.getElementById('modalBody').appendChild(container);
+                    document.getElementById('modalActions').innerHTML = `<button class="modal-btn secondary" id="mCancel">Fechar</button>`;
+                    document.getElementById('modalOverlay').classList.remove('hidden');
+                    document.getElementById('mCancel').onclick = () => {
+                        document.getElementById('modalOverlay').classList.add('hidden');
+                        resolve(null);
+                    };
+                });
+            }
+
+            function showAdminBlockModal() {
+                return new Promise(resolve => {
+                    _setupModal('Bloqueio em Massa', 'Selecione o intervalo de horas:');
+                    document.getElementById('modalBody').innerHTML = `
                     <div style="display:flex; gap:10px;">
                         <select id="mStart" class="modal-input" style="flex:1;">${genTimeOptions()}</select>
                         <select id="mEnd" class="modal-input" style="flex:1;">${genTimeOptions()}</select>
                     </div>
                 `;
-                document.getElementById('modalActions').innerHTML =
-                    `<button class="modal-btn secondary" id="mCancel">Cancelar</button>
+                    document.getElementById('modalActions').innerHTML =
+                        `<button class="modal-btn secondary" id="mCancel">Cancelar</button>
                      <button class="modal-btn primary"   id="mOk">Bloquear Intervalo</button>`;
 
-                document.getElementById('modalOverlay').classList.remove('hidden');
+                    document.getElementById('modalOverlay').classList.remove('hidden');
 
-                const confirm = () => {
-                    const s = parseInt(document.getElementById('mStart').value);
-                    const eObj = parseInt(document.getElementById('mEnd').value);
-                    if (eObj < s) {
-                        alert("O horário final deve ser maior ou igual ao inicial.");
-                        return;
-                    }
-                    document.getElementById('modalOverlay').classList.add('hidden');
-                    resolve({ startIdx: s, endIdx: eObj });
-                };
-                const cancel = () => {
-                    document.getElementById('modalOverlay').classList.add('hidden');
-                    resolve(null);
-                };
+                    const confirm = () => {
+                        const s = parseInt(document.getElementById('mStart').value);
+                        const eObj = parseInt(document.getElementById('mEnd').value);
+                        if (eObj < s) {
+                            alert("O horário final deve ser maior ou igual ao inicial.");
+                            return;
+                        }
+                        document.getElementById('modalOverlay').classList.add('hidden');
+                        resolve({ startIdx: s, endIdx: eObj });
+                    };
+                    const cancel = () => {
+                        document.getElementById('modalOverlay').classList.add('hidden');
+                        resolve(null);
+                    };
 
-                document.getElementById('mOk').onclick = confirm;
-                document.getElementById('mCancel').onclick = cancel;
-            });
-        }
+                    document.getElementById('mOk').onclick = confirm;
+                    document.getElementById('mCancel').onclick = cancel;
+                });
+            }
 
-        function showPixModal(nome, dataStr, slotCode) {
-            return new Promise(resolve => {
-                _setupModal('Finalizar Reserva', `Olá ${nome}! Siga os passos abaixo para garantir sua vaga.`);
+            function showPixModal(nome, dataStr, slotCode) {
+                return new Promise(resolve => {
+                    _setupModal('Finalizar Reserva', `Olá ${nome}! Siga os passos abaixo para garantir sua vaga.`);
 
-                const wpMsg = `Olá! Realizei o agendamento de ${nome} para o dia ${dataStr}. Fiz o pix para ${CONFIG.PIX_HOLDER}, banco ${CONFIG.PIX_BANK}, no valor de ${CONFIG.PIX_VALUE}, nesse pix que copiei no agendamento ${slotCode}`;
-                const wpLink = `https://wa.me/${CONFIG.WA_PHONE}?text=${encodeURIComponent(wpMsg)}`;
+                    const wpMsg = `Olá! Realizei o agendamento de ${nome} para o dia ${dataStr}. Fiz o pix para ${CONFIG.PIX_HOLDER}, banco ${CONFIG.PIX_BANK}, no valor de ${CONFIG.PIX_VALUE}, nesse pix que copiei no agendamento ${slotCode}`;
+                    const wpLink = `https://wa.me/${CONFIG.WA_PHONE}?text=${encodeURIComponent(wpMsg)}`;
 
-                document.getElementById('modalBody').innerHTML = `
-                    <div style="display:flex; flex-direction:column; gap:16px;">
+                    document.getElementById('modalBody').innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:12px;">
                         
                         <!-- Passo 1 -->
                         <div style="border: 1px solid var(--border); border-radius:16px; padding:16px; background:rgba(0,0,0,0.02);">
@@ -1467,7 +1467,7 @@
                             <div style="text-align:center;">
                                 <div style="font-size:0.7rem; color:var(--slate); margin-bottom:4px;">Chave (${CONFIG.PIX_BANK})</div>
                                 <div style="font-size:1.1rem; font-weight:700; color:var(--text); letter-spacing:1px; margin-bottom:10px;">${CONFIG.PIX_KEY}</div>
-                                <button id="btnCopyPix" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--pink); background:transparent; color:var(--pink); font-weight:700; font-size:0.8rem; cursor:pointer;">📋 COPIAR CHAVE PIX</button>
+                                <button id="btnCopyPix" style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--pink); background:var(--pink); color:#fff; font-weight:700; font-size:0.85rem; cursor:pointer;">COPIAR CHAVE PIX</button>
                             </div>
                         </div>
 
@@ -1478,8 +1478,8 @@
                                 SEU CÓDIGO DE RASTREIO
                             </div>
                             <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-family:monospace; font-size:0.9rem; font-weight:700; color:var(--slate);">${slotCode}</span>
-                                <button id="btnCopyToken" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:white; cursor:pointer; font-size:0.7rem;">COPIAR</button>
+                                <span style="font-family:monospace; font-size:0.8rem; font-weight:700; color:var(--slate);">${slotCode}</span>
+                                <button id="btnCopyToken" style="padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:white; cursor:pointer; font-size:0.6rem;">COPIAR</button>
                             </div>
                         </div>
 
@@ -1498,280 +1498,280 @@
                     </div>
                 `;
 
-                document.getElementById('modalActions').innerHTML = `
+                    document.getElementById('modalActions').innerHTML = `
                     <button class="modal-btn secondary" id="mCancel" style="width:100%; opacity:0.6;">FECHAR JANELA</button>
                 `;
 
-                document.getElementById('modalOverlay').classList.remove('hidden');
+                    document.getElementById('modalOverlay').classList.remove('hidden');
 
-                document.getElementById('btnCopyPix').onclick = () => {
-                    copyToClipboard(CONFIG.PIX_KEY, document.getElementById('btnCopyPix'));
-                };
-                document.getElementById('btnCopyToken').onclick = () => {
-                    copyToClipboard(slotCode, document.getElementById('btnCopyToken'));
-                };
-                document.getElementById('btnWpFinal').onclick = () => {
-                    document.getElementById('modalOverlay').classList.add('hidden');
-                };
-                document.getElementById('mCancel').onclick = () => {
-                    document.getElementById('modalOverlay').classList.add('hidden');
-                    resolve();
-                };
-            });
-        }
-
-        function copyToClipboard(text, btnElement) {
-            navigator.clipboard.writeText(text).then(() => {
-                const originalText = btnElement.innerText;
-                const originalBg = btnElement.style.background;
-                const originalColor = btnElement.style.color;
-                const originalBorder = btnElement.style.borderColor;
-
-                btnElement.innerText = '✅ Copiado!';
-                btnElement.style.background = 'var(--emerald)';
-                btnElement.style.color = '#fff';
-                btnElement.style.borderColor = 'var(--emerald)';
-
-                setTimeout(() => {
-                    btnElement.innerText = originalText;
-                    btnElement.style.background = originalBg;
-                    btnElement.style.color = originalColor;
-                    btnElement.style.borderColor = originalBorder;
-                }, 2000);
-            });
-        }
-
-        function genTimeOptions() {
-            let h = '';
-            const pulse = 30; // Sempre 30 para flexibilidade no bloqueio
-            for (let i = 0; i < 32; i++) {
-                const mins = i * pulse;
-                const hh = Math.floor(mins / 60).toString().padStart(2, '0');
-                const mm = (mins % 60).toString().padStart(2, '0');
-                h += `<option value="${i}">${hh}:${mm}</option>`;
+                    document.getElementById('btnCopyPix').onclick = () => {
+                        copyToClipboard(CONFIG.PIX_KEY, document.getElementById('btnCopyPix'));
+                    };
+                    document.getElementById('btnCopyToken').onclick = () => {
+                        copyToClipboard(slotCode, document.getElementById('btnCopyToken'));
+                    };
+                    document.getElementById('btnWpFinal').onclick = () => {
+                        document.getElementById('modalOverlay').classList.add('hidden');
+                    };
+                    document.getElementById('mCancel').onclick = () => {
+                        document.getElementById('modalOverlay').classList.add('hidden');
+                        resolve();
+                    };
+                });
             }
-            return h;
-        }
 
-        // =============================================
-        // LÓGICA DE DADOS
-        // =============================================
-        async function init() {
-            if (isSaving) return; // Não recarrega enquanto salva
-            setLoading(true);
+            function copyToClipboard(text, btnElement) {
+                navigator.clipboard.writeText(text).then(() => {
+                    const originalText = btnElement.innerText;
+                    const originalBg = btnElement.style.background;
+                    const originalColor = btnElement.style.color;
+                    const originalBorder = btnElement.style.borderColor;
 
-            try {
-                // Adicionamos um timestamp (_t) para evitar cache do navegador (Cache Busting)
-                const url = `${CONFIG.API_URL}?pass=${encodeURIComponent(adminPass)}&_t=${Date.now()}`;
+                    btnElement.innerText = '✅ Copiado!';
+                    btnElement.style.background = 'var(--emerald)';
+                    btnElement.style.color = '#fff';
+                    btnElement.style.borderColor = 'var(--emerald)';
 
-                const script = document.createElement('script');
-                const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(7);
+                    setTimeout(() => {
+                        btnElement.innerText = originalText;
+                        btnElement.style.background = originalBg;
+                        btnElement.style.color = originalColor;
+                        btnElement.style.borderColor = originalBorder;
+                    }, 2000);
+                });
+            }
 
-                const timeout = setTimeout(() => {
-                    if (window[callbackName]) {
+            function genTimeOptions() {
+                let h = '';
+                const pulse = 30; // Sempre 30 para flexibilidade no bloqueio
+                for (let i = 0; i < 32; i++) {
+                    const mins = i * pulse;
+                    const hh = Math.floor(mins / 60).toString().padStart(2, '0');
+                    const mm = (mins % 60).toString().padStart(2, '0');
+                    h += `<option value="${i}">${hh}:${mm}</option>`;
+                }
+                return h;
+            }
+
+            // =============================================
+            // LÓGICA DE DADOS
+            // =============================================
+            async function init() {
+                if (isSaving) return; // Não recarrega enquanto salva
+                setLoading(true);
+
+                try {
+                    // Adicionamos um timestamp (_t) para evitar cache do navegador (Cache Busting)
+                    const url = `${CONFIG.API_URL}?pass=${encodeURIComponent(adminPass)}&_t=${Date.now()}`;
+
+                    const script = document.createElement('script');
+                    const callbackName = 'jsonp_cb_' + Math.random().toString(36).substring(7);
+
+                    const timeout = setTimeout(() => {
+                        if (window[callbackName]) {
+                            delete window[callbackName];
+                            if (script.parentNode) script.parentNode.removeChild(script);
+                            setLoading(false);
+                            showErrorState();
+                        }
+                    }, 10000);
+
+                    window[callbackName] = (data) => {
+                        clearTimeout(timeout);
+                        delete window[callbackName];
+                        if (script.parentNode) script.parentNode.removeChild(script);
+                        handleData(data);
+                    };
+
+                    script.onerror = () => {
+                        clearTimeout(timeout);
                         delete window[callbackName];
                         if (script.parentNode) script.parentNode.removeChild(script);
                         setLoading(false);
-                        showAlert('Tempo Esgotado', 'O servidor demorou a responder. Tente atualizar a página.');
-                    }
-                }, 12000);
+                        showErrorState();
+                    };
 
-                window[callbackName] = (data) => {
-                    clearTimeout(timeout);
-                    delete window[callbackName];
-                    if (script.parentNode) script.parentNode.removeChild(script);
-                    handleData(data);
-                };
-
-                script.onerror = () => {
-                    clearTimeout(timeout);
-                    delete window[callbackName];
-                    if (script.parentNode) script.parentNode.removeChild(script);
+                    script.src = `${url}&callback=${callbackName}`;
+                    document.body.appendChild(script);
+                } catch (e) {
                     setLoading(false);
-                    showAlert('Erro de Conexão', 'Não foi possível conectar ao Google Script. Verifique se ele está publicado como "Qualquer pessoa".');
-                };
+                    console.error(e);
+                }
+            }
 
-                script.src = `${url}&callback=${callbackName}`;
-                document.body.appendChild(script);
-            } catch (e) {
+            function handleData(data) {
                 setLoading(false);
-                console.error(e);
+                if (data.status === 'OK') {
+                    agendaData = data.agenda;
+                    isAdminActive = data.isAdmin;
+                    if (data.config) scheduleConfig = data.config;
+
+                    if (data.serverTime) {
+                        serverTimeOffset = new Date(data.serverTime).getTime() - Date.now();
+                    }
+
+                    if (!selectedDayIso) selectedDayIso = toLocalISO(new Date());
+                    updateAdminUI();
+                    drawDaysMenu();
+                    if (!document.getElementById('agenda').classList.contains('hidden')) {
+                        renderSlots(selectedDayIso);
+                    }
+                    scheduleAutoRefresh();
+                } else {
+                    showAlert('Erro', data.message || 'Erro ao carregar dados.');
+                }
             }
-        }
 
-        function handleData(data) {
-            setLoading(false);
-            if (data.status === 'OK') {
-                agendaData = data.agenda;
-                isAdminActive = data.isAdmin;
-                if (data.config) scheduleConfig = data.config;
-
-                if (data.serverTime) {
-                    serverTimeOffset = new Date(data.serverTime).getTime() - Date.now();
-                }
-
-                if (!selectedDayIso) selectedDayIso = toLocalISO(new Date());
-                updateAdminUI();
-                drawDaysMenu();
-                if (!document.getElementById('agenda').classList.contains('hidden')) {
-                    renderSlots(selectedDayIso);
-                }
-                scheduleAutoRefresh();
-            } else {
-                showAlert('Erro', data.message || 'Erro ao carregar dados.');
+            function scheduleAutoRefresh() {
+                if (refreshTimer) clearTimeout(refreshTimer);
+                refreshTimer = setTimeout(init, 30000); // 30s
             }
-        }
 
-        function scheduleAutoRefresh() {
-            if (refreshTimer) clearTimeout(refreshTimer);
-            refreshTimer = setTimeout(init, 30000); // 30s
-        }
+            function setLoading(val) {
+                isLoading = val;
+                const loader = document.getElementById('loader');
+                const status = document.getElementById('statusText');
+                loader.style.display = val ? 'block' : 'none';
+                status.textContent = val ? 'CARREGANDO...' : 'ATUALIZADO';
+                status.style.color = val ? 'var(--pink)' : 'var(--status-free)';
+            }
 
-        function setLoading(val) {
-            isLoading = val;
-            const loader = document.getElementById('loader');
-            const status = document.getElementById('statusText');
-            loader.style.display = val ? 'block' : 'none';
-            status.textContent = val ? 'SINCRONIZANDO...' : 'SINCRONIZADO';
-            status.style.color = val ? 'var(--slate)' : 'var(--emerald)';
-        }
+            function toggleMultiSelect() {
+                isMultiMode = !isMultiMode;
+                selectedSlots = [];
+                const bulk = document.getElementById('bulkBar');
+                const btn = document.getElementById('btnMulti');
+                btn.textContent = isMultiMode ? 'MULTI: ON' : 'MULTI: OFF';
+                btn.classList.toggle('active', isMultiMode);
+                bulk.style.display = isMultiMode ? 'flex' : 'none';
+                renderSlots(selectedDayIso);
+            }
 
-        function toggleMultiSelect() {
-            isMultiMode = !isMultiMode;
-            selectedSlots = [];
-            const bulk = document.getElementById('bulkBar');
-            const btn = document.getElementById('btnMulti');
-            btn.textContent = isMultiMode ? 'MULTI: ON' : 'MULTI: OFF';
-            btn.classList.toggle('active', isMultiMode);
-            bulk.style.display = isMultiMode ? 'flex' : 'none';
-            renderSlots(selectedDayIso);
-        }
+            async function applyBulkAction(st, cl) {
+                if (selectedSlots.length === 0) return;
+                const batch = selectedSlots.map(t => ({
+                    data: selectedDayIso, horario: t, status: st, cliente: cl, telefone: '', password: adminPass
+                }));
+                await saveUpdates(batch);
+                toggleMultiSelect();
+            }
 
-        async function applyBulkAction(st, cl) {
-            if (selectedSlots.length === 0) return;
-            const batch = selectedSlots.map(t => ({
-                data: selectedDayIso, horario: t, status: st, cliente: cl, telefone: '', password: adminPass
-            }));
-            await saveUpdates(batch);
-            toggleMultiSelect();
-        }
+            // =============================================
+            // SALVAR
+            // =============================================
+            async function saveUpdates(list) {
+                isSaving = true;
+                setLoading(true);
 
-        // =============================================
-        // SALVAR
-        // =============================================
-        async function saveUpdates(list) {
-            isSaving = true;
-            setLoading(true);
-
-            // Atualização Otimista local
-            list.forEach(up => {
-                const idx = agendaData.findIndex(
-                    r => normalizeDate(r.data) === normalizeDate(up.data) && normalizeTime(r.horario) === normalizeTime(up.horario)
-                );
-                if (idx > -1) {
-                    agendaData[idx].status = up.status;
-                    agendaData[idx].cliente = up.cliente;
-                    agendaData[idx].telefone = up.telefone;
-                    if (up.codigo) agendaData[idx].codigo = up.codigo;
-                    if (up.duration) agendaData[idx].duration = up.duration;
-                }
-            });
-            renderSlots(selectedDayIso);
-
-            try {
-                // Enviamos para o Google via POST (no-cors)
-                await fetch(CONFIG.API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify(list)
+                // Atualização Otimista local
+                list.forEach(up => {
+                    const idx = agendaData.findIndex(
+                        r => normalizeDate(r.data) === normalizeDate(up.data) && normalizeTime(r.horario) === normalizeTime(up.horario)
+                    );
+                    if (idx > -1) {
+                        agendaData[idx].status = up.status;
+                        agendaData[idx].cliente = up.cliente;
+                        agendaData[idx].telefone = up.telefone;
+                        if (up.codigo) agendaData[idx].codigo = up.codigo;
+                        if (up.duration) agendaData[idx].duration = up.duration;
+                    }
                 });
+                renderSlots(selectedDayIso);
 
-                // Pequeno delay para o Google processar antes do próximo refresh automático
-                setTimeout(() => {
+                try {
+                    // Enviamos para o Google via POST (no-cors)
+                    await fetch(CONFIG.API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify(list)
+                    });
+
+                    // Pequeno delay para o Google processar antes do próximo refresh automático
+                    setTimeout(() => {
+                        isSaving = false;
+                        setLoading(false);
+                        init(); // Força um refresh real
+                    }, 1500);
+
+                } catch (err) {
+                    console.error(err);
+                    await showAlert('Erro de conexão', 'Não foi possível salvar. Verifique se você está conectado à internet.');
                     isSaving = false;
                     setLoading(false);
-                    init(); // Força um refresh real
-                }, 1500);
-
-            } catch (err) {
-                console.error(err);
-                await showAlert('Erro de conexão', 'Não foi possível salvar. Verifique se você está conectado à internet.');
-                isSaving = false;
-                setLoading(false);
-            }
-        }
-
-        function toggleTheme() {
-            document.body.classList.toggle('dark-theme');
-            const isDark = document.body.classList.contains('dark-theme');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
-        }
-
-        // Local Storage Theme
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.classList.add('dark-theme');
-            document.getElementById('themeToggle').textContent = '☀️';
-        }
-
-        // =============================================
-        // AUTENTICAÇÃO ADMIN
-        // =============================================
-        async function doAdminAuth() {
-            if (isAdminActive) {
-                adminPass = '';
-                isAdminActive = false;
-                init();
-            } else {
-                const guess = await showPrompt(
-                    'Acesso Restrito',
-                    'Digite a senha de administrador:',
-                    'Senha',
-                    true
-                );
-                if (guess) {
-                    adminPass = guess;
-                    isAdminActive = true;
-                    init();
                 }
             }
-        }
 
-        function updateAdminUI() {
-            const btn = document.getElementById('admBtn');
-            const admStatus = document.getElementById('admStatus');
-            const badge = document.getElementById('adminBadge');
-            const spacer = document.getElementById('headerSpacer');
-            const histBtn = document.getElementById('historyBtnContainer');
-
-            if (isAdminActive) {
-                document.body.classList.add('admin-mode');
-                btn.innerHTML = '🔓 SAIR';
-                btn.classList.add('active');
-                admStatus.style.display = 'flex';
-                badge.style.display = 'inline-block';
-                spacer.style.display = 'none';
-                if (histBtn) histBtn.style.display = 'block';
-            } else {
-                document.body.classList.remove('admin-mode');
-                btn.innerHTML = '🔒';
-                btn.classList.remove('active');
-                admStatus.style.display = 'none';
-                badge.style.display = 'none';
-                spacer.style.display = '';
-                if (histBtn) histBtn.style.display = 'none';
-                if (viewingHistory) toggleHistoryView();
+            function toggleTheme() {
+                document.body.classList.toggle('dark-theme');
+                const isDark = document.body.classList.contains('dark-theme');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
             }
-        }
 
-        // =============================================
-        // CONFIGURAÇÕES DO SISTEMA (ADMIN)
-        // =============================================
-        async function showSettingsModal() {
-            _setupModal('Ajustes da Agenda', 'Configure o horário de funcionamento e a duração de cada vaga.');
+            // Local Storage Theme
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-theme');
+                document.getElementById('themeToggle').textContent = '☀️';
+            }
 
-            document.getElementById('modalBody').innerHTML = `
+            // =============================================
+            // AUTENTICAÇÃO ADMIN
+            // =============================================
+            async function doAdminAuth() {
+                if (isAdminActive) {
+                    adminPass = '';
+                    isAdminActive = false;
+                    init();
+                } else {
+                    const guess = await showPrompt(
+                        'Acesso Restrito',
+                        'Digite a senha de administrador:',
+                        'Senha',
+                        true
+                    );
+                    if (guess) {
+                        adminPass = guess;
+                        isAdminActive = true;
+                        init();
+                    }
+                }
+            }
+
+            function updateAdminUI() {
+                const btn = document.getElementById('admBtn');
+                const admStatus = document.getElementById('admStatus');
+                const badge = document.getElementById('adminBadge');
+                const spacer = document.getElementById('headerSpacer');
+                const histBtn = document.getElementById('historyBtnContainer');
+
+                if (isAdminActive) {
+                    document.body.classList.add('admin-mode');
+                    btn.innerHTML = '🔓 SAIR';
+                    btn.classList.add('active');
+                    admStatus.style.display = 'flex';
+                    badge.style.display = 'inline-block';
+                    spacer.style.display = 'none';
+                    if (histBtn) histBtn.style.display = 'block';
+                } else {
+                    document.body.classList.remove('admin-mode');
+                    btn.innerHTML = '🔒';
+                    btn.classList.remove('active');
+                    admStatus.style.display = 'none';
+                    badge.style.display = 'none';
+                    spacer.style.display = '';
+                    if (histBtn) histBtn.style.display = 'none';
+                    if (viewingHistory) toggleHistoryView();
+                }
+            }
+
+            // =============================================
+            // CONFIGURAÇÕES DO SISTEMA (ADMIN)
+            // =============================================
+            async function showSettingsModal() {
+                _setupModal('Ajustes da Agenda', 'Configure o horário de funcionamento e a duração de cada vaga.');
+
+                document.getElementById('modalBody').innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:12px;">
                     <div>
                         <label style="font-size:0.7rem; font-weight:700; color:var(--pink);">HORA DE INÍCIO (HH:MM)</label>
@@ -1797,57 +1797,57 @@
                 </div>
             `;
 
-            document.getElementById('modalActions').innerHTML = `
+                document.getElementById('modalActions').innerHTML = `
                 <button class="modal-btn secondary" id="mCancel">Cancelar</button>
                 <button class="modal-btn primary"   id="mSave">Salvar Ajustes</button>
             `;
 
-            document.getElementById('modalOverlay').classList.remove('hidden');
+                document.getElementById('modalOverlay').classList.remove('hidden');
 
-            document.getElementById('mCancel').onclick = () => {
-                document.getElementById('modalOverlay').classList.add('hidden');
-            };
-
-            document.getElementById('mSave').onclick = async () => {
-                const newCfg = {
-                    start: document.getElementById('cfgStart').value,
-                    end: document.getElementById('cfgEnd').value,
-                    duration: parseInt(document.getElementById('cfgDuration').value)
+                document.getElementById('mCancel').onclick = () => {
+                    document.getElementById('modalOverlay').classList.add('hidden');
                 };
 
-                await saveConfig(newCfg);
-                document.getElementById('modalOverlay').classList.add('hidden');
-            };
-        }
+                document.getElementById('mSave').onclick = async () => {
+                    const newCfg = {
+                        start: document.getElementById('cfgStart').value,
+                        end: document.getElementById('cfgEnd').value,
+                        duration: parseInt(document.getElementById('cfgDuration').value)
+                    };
 
-        async function saveConfig(newCfg) {
-            setLoading(true);
-            try {
-                await fetch(CONFIG.API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify([{
-                        action: 'update_config',
-                        config: newCfg,
-                        password: adminPass
-                    }])
-                });
-
-                // Atualiza local e recarrega
-                scheduleConfig = newCfg;
-                setTimeout(() => {
-                    init();
-                }, 1000);
-
-            } catch (err) {
-                console.error(err);
-                showAlert('Erro', 'Falha ao salvar configurações no servidor.');
-                setLoading(false);
+                    await saveConfig(newCfg);
+                    document.getElementById('modalOverlay').classList.add('hidden');
+                };
             }
-        }
 
-        window.onload = init;
+            async function saveConfig(newCfg) {
+                setLoading(true);
+                try {
+                    await fetch(CONFIG.API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify([{
+                            action: 'update_config',
+                            config: newCfg,
+                            password: adminPass
+                        }])
+                    });
+
+                    // Atualiza local e recarrega
+                    scheduleConfig = newCfg;
+                    setTimeout(() => {
+                        init();
+                    }, 1000);
+
+                } catch (err) {
+                    console.error(err);
+                    showAlert('Erro', 'Falha ao salvar configurações no servidor.');
+                    setLoading(false);
+                }
+            }
+
+            window.onload = init;
     </script>
 </body>
 
