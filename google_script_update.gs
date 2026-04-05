@@ -199,11 +199,25 @@ function doPost(e) {
     var providedPass = ((updates[0].password) || "").toString().trim();
     var callerIsAdmin = (providedPass === ADMIN_PASSWORD.trim());
 
-    // ACTION: UPDATE_CONFIG
+    // ACTION: UPDATE_CONFIG (Saneamento e Validação)
     if (updates[0].action === "update_config") {
       if (!callerIsAdmin) return jsonResponse("ERRO", "Senha administrativa incorreta.");
-      updateScheduleConfig(ss, updates[0].config);
-      return jsonResponse("OK", "Configurações atualizadas com sucesso.");
+      
+      var newCfg = updates[0].config;
+      // Validação básica de horários HH:mm
+      var timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+      if (!timeRegex.test(newCfg.start) || !timeRegex.test(newCfg.end)) {
+        return jsonResponse("ERRO", "Formatos de hora inválidos (use HH:mm).");
+      }
+      
+      // Validação de duração (apenas valores permitidos)
+      var allowedDurs = [30, 60, 90, 120, 180];
+      if (!allowedDurs.includes(Number(newCfg.duration))) {
+        newCfg.duration = 60; // Fallback
+      }
+
+      updateScheduleConfig(ss, newCfg);
+      return jsonResponse("OK", "Configurações atualizadas e validadas.");
     }
 
     var tz           = ss.getSpreadsheetTimeZone();
@@ -215,12 +229,14 @@ function doPost(e) {
       var targetDate = (update.data    || "").toString().trim();
       var targetTime = (update.horario || "").toString().trim();
       var newStatus  = (update.status  || "").toString().trim();
-      var newClient  = (update.cliente || "").toString().trim();
-      var newPhone   = (update.telefone || "").toString().trim();
+      
+      // Limpeza de campos para segurança
+      var newClient  = (update.cliente || "").toString().trim().substring(0, 100);
+      var newPhone   = (update.telefone || "").toString().trim().replace(/[^0-9]/g, '');
       var newCodigo  = (update.codigo   || "").toString().trim();
       var bTime      = (update.bookingTime || "").toString().trim();
       var rUntil     = (update.reservedUntil || "").toString().trim();
-      var dMinutes   = (update.duration || "").toString().trim();
+      var dMinutes   = Number(update.duration) || 60;
 
       if (!targetDate || !targetTime || !newStatus) continue;
 
