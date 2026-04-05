@@ -1024,6 +1024,18 @@
                 let curTotal = startHH * 60 + startMM;
                 const endTotal = endHH * 60 + endMM;
 
+                // Proteção contra horários de início e fim iguais ou invertidos
+                if (curTotal >= endTotal) {
+                    container.innerHTML = `
+                        <div style="padding:60px 20px; text-align:center; color:var(--slate); border: 1px dashed var(--border); border-radius: 20px;">
+                            <div style="font-size:2rem; margin-bottom:15px;">⏱️</div>
+                            <h3 style="font-family:'Cormorant Garamond', serif; font-size:1.4rem; color:var(--pink);">Fora de Expediente</h3>
+                            <p style="font-size:0.85rem; margin:10px 0; opacity:0.8;">Os horários de atendimento para hoje não foram configurados ou estão encerrados.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
                 const grid = document.createElement('div');
                 grid.className = 'agenda-grid';
 
@@ -1040,7 +1052,7 @@
                         return rData === iso && rTime === tLabel;
                     });
 
-                    const st = reg ? reg.status : 'Livre';
+                    let st = reg ? reg.status : 'Livre';
                     const cl = reg ? reg.cliente : '';
                     const tel = reg ? (reg.telefone || '') : '';
                     const slotCodigo = reg ? (reg.codigo || '') : '';
@@ -1056,9 +1068,16 @@
                     }
 
                     let styleClass = 'b-free', colorClass = 'c-free';
-                    if (st === 'Ocupado') { styleClass = 'b-busy'; colorClass = 'c-busy'; }
-                    else if (st === 'Bloqueado') { styleClass = 'b-lock'; colorClass = 'c-lock'; }
-                    else if (st === 'Aguardando Pagamento') { styleClass = 'b-pend'; colorClass = 'c-pend'; st = 'RESERVADO (PIX)'; }
+                    let displayStatus = st; // Variável para exibição visual
+
+                    if (st === 'Ocupado') { 
+                        styleClass = 'b-busy'; colorClass = 'c-busy'; 
+                    } else if (st === 'Bloqueado') { 
+                        styleClass = 'b-lock'; colorClass = 'c-lock'; 
+                    } else if (st === 'Aguardando Pagamento') { 
+                        styleClass = 'b-pend'; colorClass = 'c-pend'; 
+                        displayStatus = 'RESERVADO (PIX)'; 
+                    }
 
                     let clHtml = cl;
                     if (!clHtml) {
@@ -1126,8 +1145,8 @@
                     div.innerHTML = `
                         <div class="slot-time">${labelFinal}</div>
                         <div class="slot-body">
-                            ${stHtml}
-                            <div class="slot-cl" style="margin-top:${stHtml ? '5px' : '0'};">${clHtml}</div>
+                            <div class="slot-st ${colorClass}">${displayStatus}</div>
+                            <div class="slot-cl" style="margin-top:5px;">${clHtml}</div>
                         </div>
                     `;
                     grid.appendChild(div);
