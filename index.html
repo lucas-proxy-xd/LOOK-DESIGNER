@@ -1126,6 +1126,17 @@
 
             if (!isAdminActive) {
                 if (s !== 'Livre') {
+                    // Verificação: Se o usuário clica em algo que ele mesmo agendou e está pendente, mostra o PIX de novo
+                    if (s === 'Aguardando Pagamento') {
+                        const reg = agendaData.find(x => normalizeDate(x.data) === d && normalizeTime(x.horario) === t);
+                        const myToken = localStorage.getItem('look_last_token');
+                        if (reg && reg.codigo === myToken) {
+                            const dateParts = d.split('-');
+                            const dataFmt = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]} às ${t}`;
+                            await showPixModal(reg.cliente, dataFmt, reg.codigo);
+                            return;
+                        }
+                    }
                     await showAlert('Horário indisponível', 'Este horário já está ocupado ou bloqueado.');
                     return;
                 }
@@ -1309,7 +1320,7 @@
                     const t = document.getElementById('mTel').value.trim();
                     // Se não for admin, usa a duração padrão da config ou 60m
                     const d = showDur ? parseInt(document.getElementById('mDur').value) : (scheduleConfig.duration || 60);
-                    
+
                     if (!n || !t) { alert('Preencha nome e telefone!'); return; }
                     document.getElementById('modalOverlay').classList.add('hidden');
                     resolve({ nome: n, telefone: t, duration: d });
@@ -1411,7 +1422,8 @@
             return new Promise(resolve => {
                 _setupModal('Pagamento da Taxa', `Quase lá! Para garantir sua vaga, efetue o pagamento da taxa de reserva de ${CONFIG.PIX_VALUE} no PIX:`);
 
-                const wpLink = `https://wa.me/${CONFIG.WA_PHONE}?text=Ol%C3%A1!%20Realizei%20o%20agendamento%20de%20${encodeURIComponent(nome)}%20para%20o%20dia%20${encodeURIComponent(dataStr)}%20e%20este%20%C3%A9%20o%20meu%20comprovante%20de%20pagamento.%20C%C3%B3digo%20da%20Vaga:%20${slotCode}`;
+                const wpMsg = `Olá! Realizei o agendamento de ${nome} para o dia ${dataStr}. Fiz o pix para ${CONFIG.PIX_HOLDER}, banco ${CONFIG.PIX_BANK}, no valor de ${CONFIG.PIX_VALUE}, nesse pix que copiei no agendamento ${slotCode}`;
+                const wpLink = `https://wa.me/${CONFIG.WA_PHONE}?text=${encodeURIComponent(wpMsg)}`;
 
                 document.getElementById('modalBody').innerHTML = `
                     <div style="background:var(--card); padding:10px; border-radius:12px; border:1px dashed var(--pink); text-align:center; font-weight:bold; letter-spacing:0.5px; margin-bottom:15px; color:var(--slate);">
