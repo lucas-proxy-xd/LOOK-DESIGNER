@@ -1,10 +1,10 @@
 
-
 // ============================================================
 // CONFIGURAÇÕES (AJUSTE AQUI)
 // ============================================================
 const ADMIN_PASSWORD = "borboletas"; // Troque por uma senha segura
 const SHEET_NAME     = "TRONCO";     // Nome da aba no seu Google Sheets
+const PREFS_SHEET    = "CONFIG_AGENDA"; // Nome da aba de configurações
 const TIME_ZONE      = "GMT-4";      // Seu fuso horário (ex: GMT-3 para Brasília)
 
 // ============================================================
@@ -94,6 +94,7 @@ function doGet(e) {
     var bTime    = ((row[6] || "")      + "").trim(); // Coluna G
     var rUntil   = ((row[7] || "")      + "").trim(); // Coluna H
     var log      = ((row[8] || "")      + "").trim(); // Coluna I
+    var duration = ((row[9] || "")      + "").trim(); // Coluna J
 
     var clienteExibicao = "";
     var telefoneExibicao = "";
@@ -113,7 +114,7 @@ function doGet(e) {
       codigoExibicao = codigo; // Agora liberado para todos verem o token v6
     }
 
-    agenda.push({
+  agenda.push({
       data:    rowDate,
       horario: rowTime,
       status:  status,
@@ -121,11 +122,19 @@ function doGet(e) {
       telefone: telefoneExibicao,
       codigo: codigoExibicao,
       bookingTime: bookingTimeExibicao,
-      reservedUntil: reservedUntilExibicao
+      reservedUntil: reservedUntilExibicao,
+      duration: duration
     });
   }
 
-  var result = JSON.stringify({ status: "OK", agenda: agenda, isAdmin: isAdmin, serverTime: new Date().toISOString() });
+  const config = getScheduleConfig(ss);
+  var result = JSON.stringify({ 
+    status: "OK", 
+    agenda: agenda, 
+    isAdmin: isAdmin, 
+    serverTime: new Date().toISOString(),
+    config: config 
+  });
 
   return callback
     ? ContentService.createTextOutput(callback + "(" + result + ")").setMimeType(ContentService.MimeType.JAVASCRIPT)
@@ -169,11 +178,18 @@ function doPost(e) {
     var sheet = ss.getSheetByName(SHEET_NAME);
     if (!sheet) return jsonResponse("ERRO", "Aba '" + SHEET_NAME + "' não encontrada.");
 
-    var tz           = ss.getSpreadsheetTimeZone();
-    var data         = sheet.getDataRange().getValues();
     var providedPass = ((updates[0].password) || "").toString().trim();
     var callerIsAdmin = (providedPass === ADMIN_PASSWORD.trim());
 
+    // ACTION: UPDATE_CONFIG
+    if (updates[0].action === "update_config") {
+      if (!callerIsAdmin) return jsonResponse("ERRO", "Senha administrativa incorreta.");
+      updateScheduleConfig(ss, updates[0].config);
+      return jsonResponse("OK", "Configurações atualizadas com sucesso.");
+    }
+
+    var tz           = ss.getSpreadsheetTimeZone();
+    var data         = sheet.getDataRange().getValues();
     var savedCount = 0;
 
     for (var u = 0; u < updates.length; u++) {
@@ -186,6 +202,7 @@ function doPost(e) {
       var newCodigo  = (update.codigo   || "").toString().trim();
       var bTime      = (update.bookingTime || "").toString().trim();
       var rUntil     = (update.reservedUntil || "").toString().trim();
+      var dMinutes   = (update.duration || "").toString().trim();
 
       if (!targetDate || !targetTime || !newStatus) continue;
 
@@ -215,6 +232,7 @@ function doPost(e) {
         if (newCodigo) sheet.getRange(foundRow + 1, 6).setValue(newCodigo);
         if (bTime)     sheet.getRange(foundRow + 1, 7).setValue(bTime);
         if (rUntil)    sheet.getRange(foundRow + 1, 8).setValue(rUntil);
+        if (dMinutes)  sheet.getRange(foundRow + 1, 10).setValue(dMinutes);
         
         // Limpa campos de tempo se liberado ou ocupado definitivamente
         if (newStatus === "Livre" || newStatus === "Ocupado" || newStatus === "Bloqueado") {
@@ -229,7 +247,7 @@ function doPost(e) {
         }
 
       } else {
-        sheet.appendRow([targetDate, targetTime, newStatus, newClient, newPhone, newCodigo, bTime, rUntil]);
+        sheet.appendRow([targetDate, targetTime, newStatus, newClient, newPhone, newCodigo, bTime, rUntil, "", dMinutes]);
       }
 
       savedCount++;
@@ -240,6 +258,39 @@ function doPost(e) {
   } catch (err) {
     return jsonResponse("ERRO", "Erro interno: " + err.message);
   }
+}
+
+// ============================================================
+// HELPERS CONFIG
+// ============================================================
+function getScheduleConfig(ss) {
+  let sheet = ss.getSheetByName(PREFS_SHEET);
+  const defaults = { start: "08:00", end: "20:00", duration: 30 };
+  
+  if (!sheet) return defaults;
+  
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return defaults;
+  
+  return {
+    start: (data[1][0] || defaults.start).toString(),
+    end: (data[1][1] || defaults.end).toString(),
+    duration: parseInt(data[1][2] || defaults.duration)
+  };
+}
+
+function updateScheduleConfig(ss, config) {
+  let sheet = ss.getSheetByName(PREFS_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(PREFS_SHEET);
+    sheet.appendRow(["Hora Início", "Hora Fim", "Duração (min)"]);
+  }
+  
+  sheet.getRange(2, 1, 1, 3).setValues([[
+    config.start, 
+    config.end, 
+    config.duration
+  ]]);
 }
 
 // ============================================================
@@ -256,6 +307,7 @@ function autoReleaseExpiredSlots() {
   for (let i = 1; i < data.length; i++) {
     const status = (data[i][2] || "").toString();
     const client = (data[i][3] || "").toString();
+    const phone  = (data[i][4] || "").toString(); // Coluna E
     const token  = (data[i][5] || "").toString(); // Col F
     const expiryStr = (data[i][7] || "").toString(); // Coluna H
     
@@ -263,7 +315,7 @@ function autoReleaseExpiredSlots() {
       const expiryDate = new Date(expiryStr);
       if (expiryDate < now) {
         // Libera a vaga e gera o Log de Auditoria na Coluna I
-        const logMsg = "[SISTEMA " + Utilities.formatDate(now, "GMT-4", "HH:mm") + "] Vaga liberada por falta de confirmação. Cliente: " + client + " / Token: " + token;
+        const logMsg = "[SISTEMA " + Utilities.formatDate(now, TIME_ZONE, "HH:mm") + "] Vaga liberada por falta de confirmação. Cliente: " + client + " (" + phone + ") / Token: " + token;
         
         sheet.getRange(i + 1, 3).setValue("Livre");
         sheet.getRange(i + 1, 4, 1, 5).clearContent(); // Limpa D, E, F, G, H
