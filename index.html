@@ -1006,11 +1006,18 @@
                     }
                 }
                 
-                if (isAdminActive && slotCodigo) {
+                 if (isAdminActive && slotCodigo) {
                     clHtml += `
                         <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
                             <span style="font-family:monospace; font-size:0.65rem; opacity:0.6; letter-spacing:1px; background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:4px;">🔑 ${slotCodigo}</span>
                             <button onclick="event.stopPropagation(); copyToClipboard('${slotCodigo}', this)" style="background:transparent; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">📋</button>
+                        </div>
+                    `;
+                } else if (!isAdminActive && slotCodigo && (st === 'Ocupado' || st === 'Aguardando Pagamento')) {
+                    // Exibe token para não-admin também, conforme pedido
+                    clHtml += `
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
+                            <span style="font-family:monospace; font-size:0.65rem; opacity:0.6; letter-spacing:1px; background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:4px;">🔑 ${slotCodigo}</span>
                         </div>
                     `;
                 }
