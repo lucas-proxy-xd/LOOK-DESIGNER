@@ -1090,10 +1090,13 @@
 
                 const lastBookingTime = localStorage.getItem('look_booking_ts');
                 const nowMs = Date.now();
+                const limitMs = (CONFIG.RESERVE_MINUTES || 20) * 60000;
+
                 if (localStorage.getItem('look_has_booked') === 'true') {
-                    if (lastBookingTime && (nowMs - parseInt(lastBookingTime)) > 20 * 60000) {
-                        // Passou 20 min, libera localmente
+                    // Se o tempo passou OU se não houver registro de tempo, limpamos o bloqueio
+                    if (!lastBookingTime || (nowMs - parseInt(lastBookingTime)) > limitMs) {
                         localStorage.removeItem('look_has_booked');
+                        localStorage.removeItem('look_booking_ts');
                     } else {
                         const wpContato = `https://wa.me/${CONFIG.WA_PHONE}?text=Ol%C3%A1!%20Gostaria%20de%20reagendar%20ou%20fazer%20uma%20nova%20reserva.`;
                         await _showContactAlert('Limite Alcançado', 'Você já possui uma solicitação de agendamento em andamento. Para alterar o horário ou realizar um novo agendamento, por favor entre em contato com a gerente.', wpContato);
