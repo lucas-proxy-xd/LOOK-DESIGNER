@@ -831,6 +831,7 @@
         let isLoading = false;
         let refreshTimer = null;
         let viewingHistory = false;
+        let serverTimeOffset = 0; // ms difference between client and server
 
         // Gera um código único no formato visual IPv6 (4 grupos de 4 hex)
         function generateSlotCode() {
@@ -976,9 +977,29 @@
                     const telNum = tel.replace(/\D/g, ''); // Extract only digits
                     clHtml += `<br><a href="https://wa.me/55${telNum}?text=${encodeURIComponent(customMsg)}" target="_blank" onclick="event.stopPropagation()" class="whatsapp-btn">📱 Enviar WhatsApp</a>`;
                 }
+
+                if (isAdminActive && st === 'Aguardando Pagamento') {
+                    const bTime = reg ? reg.bookingTime : '';
+                    if (bTime) {
+                        const bDate = new Date(bTime);
+                        const now = new Date(Date.now() + serverTimeOffset);
+                        const diffMs = now - bDate;
+                        const diffMin = Math.floor(diffMs / 60000);
+                        const timeStr = bDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                        
+                        clHtml += `<div style="margin-top:8px; font-size:0.7rem; color:var(--status-pend); font-weight:600; background:rgba(179,134,0,0.1); padding:4px 8px; border-radius:6px; display:inline-block;">`;
+                        clHtml += `⏳ Aguardando há ${diffMin} min (desde ${timeStr})`;
+                        clHtml += `</div>`;
+                    }
+                }
                 
                 if (isAdminActive && slotCodigo) {
-                    clHtml += `<br><span style="font-family:monospace; font-size:0.65rem; opacity:0.5; letter-spacing:1px; display:block; margin-top:4px;">🔑 ${slotCodigo}</span>`;
+                    clHtml += `
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
+                            <span style="font-family:monospace; font-size:0.65rem; opacity:0.6; letter-spacing:1px; background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:4px;">🔑 ${slotCodigo}</span>
+                            <button onclick="event.stopPropagation(); copyToClipboard('${slotCodigo}', this)" style="background:transparent; border:none; cursor:pointer; font-size:0.7rem; opacity:0.5;">📋</button>
+                        </div>
+                    `;
                 }
 
                 const div = document.createElement('div');
@@ -1023,10 +1044,17 @@
                     return;
                 }
                 
+                const lastBookingTime = localStorage.getItem('look_booking_ts');
+                const nowMs = Date.now();
                 if (localStorage.getItem('look_has_booked') === 'true') {
-                    const wpContato = `https://wa.me/559296150540?text=Ol%C3%A1!%20Gostaria%20de%20reagendar%20ou%20fazer%20uma%20nova%20reserva.`;
-                    await _showContactAlert('Limite Alcançado', 'Você já possui uma solicitação de agendamento em andamento. Para alterar o horário ou realizar um novo agendamento, por favor entre em contato com a gerente.', wpContato);
-                    return;
+                    if (lastBookingTime && (nowMs - parseInt(lastBookingTime)) > 20 * 60000) {
+                        // Passou 20 min, libera localmente
+                        localStorage.removeItem('look_has_booked');
+                    } else {
+                        const wpContato = `https://wa.me/559296150540?text=Ol%C3%A1!%20Gostaria%20de%20reagendar%20ou%20fazer%20uma%20nova%20reserva.`;
+                        await _showContactAlert('Limite Alcançado', 'Você já possui uma solicitação de agendamento em andamento. Para alterar o horário ou realizar um novo agendamento, por favor entre em contato com a gerente.', wpContato);
+                        return;
+                    }
                 }
 
                 const result = await showBookingPrompt('Reservar Horário', `Preencha seus dados para agendar às ${t}:`);
@@ -1037,14 +1065,26 @@
                 
                 // Bloqueia no navegador para evitar spam
                 localStorage.setItem('look_has_booked', 'true');
+                localStorage.setItem('look_booking_ts', Date.now().toString());
+                localStorage.setItem('look_last_token', slotCode);
                 
+                // Timestamps
+                const nowTotal = new Date();
+                const bTime = nowTotal.toISOString();
+                const rUntil = new Date(nowTotal.getTime() + 20 * 60000).toISOString();
+
                 // Salva como Pendente de maneira otimista
-                await saveUpdates([{ data: d, horario: t, status: 'Aguardando Pagamento', cliente: result.nome, telefone: result.telefone, codigo: slotCode, password: adminPass }]);
+                await saveUpdates([{ 
+                    data: d, horario: t, status: 'Aguardando Pagamento', 
+                    cliente: result.nome, telefone: result.telefone, 
+                    codigo: slotCode, bookingTime: bTime, reservedUntil: rUntil,
+                    password: adminPass 
+                }]);
                 
                 // Exibe Modal do PIX
                 const dateParts = d.split('-'); // YYYY-MM-DD
                 const dataFmt = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]} às ${t}`;
-                await showPixModal(result.nome, dataFmt);
+                await showPixModal(result.nome, dataFmt, slotCode);
 
             } else {
                 let actChoices = [];
@@ -1231,12 +1271,12 @@
             });
         }
 
-        function showPixModal(nome, dataStr) {
+        function showPixModal(nome, dataStr, slotCode) {
             return new Promise(resolve => {
                 _setupModal('Pagamento da Taxa', 'Quase lá! Para garantir sua vaga, efetue o pagamento da taxa de reserva de R$ 25,00 no PIX:');
                 
                 const pixKey = "62993362375";
-                const wpLink = `https://wa.me/559296150540?text=Ol%C3%A1!%20Realizei%20o%20agendamento%20de%20${encodeURIComponent(nome)}%20para%20o%20dia%20${encodeURIComponent(dataStr)}%20e%20este%20%C3%A9%20o%20meu%20comprovante%20de%20pagamento.`;
+                const wpLink = `https://wa.me/559296150540?text=Ol%C3%A1!%20Realizei%20o%20agendamento%20de%20${encodeURIComponent(nome)}%20para%20o%20dia%20${encodeURIComponent(dataStr)}%20e%20este%20%C3%A9%20o%20meu%20comprovante%20de%20pagamento.%20C%C3%B3digo%20da%20Vaga:%20${slotCode}`;
 
                 document.getElementById('modalBody').innerHTML = `
                     <div style="background:var(--card); padding:10px; border-radius:8px; border:1px dashed var(--pink); text-align:center; font-weight:bold; letter-spacing:1px; margin-bottom:15px; color:var(--slate);">
@@ -1246,6 +1286,15 @@
                             <button id="btnCopyPix" style="background:transparent; border:1px solid var(--pink); color:var(--text); border-radius:4px; padding:2px 8px; cursor:pointer; font-size:0.7rem; transition:0.2s;">📋 Copiar</button>
                         </div>
                     </div>
+                    
+                    <div style="background:rgba(205,139,139,0.05); padding:12px; border-radius:12px; border:1px solid var(--border); margin-bottom:15px; text-align:center;">
+                        <span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:1px; color:var(--slate); font-weight:700;">Seu Código de Rastreio (v6)</span>
+                        <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:4px;">
+                            <span style="font-family:monospace; font-size:1rem; color:var(--pink); font-weight:700;">${slotCode}</span>
+                            <button id="btnCopyToken" style="background:transparent; border:1px solid var(--pink); color:var(--text); border-radius:4px; padding:2px 8px; cursor:pointer; font-size:0.7rem;">📋</button>
+                        </div>
+                    </div>
+
                     <p style="font-size:0.85rem; font-weight:bold; color:var(--pink); text-align:center; margin-bottom:10px;">
                         ⚠️ IMPORTANTE: Você tem 20 minutos para enviar o comprovante. Após esse prazo, sem confirmação, a vaga é liberada automaticamente.
                     </p>
@@ -1259,25 +1308,38 @@
                 document.getElementById('modalOverlay').classList.remove('hidden');
 
                 document.getElementById('btnCopyPix').onclick = () => {
-                    navigator.clipboard.writeText(pixKey).then(() => {
-                        const b = document.getElementById('btnCopyPix');
-                        b.innerText = '✅ Copiado!';
-                        b.style.background = 'var(--emerald)';
-                        b.style.color = '#fff';
-                        b.style.borderColor = 'var(--emerald)';
-                        setTimeout(() => {
-                            b.innerText = '📋 Copiar';
-                            b.style.background = 'transparent';
-                            b.style.color = 'var(--text)';
-                            b.style.borderColor = 'var(--pink)';
-                        }, 2000);
-                    });
+                    copyToClipboard(pixKey, document.getElementById('btnCopyPix'));
                 };
                 
+                document.getElementById('btnCopyToken').onclick = () => {
+                    copyToClipboard(slotCode, document.getElementById('btnCopyToken'));
+                };
+
                 document.getElementById('mCancel').onclick = () => {
                     document.getElementById('modalOverlay').classList.add('hidden');
                     resolve();
                 };
+            });
+        }
+
+        function copyToClipboard(text, btnElement) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btnElement.innerText;
+                const originalBg = btnElement.style.background;
+                const originalColor = btnElement.style.color;
+                const originalBorder = btnElement.style.borderColor;
+
+                btnElement.innerText = '✅ Copiado!';
+                btnElement.style.background = 'var(--emerald)';
+                btnElement.style.color = '#fff';
+                btnElement.style.borderColor = 'var(--emerald)';
+                
+                setTimeout(() => {
+                    btnElement.innerText = originalText;
+                    btnElement.style.background = originalBg;
+                    btnElement.style.color = originalColor;
+                    btnElement.style.borderColor = originalBorder;
+                }, 2000);
             });
         }
 
@@ -1320,6 +1382,11 @@
             if (data.status === 'OK') {
                 agendaData = data.agenda;
                 isAdminActive = data.isAdmin;
+                
+                if (data.serverTime) {
+                    serverTimeOffset = new Date(data.serverTime).getTime() - Date.now();
+                }
+
                 if (!selectedDayIso) selectedDayIso = toLocalISO(new Date());
                 updateAdminUI();
                 drawDaysMenu();
@@ -1383,8 +1450,15 @@
                     agendaData[idx].cliente = up.cliente;
                     agendaData[idx].telefone = up.telefone;
                     if (up.codigo) agendaData[idx].codigo = up.codigo;
+                    if (up.bookingTime) agendaData[idx].bookingTime = up.bookingTime;
+                    if (up.reservedUntil) agendaData[idx].reservedUntil = up.reservedUntil;
                 } else {
-                    agendaData.push({ data: up.data, horario: up.horario, status: up.status, cliente: up.cliente, telefone: up.telefone, codigo: up.codigo || '' });
+                    agendaData.push({ 
+                        data: up.data, horario: up.horario, status: up.status, 
+                        cliente: up.cliente, telefone: up.telefone, 
+                        codigo: up.codigo || '', bookingTime: up.bookingTime || '', 
+                        reservedUntil: up.reservedUntil || '' 
+                    });
                 }
             });
             renderSlots(selectedDayIso);
