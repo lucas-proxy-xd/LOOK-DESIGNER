@@ -1,3 +1,21 @@
+/**
+ * LOOK DESIGNER — Google Apps Script Backend (v2.0)
+ * 
+ * 📝 INSTRUÇÕES DE INSTALAÇÃO:
+ * 1. No Google Sheets: Extensões > Apps Script.
+ * 2. Cole este código no arquivo .gs.
+ * 3. Clique em "Implantar" (Deploy) > "Nova implantação".
+ * 4. Selecione "App da Web".
+ * 5. Configurações:
+ *    - Descrição: Backend Look Designer
+ *    - Executar como: Eu (seu e-mail)
+ *    - Quem tem acesso: Qualquer pessoa
+ * 6. Copie a "URL do app da web" e cole no `index.html` (API_URL).
+ * 7. GATILHO AUTOMÁTICO:
+ *    - Clique no ícone de Relógio (Gatilhos) à esquerda.
+ *    - Adicionar Gatilho > Escolha: `autoReleaseExpiredSlots`.
+ *    - Origem: Baseado no tempo > Temporizador de minutos > A cada 5 ou 10 minutos.
+ */
 
 // ============================================================
 // CONFIGURAÇÕES (AJUSTE AQUI)
