@@ -1283,15 +1283,16 @@
         function showBookingPrompt(title, msg) {
             return new Promise(resolve => {
                 _setupModal(title, msg);
+                const showDur = isAdminActive;
                 document.getElementById('modalBody').innerHTML = `
                     <input type="text" id="mNome" class="modal-input" placeholder="Seu nome completo" autocomplete="off">
                     <input type="tel" id="mTel" class="modal-input" placeholder="Telefone (WhatsApp)" autocomplete="off">
-                    <div style="margin-top:10px;">
+                    <div style="margin-top:10px; ${showDur ? '' : 'display:none;'}">
                         <label style="font-size:0.65rem; font-weight:700; color:var(--pink); display:block; margin-bottom:4px;">DURAÇÃO ESTIMADA</label>
                         <select id="mDur" class="modal-input">
                             <option value="30">30 minutos</option>
-                            <option value="60" selected>1 hora</option>
-                            <option value="90">1 hora e 30 min</option>
+                            <option value="60" ${scheduleConfig.duration === 60 ? 'selected' : ''}>1 hora</option>
+                            <option value="90" ${scheduleConfig.duration === 90 ? 'selected' : ''}>1 hora e 30 min</option>
                             <option value="120">2 horas</option>
                             <option value="180">3 horas</option>
                         </select>
@@ -1306,7 +1307,9 @@
                 const confirm = () => {
                     const n = document.getElementById('mNome').value.trim();
                     const t = document.getElementById('mTel').value.trim();
-                    const d = parseInt(document.getElementById('mDur').value);
+                    // Se não for admin, usa a duração padrão da config ou 60m
+                    const d = showDur ? parseInt(document.getElementById('mDur').value) : (scheduleConfig.duration || 60);
+                    
                     if (!n || !t) { alert('Preencha nome e telefone!'); return; }
                     document.getElementById('modalOverlay').classList.add('hidden');
                     resolve({ nome: n, telefone: t, duration: d });
