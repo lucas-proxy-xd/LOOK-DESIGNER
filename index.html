@@ -1014,10 +1014,11 @@
                         </div>
                     `;
                 } else if (!isAdminActive && slotCodigo && (st === 'Ocupado' || st === 'Aguardando Pagamento')) {
-                    // Exibe token para não-admin também, conforme pedido
+                    // Exibe token para não-admin também, conforme pedido, mais destacado
                     clHtml += `
-                        <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
-                            <span style="font-family:monospace; font-size:0.65rem; opacity:0.6; letter-spacing:1px; background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:4px;">🔑 ${slotCodigo}</span>
+                        <div style="margin-top:8px; display:flex; align-items:center; gap:5px; background:rgba(205,139,139,0.05); padding:6px 10px; border-radius:10px; border:1px solid rgba(205,139,139,0.15); width:fit-content;">
+                            <span style="font-size:0.7rem; color:var(--pink); font-weight:700; letter-spacing:0.5px;">🔑 CÓDIGO:</span>
+                            <span style="font-family:monospace; font-size:0.8rem; color:var(--text); font-weight:600;">${slotCodigo}</span>
                         </div>
                     `;
                 }
