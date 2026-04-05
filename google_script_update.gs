@@ -1,21 +1,11 @@
-/**
- * LOOK DESIGNER — Google Apps Script
- * Planilha: TRONCO (única aba)
- *
- * Estrutura da aba TRONCO:
- *   Coluna A: Data          (ex: 2026-04-05 ou Date)
- *   Coluna B: Horário       (ex: 09:00 ou Time)
- *   Coluna C: Status        (Livre | Ocupado | Bloqueado | Aguardando Pagamento)
- *   Coluna D: Cliente       (nome do cliente ou RESERVADO)
- *   Coluna E: Telefone      (telefone do cliente)
- *   Coluna F: Código        (código único de rastreio, ex: a3f2:8b1d:4c09:e7a1)
- *   Coluna G: BookingTime   (ISO string - quando o cliente clicou)
- *   Coluna H: ReservedUntil (ISO string - expiração, ex: +20 min)
- *   Coluna I: Auditoria     (Mensagens de log sobre expiração ou eventos importantes)
- */
 
-const ADMIN_PASSWORD = "borboletas";
-const SHEET_NAME     = "TRONCO";
+
+// ============================================================
+// CONFIGURAÇÕES (AJUSTE AQUI)
+// ============================================================
+const ADMIN_PASSWORD = "borboletas"; // Troque por uma senha segura
+const SHEET_NAME     = "TRONCO";     // Nome da aba no seu Google Sheets
+const TIME_ZONE      = "GMT-4";      // Seu fuso horário (ex: GMT-3 para Brasília)
 
 // ============================================================
 // HELPERS
