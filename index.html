@@ -43,6 +43,12 @@
             color: var(--ink);
             min-height: 100vh;
             overflow-x: hidden;
+            transition: background 0.5s ease;
+        }
+
+        body.admin-on {
+            background: #ffe4e6;
+            /* Rose-100: Rosa mais presente, mas ainda legível */
         }
 
         body::before {
@@ -299,8 +305,8 @@
             border-radius: 18px;
             padding: 20px;
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
             margin-bottom: 12px;
         }
 
@@ -447,14 +453,63 @@
         }
 
         /* DAY PICKER */
+        .day-picker-wrap {
+            position: relative;
+            margin: 0 -20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .scroll-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            background: white;
+            border: 1px solid rgba(196, 132, 138, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--rose);
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            font-size: 0.8rem;
+            font-weight: 700;
+            opacity: 0.15;
+            /* Subitamente transparente conforme pedido */
+        }
+
+        .scroll-arrow:active {
+            transform: translateY(-50%) scale(0.9);
+            opacity: 0.5;
+        }
+
+        .scroll-arrow.left {
+            left: 2px;
+        }
+
+        .scroll-arrow.right {
+            right: 2px;
+        }
+
         .day-scroller {
             display: flex;
             gap: 12px;
             overflow-x: auto;
-            padding: 8px 0 24px;
+            padding: 8px 80px 24px;
+            /* Aumentado para 80px para garantir que as datas não fiquem sob as setas */
             scrollbar-width: none;
             opacity: 0;
             animation: fadeUp 1s 4.2s var(--ease) forwards;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+            mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
         }
 
         .day-scroller::-webkit-scrollbar {
@@ -462,8 +517,10 @@
         }
 
         .day-pill {
-            min-width: 64px;
-            height: 88px;
+            min-width: 68px;
+            /* Slightly wider */
+            height: 94px;
+            /* Slightly taller */
             border-radius: 20px;
             background: white;
             border: 1.5px solid rgba(196, 132, 138, 0.15);
@@ -477,6 +534,9 @@
             box-shadow: 0 4px 20px rgba(42, 32, 32, 0.05);
             position: relative;
             overflow: hidden;
+            scroll-snap-align: start;
+            /* Snap point */
+            flex-shrink: 0;
         }
 
         .day-pill::before {
@@ -1166,7 +1226,11 @@
         </header>
 
         <div class="section-label">✦ Escolha sua data ✦</div>
-        <div class="day-scroller" id="dayScroller"></div>
+        <div class="day-picker-wrap">
+            <button class="scroll-arrow left" onclick="scrollDays(-1)">‹</button>
+            <div class="day-scroller" id="dayScroller"></div>
+            <button class="scroll-arrow right" onclick="scrollDays(1)">›</button>
+        </div>
 
         <!-- PAINEL ADMIN - visível só quando logado -->
         <section id="adminPanel">
@@ -1178,12 +1242,20 @@
                         class="stat-lbl">Ocupados</span></div>
                 <div class="stat-item"><span class="stat-num" id="statAguard">—</span><span
                         class="stat-lbl">Aguardando</span></div>
+                <div class="stat-item" style="border-left:1px solid rgba(255,255,255,0.1);padding-left:10px;">
+                    <span class="stat-num" id="statPix" style="font-size:1.1rem;color:var(--gold);">—</span>
+                    <span class="stat-lbl">Taxa PIX</span>
+                </div>
+                <div class="stat-item" style="border-left:1px solid rgba(255,255,255,0.1);padding-left:10px;">
+                    <span class="stat-num" id="statNext" style="font-size:1.1rem;color:var(--rose);">—</span>
+                    <span class="stat-lbl">Próximo Online</span>
+                </div>
             </div>
             <div class="admin-cards">
                 <div class="admin-card" onclick="openConfig()">
                     <span class="ac-icon">⚙️</span>
-                    <div class="ac-label">Expediente</div>
-                    <div class="ac-desc">Horário de início, fim e duração padrão</div>
+                    <div class="ac-label">Configurações</div>
+                    <div class="ac-desc">Expediente e Valor da Reserva (PIX)</div>
                 </div>
                 <div class="admin-card" onclick="openDurPanel()">
                     <span class="ac-icon">⏱️</span>
@@ -1262,8 +1334,10 @@
             <button class="nav-btn" onclick="scrollToTop()">Início</button>
             <button class="nav-admin-login" onclick="promptAdmin()">🔐 Admin</button>
         </div>
-        <div id="adminNav">
+        <div id="adminNav" style="display:none;gap:4px;align-items:center;">
             <button id="syncBtn" class="nav-btn primary" onclick="syncData()">↻ Atualizar</button>
+            <button class="nav-btn" onclick="logoutAdmin()"
+                style="color:var(--rose);border-color:var(--rose);">Sair</button>
         </div>
     </div>
 
@@ -1297,6 +1371,13 @@
         setTimeout(() => document.getElementById('intro').classList.add('out'), 3500);
 
         // ─── INIT ─────────────────────────────────────────────
+        // Day Selector scroll logic
+        function scrollDays(dir) {
+            const scroller = document.getElementById('dayScroller');
+            const scrollAmount = 250; // Scroll roughly 3-4 pills
+            scroller.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
+        }
+
         async function syncData() {
             const btn = document.getElementById('syncBtn');
             if (btn) { btn.textContent = '⏱ Sincronizando...'; btn.style.opacity = '0.7'; }
@@ -1328,6 +1409,26 @@
         }
 
         // ─── DAYS ─────────────────────────────────────────────
+        function handlePhoneInput(el) {
+            let v = el.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.slice(0, 11);
+
+            let f = '';
+            if (v.length > 0) {
+                f = '(' + v.substring(0, 2);
+                if (v.length > 2) {
+                    f += ') ' + v.substring(2, 3);
+                    if (v.length > 3) {
+                        f += ' ' + v.substring(3, 7);
+                        if (v.length > 7) {
+                            f += '-' + v.substring(7, 11);
+                        }
+                    }
+                }
+            }
+            el.value = f;
+        }
+
         function renderDays() {
             const c = document.getElementById('dayScroller');
             c.innerHTML = '';
@@ -1397,6 +1498,12 @@
 
                 let st = reg ? reg.status : 'Livre';
                 let durMin = reg ? parseInt(reg.duration || srvCfg.duration) : srvCfg.duration;
+
+                // Ocultar horários que já passaram para o cliente (mantém a visão limpa)
+                if (isPast && !isAdmin) { 
+                    cur += Math.max(15, durMin || 30); 
+                    continue; 
+                }
                 const reservedUntil = reg ? reg.reservedUntil : null;
                 const logMsg = reg ? reg.log : null;
 
@@ -1465,10 +1572,11 @@
                 let extra = '';
                 if (isAdmin && reg && reg.telefone) {
                     const clean = reg.telefone.replace(/\D/g, '');
+                    const softMsg = encodeURIComponent(`Olá, ${reg.cliente}! ✨ Sou a Camila do Studio Look Designer. Vi seu interesse no horário das ${clock} do dia ${iso.split('-').reverse().join('/')}. Posso te ajudar com a confirmação? 💗`);
                     extra = `<div class="slot-dur" style="margin-top:8px;">
-                        <a href="https://wa.me/${clean.startsWith('55') ? clean : '55' + clean}" target="_blank" 
+                        <a href="https://wa.me/${clean.startsWith('55') ? clean : '55' + clean}?text=${softMsg}" target="_blank" 
                            style="text-decoration:none; color:var(--rose); font-weight:700; background:rgba(196,132,138,0.1); padding:5px 12px; border-radius:10px; display:inline-block; font-size:0.65rem;">
-                           💬 WhatsApp: ${reg.telefone}
+                           💬 Contato Rápido
                         </a>
                     </div>`;
                 }
@@ -1487,6 +1595,10 @@
             <div class="slot-info">
                 <div class="slot-status" style="color:${pipColor}">${stLabel}</div>
                 <div class="slot-client">${clientName}</div>
+                <div class="slot-dur" style="margin-top:2px; font-size:0.6rem; opacity:0.6;">
+                    ${st !== 'Livre' && reg && reg.telefone ? '📞 ' + reg.telefone : ''} 
+                    ${st !== 'Livre' && reg && reg.codigo ? ' · 🎫 ' + reg.codigo : ''}
+                </div>
                 <div class="slot-dur">${durLabel}</div>
                 ${extra}
                 ${countdownHtml}
@@ -1598,7 +1710,7 @@
         <label class="field-label">Seu nome</label>
         <input id="bName" class="inp" placeholder="Nome completo">
         <label class="field-label">WhatsApp</label>
-        <input id="bPhone" class="inp" placeholder="(00) 00000-0000" type="tel">
+        <input id="bPhone" class="inp" placeholder="(92) 9 0000-0000" type="tel" oninput="handlePhoneInput(this)">
     `;
             document.getElementById('sheetActions').innerHTML = `
         <button class="btn btn-primary" onclick="confirmBooking('${iso}','${clock}','${df}')">Reservar meu horário →</button>
@@ -1611,9 +1723,38 @@
             const phone = document.getElementById('bPhone').value.trim();
             if (!name || !phone) { alert('Preencha todos os campos.'); return; }
 
+            // Verificação de reserva duplicada (Restriction)
+            const activeBooking = localStorage.getItem('last_booking_v3');
+            if (activeBooking) {
+                const b = JSON.parse(activeBooking);
+                const stillWaiting = db.find(r => r.codigo === b.token && r.status === 'Aguardando Pagamento');
+                if (stillWaiting) {
+                    openSheet('Reserva Pendente ⏳', 'Você já possui uma reserva aguardando pagamento no sistema.');
+                    document.getElementById('sheetBody').innerHTML = `
+                        <div class="info-box" style="border-color:var(--rose);">
+                            Sua reserva anterior ainda está ativa. Por favor, finalize o pagamento ou fale com a nossa gerente caso precise de ajuda.
+                        </div>
+                        <a href="https://wa.me/${CFG.WA}?text=${encodeURIComponent('Olá Camila, gostaria de tirar uma dúvida sobre minha reserva que está em aguardo.')}" 
+                           target="_blank" class="wa-link">💬 Falar com a Gerente agora</a>
+                    `;
+                    document.getElementById('sheetActions').innerHTML = `
+                        <button class="btn btn-secondary" onclick="closeSheet()">Fechar e voltar</button>
+                    `;
+                    return;
+                }
+            }
+
             const token = Math.random().toString(36).substring(2, 7).toUpperCase();
             const exp = new Date(Date.now() + CFG.RESERVE_MIN * 60000).toISOString();
             const bTime = new Date().toISOString();
+
+            localStorage.setItem('last_booking_v3', JSON.stringify({ token, iso, clock }));
+
+            // Sincroniza uma última vez para pegar o valor do PIX mais recente
+            await syncData();
+
+            // O sistema notificará a gerente automaticamente no backend (doPost).
+            // Removida a abertura de aba de WhatsApp para o cliente após clicar em Reservar.
 
             // Mostra o PIX IMEDIATAMENTE (Interface Otimista)
             showPixSheet(name, phone, iso, clock, df, token, exp);
@@ -1629,6 +1770,9 @@
 
         function showPixSheet(name, phone, iso, clock, df, token, exp) {
             const leftMin = CFG.RESERVE_MIN;
+            const pixMsg = srvCfg.pix_value && parseFloat(srvCfg.pix_value) > 0
+                ? `💰 *Valor da Reserva:* R$ ${srvCfg.pix_value}\n`
+                : '';
             const waText = encodeURIComponent(
                 `Olá, Camila! 💗\n\nAcabei de reservar meu horário pelo site da Look Designer.\n\n` +
                 `📌 *Dados do agendamento:*\n` +
@@ -1636,6 +1780,7 @@
                 `• Data: ${df}\n` +
                 `• Horário: ${clock}\n` +
                 `• Código da reserva: *${token}*\n\n` +
+                pixMsg +
                 `💰 *PIX enviado para:*\n` +
                 `• Titular: ${CFG.PIX_HOLDER}\n` +
                 `• Chave PIX: ${CFG.PIX_KEY} (${CFG.PIX_BANK})\n\n` +
@@ -1649,7 +1794,14 @@
             <div class="pix-label">Chave PIX (celular)</div>
             <div class="pix-key">${CFG.PIX_KEY}</div>
             <div class="pix-holder">${CFG.PIX_BANK} · ${CFG.PIX_HOLDER}</div>
+            <div style="margin-top:12px; padding:10px; background:rgba(201,168,108,0.1); border-radius:10px;">
+                <div style="font-size:0.6rem; color:var(--gold); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Valor para Reserva</div>
+                <div style="font-weight:700; color:var(--ink); font-size:1.4rem;">R$ ${srvCfg.pix_value || '0.00'}</div>
+            </div>
             <button class="btn btn-secondary" style="margin-top:16px;padding:12px;" onclick="navigator.clipboard.writeText('${CFG.PIX_KEY}').then(()=>alert('Chave copiada!'))">📋 Copiar Chave</button>
+        </div>
+        <div class="info-box" style="border-color:var(--rose); background:rgba(196,132,138,0.05);">
+            ⭐ <strong>Horário Exclusivo:</strong> Esta reserva garante que o seu horário seja bloqueado apenas para você, evitando esperas ou choque de horários.
         </div>
         <div class="booking-sum">
             <p><strong>${name}</strong> · ${df} às ${clock}</p>
@@ -1675,12 +1827,17 @@
             openSheet(`Gestão · ${clock}`, `Status atual: ${st}`);
             document.getElementById('sheetBody').innerHTML = `
         <div class="admin-action-grid">
-            ${st !== 'Bloqueado' ? `<button class="btn btn-danger" onclick="adminAction('${iso}','${clock}','block')">🔒 Bloquear este horário</button>` : ''}
+            ${st === 'Aguardando Pagamento' ? `
+                <button class="btn" style="background:#25D366; color:white; margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="adminConfirm('${iso}','${clock}')">✅ Confirmar Agendamento</button>
+                <button class="btn btn-secondary" style="margin-bottom:16px;" onclick="adminAction('${iso}','${clock}','free')">❌ Revogar / Liberar Vaga</button>
+                <div style="height:1px; background:var(--cream-dark); margin-bottom:16px;"></div>
+            ` : ''}
+            ${st !== 'Bloqueado' && st !== 'Aguardando Pagamento' ? `<button class="btn btn-danger" onclick="adminAction('${iso}','${clock}','block')">🔒 Bloquear este horário</button>` : ''}
             ${st === 'Bloqueado' || st === 'Ocupado' ? `<button class="btn btn-gold" onclick="adminAction('${iso}','${clock}','free')">🔓 Liberar horário</button>` : ''}
         </div>
-        <label class="field-label">Agendar manualmente</label>
-        <input id="aName" class="inp" placeholder="Nome do cliente" value="${reg && st === 'Ocupado' ? reg.cliente : ''}">
-        <input id="aPhone" class="inp" placeholder="WhatsApp do cliente" type="tel" value="${reg && reg.telefone ? reg.telefone : ''}">
+        <label class="field-label">${st === 'Aguardando Pagamento' || st === 'Ocupado' ? 'Dados do Cliente' : 'Agendar manualmente'}</label>
+        <input id="aName" class="inp" placeholder="Nome do cliente" value="${reg ? reg.cliente : ''}">
+        <input id="aPhone" class="inp" placeholder="(92) 9 0000-0000" type="tel" value="${reg && reg.telefone ? reg.telefone : ''}" oninput="handlePhoneInput(this)">
         <label class="field-label">Duração do procedimento</label>
         <div class="dur-grid" id="durGrid">${durOpts}</div>
     `;
@@ -1695,6 +1852,43 @@
             document.querySelectorAll('.dur-opt').forEach(e => e.classList.remove('sel'));
             el.classList.add('sel');
             selectedDur = val;
+        }
+
+        async function adminConfirm(iso, clock) {
+            const name = document.getElementById('aName').value.trim();
+            const phone = document.getElementById('aPhone').value.trim();
+            const dur = selectedDur || srvCfg.duration;
+            closeSheet();
+            await postUpdates([{
+                data: iso, horario: clock, status: 'Ocupado',
+                cliente: name, telefone: phone, duration: dur, password: adminPass
+            }]);
+            
+            // Abre modal de sucesso com botão de WhatsApp
+            setTimeout(() => showAdminSuccess(name, phone, iso, clock), 500);
+        }
+
+        function showAdminSuccess(name, phone, iso, clock) {
+            const clean = phone.replace(/\D/g, '');
+            const df = iso.split('-').reverse().join('/');
+            const msg = encodeURIComponent(`Olá, ${name}! ✨ Aqui é a Camila da Look Designer. Acabei de confirmar seu agendamento para o dia ${df} às ${clock}. Já estou te aguardando! 💗`);
+            
+            openSheet('Vaga Confirmada! ✅', 'O agendamento foi salvo com sucesso no sistema.');
+            document.getElementById('sheetBody').innerHTML = `
+                <div class="info-box" style="border-color:var(--gold); background:rgba(201,168,108,0.05); text-align:center;">
+                    <p style="font-size:1.1rem; margin-bottom:8px;">Agendamento de <strong>${name}</strong></p>
+                    <p>${df} às ${clock}</p>
+                </div>
+                <div style="margin-top:20px;">
+                    <a href="https://wa.me/${clean.startsWith('55') ? clean : '55' + clean}?text=${msg}" target="_blank" 
+                       class="wa-link" style="background:#25D366; color:white;">
+                       💬 Enviar Mensagem de Boas-vindas
+                    </a>
+                </div>
+            `;
+            document.getElementById('sheetActions').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeSheet()">Fechar Janela</button>
+            `;
         }
 
         async function adminAction(iso, clock, action) {
@@ -1720,7 +1914,7 @@
 
         // ─── CONFIG SHEET ──────────────────────────────────────
         function openConfig() {
-            openSheet('Configurações', 'Ajuste o expediente e a duração padrão dos atendimentos.');
+            openSheet('Configurações', 'Expediente e Valor da Reserva (PIX)');
             document.getElementById('sheetBody').innerHTML = `
         <label class="field-label">Horário de início</label>
         <input id="cfgS" class="inp" value="${srvCfg.start}" placeholder="08:00">
@@ -1728,19 +1922,48 @@
         <input id="cfgE" class="inp" value="${srvCfg.end}" placeholder="20:00">
         <label class="field-label">Duração padrão (minutos)</label>
         <input id="cfgD" class="inp" type="number" value="${srvCfg.duration}" min="30" step="15">
+        <label class="field-label">Valor da Reserva (PIX)</label>
+        <input id="cfgP" class="inp" value="${(srvCfg.pix_value || '0.00').toString().replace('.', ',')}" placeholder="25,50">
     `;
             document.getElementById('sheetActions').innerHTML = `
-        <button class="btn btn-primary" onclick="saveConfig()">Salvar configurações</button>
+        <button id="btnSaveCfg" class="btn btn-primary" onclick="saveConfig()">Salvar configurações</button>
         <button class="btn btn-secondary" onclick="closeSheet()">Cancelar</button>
     `;
         }
 
         async function saveConfig() {
+            const btn = document.getElementById('btnSaveCfg');
             const s = document.getElementById('cfgS').value;
             const e = document.getElementById('cfgE').value;
             const d = parseInt(document.getElementById('cfgD').value);
-            closeSheet();
-            await postUpdates([{ action: 'update_config', config: { start: s, end: e, duration: d }, password: adminPass }]);
+            const p = document.getElementById('cfgP').value.replace(',', '.').trim();
+
+            if (btn) { btn.textContent = '⏱ Salvando...'; btn.disabled = true; }
+
+            const cbName = 'onCfg_' + Date.now();
+            window[cbName] = (res) => {
+                if (res.status === 'OK') {
+                    srvCfg.pix_value = p;
+                    updateAdminStats();
+                    syncData();
+                    setTimeout(() => {
+                        alert('Configurações salvas com sucesso! ✨');
+                        closeSheet();
+                    }, 500);
+                } else {
+                    alert('Erro ao salvar: ' + (res.message || 'Falha de conexão'));
+                    if (btn) { btn.textContent = 'Salvar configurações'; btn.disabled = false; }
+                }
+                const sEl = document.getElementById('scr_cfg_final');
+                if (sEl) sEl.remove();
+                delete window[cbName];
+            };
+
+            const url = `${CFG.API_URL}?action=update_config&pass=${encodeURIComponent(adminPass)}&start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}&duration=${d}&pix_value=${encodeURIComponent(p)}&callback=${cbName}`;
+            const scr = document.createElement('script');
+            scr.id = 'scr_cfg_final';
+            scr.src = url;
+            document.body.appendChild(scr);
         }
 
         // ─── ADMIN AUTH ────────────────────────────────────────
@@ -1809,15 +2032,34 @@
         // ─── ADMIN STATS ────────────────────────────────────────────
         function updateAdminStats() {
             if (!isAdmin) return;
-            const todayIso = new Date().toISOString().split('T')[0];
-            const todayRecs = db.filter(r => String(r.data).substring(0, 10) === todayIso);
-            const livre = todayRecs.filter(r => r.status === 'Livre').length;
-            const ocupado = todayRecs.filter(r => r.status === 'Ocupado').length;
-            const aguard = todayRecs.filter(r => r.status === 'Aguardando Pagamento').length;
+            const target = currentDay || new Date().toISOString().split('T')[0];
+            const recs = db.filter(r => String(r.data).substring(0, 10) === target);
+
+            const livre = recs.filter(r => r.status === 'Livre').length;
+            const ocupado = recs.filter(r => r.status === 'Ocupado').length;
+            const aguard = recs.filter(r => r.status === 'Aguardando Pagamento').length;
+
             const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
             el('statLivre', livre);
             el('statOcupado', ocupado);
             el('statAguard', aguard);
+            el('statPix', 'R$ ' + (srvCfg.pix_value || '0.00'));
+
+            // Próximo agendamento (Online ou Presencial)
+            const now = new Date();
+            const curIso = now.toISOString().split('T')[0];
+            const curMins = now.getHours() * 60 + now.getMinutes();
+
+            const next = db
+                .filter(r => r.data >= curIso && (r.status === 'Ocupado' || r.status === 'Aguardando Pagamento'))
+                .map(r => {
+                    const [h, m] = r.horario.split(':').map(Number);
+                    return { ...r, mins: h * 60 + m };
+                })
+                .filter(r => r.data > curIso || (r.data === curIso && r.mins >= curMins))
+                .sort((a, b) => a.data === b.data ? a.mins - b.mins : a.data.localeCompare(b.data))[0];
+
+            el('statNext', next ? next.horario : '—');
         }
 
         // ─── ADMIN: PAINEL DURAÇÃO DE PROCEDIMENTOS ────────────────────
@@ -1860,28 +2102,41 @@
         }
 
         // ─── ADMIN: LOG SHEET ──────────────────────────────────
-        function openLogSheet() {
-            const expired = db.filter(r => {
-                if (r.status !== 'Aguardando Pagamento') return false;
-                if (!r.reservedUntil) return false;
-                return new Date() > new Date(r.reservedUntil);
-            });
-            const logHtml = expired.length === 0
-                ? '<div class="info-box">Nenhuma reserva expirada registrada neste ciclo. ✨</div>'
-                : expired.map(r => `
-            <div class="log-entry">
-                <strong>⏱ ${r.horario} — ${r.data} — Reserva Não Confirmada</strong>
-                Cliente: ${r.cliente || '—'}<br>
-                Expiry log registrado na planilha.
-                <div class="log-meta">Token: ${r.codigo || '—'} · ${r.telefone || '—'}</div>
-            </div>
-        `).join('');
+        let logSortRev = true; // true = Recentes primeiro (DESC), false = Antigas (ASC)
 
-            openSheet('Registros do Sistema', 'Reservas expiradas e eventos desta sessão.');
-            document.getElementById('sheetBody').innerHTML = logHtml;
+        function openLogSheet() {
+            const allLogs = db.filter(r => r.status !== 'Livre')
+                .sort((a, b) => {
+                    const timeA = a.bookingTime || (a.data + 'T' + a.horario);
+                    const timeB = b.bookingTime || (b.data + 'T' + b.horario);
+                    return logSortRev ? timeB.localeCompare(timeA) : timeA.localeCompare(timeB);
+                })
+                .slice(0, 50); // Mostra mais no log agora
+
+            const logHtml = allLogs.length === 0
+                ? '<div class="info-box">Nenhum evento registrado. ✨</div>'
+                : allLogs.map(r => {
+                    const isEx = r.status === 'Aguardando Pagamento' && r.reservedUntil && (new Date() > new Date(r.reservedUntil));
+                    const stColor = r.status === 'Ocupado' ? 'var(--st-ocupado)' : 'var(--st-aguard)';
+                    return `
+                <div class="log-entry" style="border-left-color:${stColor}">
+                    <strong>${r.status === 'Ocupado' ? '✅ Vaga Confirmada' : (isEx ? '❌ Reserva Expirada' : '⏳ Aguardando Pagamento')}</strong>
+                    <p style="margin:4px 0">${r.cliente} — ${r.data.split('-').reverse().join('/')} às ${r.horario}</p>
+                    <div class="log-meta">Token: ${r.codigo || '—'} · ${r.telefone || '—'}</div>
+                </div>
+            `}).join('');
+
+            openSheet('Registros do Sistema', 'Histórico de agendamentos online.');
+            document.getElementById('sheetBody').innerHTML = `
+                <div style="display:flex; gap:8px; margin-bottom:16px;">
+                    <button class="dur-opt ${logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=true;openLogSheet()">⬇ Recentes Primeiro</button>
+                    <button class="dur-opt ${!logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=false;openLogSheet()">⬆ Antigas Primeiro</button>
+                </div>
+                ${logHtml}
+            `;
             document.getElementById('sheetActions').innerHTML = `
-        <button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>
-    `;
+                <button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>
+            `;
         }
 
         // ─── INTRO PETALS ────────────────────────────────────────
