@@ -122,10 +122,62 @@
             }
         }
 
-        /* Lash SVG icon */
+        /* Intro mark */
         .intro-icon {
+            position: relative;
             opacity: 0;
             animation: fadeUp 1.2s 0.3s var(--ease) forwards;
+        }
+
+        .intro-icon::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 124px;
+            height: 124px;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(201, 168, 108, 0.26) 0%, rgba(201, 168, 108, 0.08) 36%, rgba(201, 168, 108, 0) 72%);
+            filter: blur(5px);
+            pointer-events: none;
+        }
+
+        .intro-mark {
+            width: 92px;
+            height: 92px;
+            display: block;
+        }
+
+        .intro-star {
+            transform-origin: 46px 46px;
+            animation: starSpin 10s linear infinite;
+            filter: drop-shadow(0 0 12px rgba(201, 168, 108, 0.28));
+        }
+
+        .intro-star-core {
+            transform-origin: 46px 46px;
+            animation: starPulse 2.4s ease-in-out infinite;
+        }
+
+        .intro-orbit {
+            transform-origin: 46px 46px;
+            animation: orbitFloat 4.8s ease-in-out infinite;
+        }
+
+        .intro-spark {
+            animation: sparkBlink 2.2s ease-in-out infinite;
+        }
+
+        .intro-spark.s2 {
+            animation-delay: 0.45s;
+        }
+
+        .intro-spark.s3 {
+            animation-delay: 0.95s;
+        }
+
+        .intro-spark.s4 {
+            animation-delay: 1.5s;
         }
 
         .intro-title {
@@ -146,6 +198,61 @@
             text-transform: uppercase;
             opacity: 0;
             animation: fadeUp 1.2s 1s var(--ease) forwards;
+        }
+
+        @keyframes starSpin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes starPulse {
+
+            0%,
+            100% {
+                transform: scale(0.92);
+                opacity: 0.88;
+            }
+
+            50% {
+                transform: scale(1.08);
+                opacity: 1;
+            }
+        }
+
+        @keyframes orbitFloat {
+
+            0%,
+            100% {
+                transform: scale(1) rotate(0deg);
+            }
+
+            50% {
+                transform: scale(1.03) rotate(8deg);
+            }
+        }
+
+        @keyframes sparkBlink {
+
+            0%,
+            100% {
+                opacity: 0.22;
+                transform: scale(0.82);
+            }
+
+            42% {
+                opacity: 1;
+                transform: scale(1.18);
+            }
+
+            72% {
+                opacity: 0.4;
+                transform: scale(0.94);
+            }
         }
 
         @keyframes fadeUp {
@@ -183,8 +290,20 @@
         }
 
         .sig-lash-deco {
-            font-size: 1.6rem;
-            margin-bottom: 8px;
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.82) 38%, rgba(201, 168, 108, 0.12) 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 14px 34px rgba(139, 79, 85, 0.11);
+        }
+
+        .sig-mark {
+            width: 34px;
+            height: 34px;
             display: block;
         }
 
@@ -1199,19 +1318,42 @@
     <div id="intro">
         <div class="intro-petals" id="introPetals"></div>
         <div class="intro-icon">
-            <svg width="72" height="48" viewBox="0 0 72 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 38 Q18 14 36 10 Q54 14 68 38" stroke="#C9A86C" stroke-width="2.5" fill="none"
-                    stroke-linecap="round" />
-                <line x1="12" y1="30" x2="8" y2="12" stroke="#C4848A" stroke-width="1.8" stroke-linecap="round" />
-                <line x1="20" y1="22" x2="18" y2="4" stroke="#C4848A" stroke-width="1.8" stroke-linecap="round" />
-                <line x1="28" y1="16" x2="28" y2="0" stroke="#C4848A" stroke-width="2" stroke-linecap="round" />
-                <line x1="36" y1="14" x2="36" y2="0" stroke="#C9A86C" stroke-width="2.2" stroke-linecap="round" />
-                <line x1="44" y1="16" x2="44" y2="0" stroke="#C4848A" stroke-width="2" stroke-linecap="round" />
-                <line x1="52" y1="22" x2="54" y2="4" stroke="#C4848A" stroke-width="1.8" stroke-linecap="round" />
-                <line x1="60" y1="30" x2="64" y2="12" stroke="#C4848A" stroke-width="1.8" stroke-linecap="round" />
-                <circle cx="36" cy="38" r="3.5" fill="#C9A86C" opacity="0.9" />
-                <circle cx="22" cy="34" r="2" fill="#C4848A" opacity="0.6" />
-                <circle cx="50" cy="34" r="2" fill="#C4848A" opacity="0.6" />
+            <svg class="intro-mark" viewBox="0 0 92 92" fill="none" xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true">
+                <circle cx="46" cy="46" r="28" fill="url(#starGlow)" opacity="0.18" />
+                <g class="intro-orbit">
+                    <circle cx="46" cy="19" r="2.4" fill="#E8D5B0" opacity="0.95" />
+                    <circle cx="71" cy="34" r="1.9" fill="#C4848A" opacity="0.72" />
+                    <circle cx="20" cy="35" r="1.9" fill="#C4848A" opacity="0.72" />
+                    <path d="M27 63C34 69 40 72 46 72C52 72 58 69 65 63" stroke="rgba(232,213,176,0.42)"
+                        stroke-width="1.5" stroke-linecap="round" />
+                </g>
+                <g class="intro-star">
+                    <path
+                        d="M46 17L52.6 35.4L72 37.4L57.2 49.8L61.8 68.4L46 58.8L30.2 68.4L34.8 49.8L20 37.4L39.4 35.4L46 17Z"
+                        fill="url(#starFill)" />
+                </g>
+                <g class="intro-star-core">
+                    <path
+                        d="M46 26L49.3 35.7L59.6 36.8L51.8 43.3L54.2 53.2L46 48.2L37.8 53.2L40.2 43.3L32.4 36.8L42.7 35.7L46 26Z"
+                        fill="#FFF8EB" />
+                </g>
+                <circle class="intro-spark s1" cx="18" cy="22" r="2.2" fill="#FFF6DC" />
+                <circle class="intro-spark s2" cx="75" cy="20" r="1.8" fill="#FFF6DC" />
+                <circle class="intro-spark s3" cx="68" cy="67" r="2" fill="#E8D5B0" />
+                <circle class="intro-spark s4" cx="24" cy="68" r="1.7" fill="#E8D5B0" />
+                <defs>
+                    <radialGradient id="starGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+                        gradientTransform="translate(46 46) rotate(90) scale(28)">
+                        <stop stop-color="#F7E9BF" />
+                        <stop offset="1" stop-color="#F7E9BF" stop-opacity="0" />
+                    </radialGradient>
+                    <linearGradient id="starFill" x1="46" y1="17" x2="46" y2="68.4" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#FFF4CF" />
+                        <stop offset="0.48" stop-color="#D9BC7B" />
+                        <stop offset="1" stop-color="#B9894E" />
+                    </linearGradient>
+                </defs>
             </svg>
         </div>
         <div class="intro-title">Look Designer</div>
@@ -1307,17 +1449,17 @@
         <!-- ASSINATURA E CONTATO -->
         <div class="signature-section">
             <span class="sig-lash-deco">
-                <svg width="40" height="26" viewBox="0 0 40 26" fill="none">
-                    <path d="M2 22 Q10 8 20 6 Q30 8 38 22" stroke="#C9A86C" stroke-width="1.8" fill="none"
-                        stroke-linecap="round" />
-                    <line x1="7" y1="17" x2="5" y2="7" stroke="#C4848A" stroke-width="1.4" stroke-linecap="round" />
-                    <line x1="12" y1="12" x2="11" y2="2" stroke="#C4848A" stroke-width="1.4" stroke-linecap="round" />
-                    <line x1="17" y1="8" x2="17" y2="0" stroke="#C4848A" stroke-width="1.6" stroke-linecap="round" />
-                    <line x1="20" y1="7" x2="20" y2="0" stroke="#C9A86C" stroke-width="1.8" stroke-linecap="round" />
-                    <line x1="23" y1="8" x2="23" y2="0" stroke="#C4848A" stroke-width="1.6" stroke-linecap="round" />
-                    <line x1="28" y1="12" x2="29" y2="2" stroke="#C4848A" stroke-width="1.4" stroke-linecap="round" />
-                    <line x1="33" y1="17" x2="35" y2="7" stroke="#C4848A" stroke-width="1.4" stroke-linecap="round" />
-                    <circle cx="20" cy="22" r="2.2" fill="#C9A86C" opacity="0.9" />
+                <svg class="sig-mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+                    <path d="M20 5L22.9 13.5L32 14.4L25.1 20.2L27.2 29L20 24.6L12.8 29L14.9 20.2L8 14.4L17.1 13.5L20 5Z"
+                        fill="url(#sigStarFill)" />
+                    <circle cx="20" cy="20" r="15" stroke="rgba(201,168,108,0.22)" />
+                    <defs>
+                        <linearGradient id="sigStarFill" x1="20" y1="5" x2="20" y2="29" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#FFF5D6" />
+                            <stop offset="0.48" stop-color="#D8B976" />
+                            <stop offset="1" stop-color="#B78649" />
+                        </linearGradient>
+                    </defs>
                 </svg>
             </span>
             <div class="sig-name">Camila Alves</div>
@@ -1500,9 +1642,9 @@
                 let durMin = reg ? parseInt(reg.duration || srvCfg.duration) : srvCfg.duration;
 
                 // Ocultar horários que já passaram para o cliente (mantém a visão limpa)
-                if (isPast && !isAdmin) { 
-                    cur += Math.max(15, durMin || 30); 
-                    continue; 
+                if (isPast && !isAdmin) {
+                    cur += Math.max(15, durMin || 30);
+                    continue;
                 }
                 const reservedUntil = reg ? reg.reservedUntil : null;
                 const logMsg = reg ? reg.log : null;
@@ -1753,9 +1895,6 @@
             // Sincroniza uma última vez para pegar o valor do PIX mais recente
             await syncData();
 
-            // O sistema notificará a gerente automaticamente no backend (doPost).
-            // Removida a abertura de aba de WhatsApp para o cliente após clicar em Reservar.
-
             // Mostra o PIX IMEDIATAMENTE (Interface Otimista)
             showPixSheet(name, phone, iso, clock, df, token, exp);
 
@@ -1863,7 +2002,7 @@
                 data: iso, horario: clock, status: 'Ocupado',
                 cliente: name, telefone: phone, duration: dur, password: adminPass
             }]);
-            
+
             // Abre modal de sucesso com botão de WhatsApp
             setTimeout(() => showAdminSuccess(name, phone, iso, clock), 500);
         }
@@ -1872,7 +2011,7 @@
             const clean = phone.replace(/\D/g, '');
             const df = iso.split('-').reverse().join('/');
             const msg = encodeURIComponent(`Olá, ${name}! ✨ Aqui é a Camila da Look Designer. Acabei de confirmar seu agendamento para o dia ${df} às ${clock}. Já estou te aguardando! 💗`);
-            
+
             openSheet('Vaga Confirmada! ✅', 'O agendamento foi salvo com sucesso no sistema.');
             document.getElementById('sheetBody').innerHTML = `
                 <div class="info-box" style="border-color:var(--gold); background:rgba(201,168,108,0.05); text-align:center;">
