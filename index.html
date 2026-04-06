@@ -741,7 +741,8 @@
                     telefone: client.tel, codigo: token, bookingTime: new Date().toISOString(),
                     duration: scheduleCfg.duration, password: adminPass
                 }]);
-                await showDiamondPix(client.nome, `${d} às ${t}`, token);
+                const friendlyDate = new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+                await showDiamondPix(client.nome, friendlyDate, t, token);
             } else {
                 const decision = await showActionDiamond(t, s);
                 if (decision === 'lock') await performDiamondUpdate([{ data: d, horario: t, status: 'Bloqueado', cliente: 'INDISPONÍVEL', password: adminPass }]);
@@ -807,17 +808,24 @@
             });
         }
 
-        function showDiamondPix(nome, dataEx, token) {
+        function showDiamondPix(nome, dataEx, hora, token) {
             return new Promise(resolve => {
-                setSheet('Pagamento & Confirmação', 'A reserva será validada após o envio do comprovante.');
+                setSheet('Falta pouquinho! ✨', 'Quase tudo pronto para o seu momento de beleza. Para garantir sua vaga, basta fazer o PIX e me enviar o comprovante clicando no botão abaixo.');
                 document.getElementById('mBody').innerHTML = `
-                    <div style="background:var(--glass-gold); padding:25px; border-radius:30px; border: 1px dashed var(--metallic-gold); text-align:center;">
-                        <p style="font-size:0.7rem; letter-spacing:2px; font-weight:800; color:var(--metallic-gold); margin-bottom:10px;">CHAVE PIX (CELULAR)</p>
-                        <p style="font-size:1.6rem; font-weight:700; letter-spacing:1px; color:var(--deep-text);">${CONFIG.PIX_KEY}</p>
-                        <p style="font-size:0.8rem; margin-top:10px;">${CONFIG.PIX_BANK} - ${CONFIG.PIX_HOLDER}</p>
-                        <button class="btn-diamond" style="margin-top:20px;" onclick="navigator.clipboard.writeText('${CONFIG.PIX_KEY}'); alert('Copiado!')">COPIAR CHAVE PIX</button>
+                    <div style="background:var(--glass-gold); padding:25px; border-radius:30px; border: 1px dashed var(--metallic-gold); text-align:center; margin-bottom:20px;">
+                        <p style="font-size:0.65rem; letter-spacing:2px; font-weight:800; color:var(--metallic-gold); margin-bottom:12px;">CHAVE PIX (CELULAR)</p>
+                        <p style="font-size:1.8rem; font-weight:700; letter-spacing:1px; color:var(--deep-text);">${CONFIG.PIX_KEY}</p>
+                        <p style="font-size:0.85rem; margin-top:8px; opacity:0.8;">${CONFIG.PIX_BANK} | ${CONFIG.PIX_HOLDER}</p>
+                        <button class="btn-diamond" style="margin-top:15px; padding:15px;" onclick="navigator.clipboard.writeText('${CONFIG.PIX_KEY}'); alert('Chave PIX copiada!')">Copiar Chave</button>
                     </div>
-                    <a href="https://wa.me/${CONFIG.WA_PHONE}?text=Olá Camila! Agendamento Diamante: ${nome} p/ ${dataEx}. Segue o comprovante. Token: ${token}" target="_blank" class="wa-pill">ENVIAR COMPROVANTE WHATSAPP</a>
+                    
+                    <div style="text-align:center; padding:15px; background:rgba(205,139,139,0.05); border-radius:20px; margin-bottom:20px;">
+                        <p style="font-size:0.8rem; color:var(--deep-text);">Agendamento para <b>${nome}</b></p>
+                        <p style="font-size:0.8rem; color:var(--deep-text); opacity:0.8;">${dataEx} às ${hora}</p>
+                        <p style="font-size:0.7rem; margin-top:5px; font-weight:700; color:var(--accent-rose);">Token: ${token}</p>
+                    </div>
+
+                    <a href="https://wa.me/${CONFIG.WA_PHONE}?text=Olá Camila! Acabei de fazer meu agendamento pelo site no nome de ${nome}. Escolhi ${dataEx} às ${hora}. Estou enviando o comprovante do PIX para confirmar. Meu código é: ${token}. Fico aguardando! ✨" target="_blank" class="wa-pill">Enviar Comprovante</a>
                 `;
                 document.getElementById('mActions').innerHTML = `<button class="btn-diamond secondary" style="background:#eee; color:#333;" onclick="document.getElementById('modalOverlay').classList.add('hidden'); resolve()">FECHAR</button>`;
                 document.getElementById('modalOverlay').classList.remove('hidden');
