@@ -1,600 +1,204 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LOOK DESIGNER | Diamond Edition</title>
-    <!-- Premium Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,700;1,400&family=Outfit:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap"
-        rel="stylesheet">
+    <title>LOOK DESIGNER | Aura Edition</title>
+    <!-- Modern Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Diamond Palette */
-            --bg-cashmere: #FDF9F8;
-            --accent-rose: #CD8B8B;
-            --metallic-gold: #C5A059;
-            --deep-text: #4A403A;
-            --slate-soft: #7A726E;
-            --glass-white: rgba(255, 255, 255, 0.75);
-            --glass-gold: rgba(197, 160, 89, 0.15);
-            --border-glow: rgba(205, 139, 139, 0.25);
-            --shadow-soft: 0 15px 45px rgba(74, 64, 58, 0.08);
-            --ease-out: cubic-bezier(0.19, 1, 0.22, 1);
-
-            /* Status Colors (Premium) */
-            --st-free: #7CB342;
-            --st-busy: #CD8B8B;
-            --st-pend: #C5A059;
-            --st-lock: #9E9E9E;
+            /* Aura Palette (Leveza) */
+            --bg-aura: #F8F9FD;
+            --accent-main: #9B9EED; /* Soft Lavender */
+            --accent-mint: #B5C9C1; /* Soft Mint */
+            --text-deep: #434455;
+            --text-light: #7E7F91;
+            --glass-base: rgba(255, 255, 255, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --shadow-float: 0 20px 40px rgba(155, 158, 237, 0.08);
+            --ease-aura: cubic-bezier(0.23, 1, 0.32, 1);
+            
+            /* Status Colors */
+            --st-free: #95C9A4;
+            --st-busy: #E8A8B6;
+            --st-pend: #F5D547;
+            --st-lock: #D1D1D6;
         }
 
-        /* Dark Executive Dashboard */
-        body.admin-mode {
-            --bg-cashmere: #1A1716;
-            --deep-text: #FDF9F8;
-            --glass-white: rgba(45, 38, 36, 0.85);
-            --border-glow: rgba(197, 160, 89, 0.4);
-            --slate-soft: #A59B96;
-        }
-
-        body.admin-mode::after {
-            content: " EXECUTIVE DASHBOARD ACCESS ";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: linear-gradient(90deg, var(--metallic-gold), var(--accent-rose), var(--metallic-gold));
-            z-index: 10000;
-            animation: dashFlow 3s infinite linear;
-        }
-
-        @keyframes dashFlow {
-            from {
-                background-position: 0% 0%;
-            }
-
-            to {
-                background-position: 200% 0%;
-            }
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-font-smoothing: antialiased;
-        }
-
+        /* Animated Mesh Background (Aura Viva) */
         body {
             font-family: 'Outfit', sans-serif;
-            background: var(--bg-cashmere);
-            color: var(--deep-text);
-            overflow-x: hidden;
-            min-height: 100vh;
-            transition: background 0.6s var(--ease-out), color 0.6s var(--ease-out);
-            background-image:
-                radial-gradient(at 0% 0%, rgba(205, 139, 139, 0.08) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(197, 160, 89, 0.06) 0px, transparent 50%);
-            background-attachment: fixed;
+            background: linear-gradient(-45deg, #F8F9FD, #E6E9FC, #F1F4FF, #F8F9FD);
+            background-size: 400% 400%;
+            animation: auraMorph 15s ease infinite;
+            color: var(--text-deep);
+            min-height: 100vh; margin: 0; padding: 0;
+            overflow-x: hidden; transition: 0.5s;
         }
 
-        /* Diamond Loader Overlay */
-        #welcomeOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-cashmere);
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 1s var(--ease-out), visibility 1s;
+        @keyframes auraMorph {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
-        #welcomeOverlay.fade-out {
-            opacity: 0;
-            visibility: hidden;
+        /* Dashboard Executive Access (Typo Fixed) */
+        body.admin-mode {
+            --bg-aura: #1E1E2E;
+            --text-deep: #F8F9FD;
+            --glass-base: rgba(40, 42, 54, 0.8);
+            --accent-main: #BD93F9;
+        }
+        body.admin-mode::before {
+            content: "EXECUTIVE DASHBOARD ACCESS";
+            position: fixed; top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--accent-main), var(--accent-mint), var(--accent-main));
+            z-index: 10000; display: block; text-align: center; font-size: 0.5rem; letter-spacing: 5px; color: white; padding: 1px;
         }
 
-        .citation {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.6rem;
-            font-style: italic;
-            text-align: center;
-            color: var(--accent-rose);
-            opacity: 0;
-            animation: citationAnim 3s forwards;
-            padding: 0 40px;
-            letter-spacing: 1px;
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        /* Smooth Aura Intro */
+        #auraIntro {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 9999; display: flex; align-items: center; justify-content: center;
+            transition: opacity 1.2s ease-out, visibility 1.2s;
         }
+        #auraIntro.fade { opacity: 0; visibility: hidden; }
+        .aura-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.8rem; color: var(--accent-main); opacity: 0; animation: textFade 4s forwards; }
+        @keyframes textFade { 0% { opacity: 0; transform: scale(0.95); } 30% { opacity: 1; transform: scale(1); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.05); } }
 
-        @keyframes citationAnim {
-            0% {
-                opacity: 0;
-                transform: translateY(10px);
-            }
+        .app-container { max-width: 480px; margin: 0 auto; padding: 20px; position: relative; width: 100%; }
 
-            30% {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        header { padding: 40px 0; text-align: center; }
+        .logo { font-size: 1.8rem; font-weight: 300; letter-spacing: 12px; color: var(--text-deep); text-shadow: 0 5px 15px rgba(0,0,0,0.02); }
+        .logo span { font-weight: 700; color: var(--accent-main); }
 
-            70% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-
-            100% {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
+        /* Interactive Day List */
+        .day-bar { margin: 20px 0 40px; }
+        .day-scroller { display: flex; overflow-x: auto; gap: 18px; padding: 10px 5px 30px; scrollbar-width: none; }
+        .day-scroller::-webkit-scrollbar { display: none; }
+        
+        .day-item {
+            min-width: 70px; height: 95px; border-radius: 25px;
+            background: var(--glass-base); backdrop-filter: blur(25px);
+            border: 2px solid var(--glass-border); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer;
+            transition: 0.6s var(--ease-aura); box-shadow: var(--shadow-float);
         }
-
-        .diamond-app {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
+        .day-item.active {
+            background: #fff; transform: translateY(-10px) scale(1.1);
+            border-color: var(--accent-main); box-shadow: 0 30px 60px rgba(155, 158, 237, 0.2);
         }
+        .day-item .dw { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; color: var(--text-light); }
+        .day-item .dn { font-size: 1.6rem; font-weight: 700; margin: 2px 0; }
 
-        /* Header UI */
-        header {
-            padding: 40px 0 20px;
-            text-align: center;
+        /* Aura Glass Grid */
+        .grid-header { display: flex; justify-content: space-between; align-items: center; padding: 0 10px 20px; font-family: 'Playfair Display', serif; }
+        .grid-header h3 { font-size: 1.5rem; font-style: italic; }
+        .close-btn { font-family: 'Outfit', sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--accent-main); cursor: pointer; letter-spacing: 2px; }
+
+        .slots-box { display: grid; gap: 15px; perspective: 1000px; padding-bottom: 150px; }
+        .slot-glass {
+            background: var(--glass-base); backdrop-filter: blur(30px);
+            border: 2px solid var(--glass-border); border-radius: 22px;
+            padding: 22px; display: flex; align-items: center; gap: 20px;
+            cursor: pointer; transition: 0.5s var(--ease-aura);
+            animation: slotPulse 1s var(--ease-aura) backwards;
         }
+        .slot-glass:hover { transform: translateY(-5px) scale(1.02); background: #fff; box-shadow: 0 20px 50px rgba(0,0,0,0.05); }
+        @keyframes slotPulse { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .logo-box {
-            position: relative;
-            display: inline-block;
+        .time-label { font-size: 1.5rem; font-weight: 700; color: var(--accent-main); opacity: 0.9; width: 80px; text-align: center; border-right: 1px solid rgba(0,0,0,0.03); }
+        .slot-details { flex: 1; }
+        .status-badge { font-size: 0.55rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
+        .client-name { font-size: 1.1rem; font-weight: 600; }
+        .countdown { display: inline-block; background: var(--accent-main); color: white; padding: 4px 8px; border-radius: 8px; font-size: 0.6rem; margin-top: 8px; font-weight: 700; animation: auraPulse 2s infinite; }
+        @keyframes auraPulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+
+        /* Floating Nav Aura */
+        .bottom-nav {
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(30px);
+            border-radius: 50px; padding: 12px 30px; display: flex; gap: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1); z-index: 5000; border: 2px solid #fff;
         }
-
-        .logo-main {
-            font-family: 'Playfair Display', serif;
-            font-size: 3rem;
-            letter-spacing: 8px;
-            font-weight: 300;
-            color: var(--deep-text);
-            text-transform: uppercase;
+        .nav-link { background: none; border: none; font-weight: 700; font-size: 0.75rem; color: var(--text-deep); cursor: pointer; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+        
+        /* Modern Bottom Sheet */
+        .overlay-sheet {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(155, 158, 237, 0.15); backdrop-filter: blur(15px);
+            z-index: 9000; display: flex; align-items: flex-end; justify-content: center;
         }
-
-        .logo-sub {
-            display: block;
-            font-size: 0.75rem;
-            letter-spacing: 5px;
-            color: var(--metallic-gold);
-            font-weight: 600;
-            margin-top: -5px;
+        .aura-modal {
+            background: #fff; width: 100%; max-width: 480px; border-radius: 40px 40px 0 0;
+            padding: 40px; box-shadow: 0 -30px 100px rgba(0,0,0,0.15);
+            animation: auraSheet 0.7s var(--ease-aura);
         }
+        @keyframes auraSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        /* Theme Toggle (Professional) */
-        .glass-btn {
-            position: absolute;
-            right: 20px;
-            top: 40px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--glass-white);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border-glow);
-            cursor: pointer;
-            box-shadow: var(--shadow-soft);
-            transition: 0.3s;
+        .aura-input {
+            width: 100%; padding: 20px 25px; border-radius: 20px; border: 2px solid var(--bg-aura);
+            background: var(--bg-aura); font-family: inherit; font-size: 1rem; margin-bottom: 20px;
+            outline: none; transition: 0.3s;
         }
+        .aura-input:focus { border-color: var(--accent-main); background: #fff; }
+        .aura-btn { width: 100%; padding: 22px; border-radius: 20px; border: none; cursor: pointer; font-weight: 700; letter-spacing: 1px; font-size: 1rem; transition: 0.4s; }
+        .aura-btn-primary { background: var(--accent-main); color: white; box-shadow: 0 15px 30px rgba(155, 158, 237, 0.4); }
+        .aura-btn-primary:active { transform: scale(0.97); }
+        .aura-btn-secondary { background: #F0F0F5; color: var(--text-deep); }
 
-        .glass-btn:active {
-            transform: scale(0.9);
-        }
+        .wa-btn { display: block; text-align: center; background: #25D366; color: white; text-decoration: none; padding: 22px; border-radius: 20px; font-weight: 700; margin-top: 25px; box-shadow: 0 15px 40px rgba(37, 211, 102, 0.3); }
 
-        /* Day Selection Bubble */
-        .day-picker {
-            margin: 30px 0;
-            overflow: visible;
-        }
-
-        .day-scroll {
-            display: flex;
-            overflow-x: auto;
-            gap: 15px;
-            padding: 10px 5px 25px;
-            scrollbar-width: none;
-            align-items: center;
-        }
-
-        .day-scroll::-webkit-scrollbar {
-            display: none;
-        }
-
-        .day-bubble {
-            min-width: 80px;
-            height: 110px;
-            background: var(--glass-white);
-            backdrop-filter: blur(15px);
-            border-radius: 40px;
-            border: 1px solid var(--border-glow);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: 0.4s var(--ease-out);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.03);
-            flex-shrink: 0;
-        }
-
-        .day-bubble.active {
-            background: var(--accent-rose);
-            border-color: var(--accent-rose);
-            color: white;
-            transform: translateY(-8px) scale(1.05);
-            box-shadow: 0 15px 35px rgba(205, 139, 139, 0.4);
-        }
-
-        .day-bubble .dow {
-            font-size: 0.6rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            opacity: 0.7;
-        }
-
-        .day-bubble .num {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin: 4px 0;
-        }
-
-        .day-bubble .month {
-            font-size: 0.6rem;
-            font-weight: 700;
-            opacity: 0.8;
-        }
-
-        /* Grid & Cards */
-        .agenda-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.6rem;
-            margin-bottom: 25px;
-            font-style: italic;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 10px;
-            animation: fadeInUp 0.8s backwards;
-        }
-
-        .slots-container {
-            display: grid;
-            gap: 20px;
-            padding-bottom: 120px;
-        }
-
-        .slot-pill {
-            background: var(--glass-white);
-            backdrop-filter: blur(12px);
-            border-radius: 30px;
-            padding: 22px 25px;
-            display: flex;
-            align-items: center;
-            gap: 25px;
-            border: 1px solid var(--border-glow);
-            transition: 0.5s var(--ease-out);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            animation: slotIn 0.8s var(--ease-out) backwards;
-        }
-
-        .slot-pill:hover {
-            transform: scale(1.02);
-            background: white;
-            border-color: var(--accent-rose);
-        }
-
-        .slot-pill::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 8px;
-            background: var(--st-free);
-            transition: 0.3s;
-        }
-
-        .slot-time {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--metallic-gold);
-            min-width: 75px;
-            text-align: center;
-            border-right: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .slot-info {
-            flex: 1;
-        }
-
-        .slot-status {
-            font-size: 0.55rem;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            margin-bottom: 2px;
-        }
-
-        .slot-client {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--deep-text);
-        }
-
-        /* Status Variations */
-        .pill-busy::before {
-            background: var(--st-busy);
-        }
-
-        .pill-pend::before {
-            background: var(--st-pend);
-        }
-
-        .pill-lock::before {
-            background: var(--st-lock);
-        }
-
-        .pill-past {
-            opacity: 0.35;
-            filter: grayscale(0.5);
-            pointer-events: none;
-        }
-
-        /* Floating Admin Nav */
-        .admin-nav {
-            position: fixed;
-            bottom: 35px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(45, 38, 36, 0.9);
-            backdrop-filter: blur(20px);
-            padding: 12px 30px;
-            border-radius: 60px;
-            display: flex;
-            gap: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-            z-index: 5000;
-            border: 1px solid var(--metallic-gold);
-        }
-
-        .nav-btn {
-            background: transparent;
-            border: none;
-            color: white;
-            font-weight: 700;
-            font-size: 0.7rem;
-            letter-spacing: 2px;
-            cursor: pointer;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Bottom Sheet Modals */
-        #modalOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(26, 23, 22, 0.6);
-            backdrop-filter: blur(8px);
-            z-index: 9000;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-        }
-
-        .modal-sheet {
-            background: var(--bg-cashmere);
-            width: 100%;
-            max-width: 500px;
-            border-radius: 40px 40px 0 0;
-            padding: 40px 30px;
-            box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.2);
-            animation: sheetUp 0.6s var(--ease-out);
-        }
-
-        .input-pill {
-            width: 100%;
-            background: var(--glass-white);
-            border: 1px solid var(--border-glow);
-            padding: 18px 25px;
-            border-radius: 20px;
-            font-family: inherit;
-            font-size: 1rem;
-            margin-bottom: 15px;
-            outline: none;
-            transition: 0.3s;
-        }
-
-        .input-pill:focus {
-            border-color: var(--accent-rose);
-            box-shadow: 0 0 0 4px rgba(205, 139, 139, 0.1);
-        }
-
-        .btn-diamond {
-            width: 100%;
-            background: var(--accent-rose);
-            color: white;
-            border: none;
-            padding: 20px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 1rem;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: 0.3s;
-            margin-top: 10px;
-        }
-
-        .btn-diamond:active {
-            transform: scale(0.98);
-        }
-
-        /* Loader LD */
-        #mainLoader {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10001;
-        }
-
-        .dot-spark {
-            width: 40px;
-            height: 40px;
-            border: 2px solid var(--metallic-gold);
-            border-radius: 50%;
-            animation: spark 1.5s infinite;
-        }
-
-        @keyframes spark {
-            0% {
-                transform: scale(0.5);
-                opacity: 1;
-            }
-
-            100% {
-                transform: scale(1.5);
-                opacity: 0;
-            }
-        }
-
-        /* Transitions */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slotIn {
-            from {
-                opacity: 0;
-                transform: translateX(30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        @keyframes sheetUp {
-            from {
-                transform: translateY(100%);
-            }
-
-            to {
-                transform: translateY(0);
-            }
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        /* Proof Button */
-        .wa-pill {
-            display: block;
-            background: #25D366;
-            color: white;
-            text-decoration: none;
-            padding: 18px;
-            border-radius: 20px;
-            text-align: center;
-            font-weight: 700;
-            letter-spacing: 1px;
-            margin-top: 20px;
-        }
+        .hidden { display: none !important; }
+        .pill-past { opacity: 0.25; filter: grayscale(0.8); pointer-events: none; }
     </style>
 </head>
-
 <body>
 
-    <!-- Diamond Welcome Citation -->
-    <div id="welcomeOverlay">
-        <div class="citation">"A beleza é a iluminação da alma..." ✨</div>
+    <!-- Intro Viva -->
+    <div id="auraIntro">
+        <div class="aura-text">"Sua beleza em harmonia..." ✨</div>
     </div>
 
-    <!-- Mini Loader LD Central -->
-    <div id="mainLoader" class="hidden">
-        <div class="dot-spark"></div>
-    </div>
-
-    <div class="diamond-app">
+    <div class="app-container">
         <header>
-            <div class="glass-btn" onclick="toggleDashboardTheme()">
-                <span id="themeIcon">🌙</span>
-            </div>
-            <div id="adminEntry" onclick="doAdminAuth()"
-                style="position:absolute; left:20px; top:40px; opacity:0.2; cursor:pointer;">🔒</div>
-
-            <div class="logo-box" onclick="window.location.reload()">
-                <div class="logo-main">LOOK</div>
-                <div class="logo-sub">DESIGNER</div>
-            </div>
+            <div id="adminKey" onclick="doDashAuth()" style="position:absolute; left:20px; top:40px; opacity:0.1; cursor:pointer;">🔑</div>
+            <div class="logo">LOOK<span>DESIGNER</span></div>
         </header>
 
-        <!-- Premium Day Selection -->
-        <section class="day-picker">
-            <h5
-                style="font-size:0.6rem; letter-spacing:4px; font-weight:800; color:var(--accent-rose); text-transform:uppercase; margin-left:15px; margin-bottom:15px;">
-                Escolha seu momento</h5>
-            <div class="day-scroll" id="dayContainer"></div>
+        <!-- Aura Day Picker -->
+        <section class="day-bar">
+            <h5 style="font-size:0.55rem; letter-spacing:5px; font-weight:800; color:var(--accent-main); text-transform:uppercase; margin-bottom:20px; text-align:center;">Agende seu momento de leveza</h5>
+            <div class="day-scroller" id="dayContainer"></div>
         </section>
 
-        <!-- Luxury Agenda Grid -->
-        <main id="agendaBox" class="hidden">
-            <div class="agenda-title">
-                <span id="selectedDateTitle">Selecione uma data</span>
-                <span onclick="closeAgenda()"
-                    style="font-size:0.75rem; font-weight:800; color:var(--accent-rose); cursor:pointer; font-style:normal;">VOLTAR</span>
+        <!-- Dynamic Grid -->
+        <main id="mainAgenda" class="hidden">
+            <div class="grid-header">
+                <h3 id="dateLabel">Dando forma à sua aura</h3>
+                <span class="close-btn" onclick="closeGrid()">VOLTAR</span>
             </div>
-            <div id="slotsGrid" class="slots-container"></div>
+            <div id="slotsGrid" class="slots-box"></div>
         </main>
     </div>
 
-    <!-- Diamond Sheet Modal -->
+    <!-- Bottom Sheet Aura -->
     <div id="modalOverlay" class="hidden">
-        <div class="modal-sheet">
+        <div class="aura-modal">
             <h2 id="mTitle" style="font-family:'Playfair Display', serif; font-size:1.8rem; margin-bottom:10px;"></h2>
-            <p id="mDesc" style="font-size:0.85rem; color:var(--slate-soft); margin-bottom:25px; line-height:1.5;"></p>
+            <p id="mDesc" style="font-size:0.85rem; color:var(--text-light); margin-bottom:30px; line-height:1.6;"></p>
             <div id="mBody"></div>
             <div id="mActions"></div>
         </div>
     </div>
 
-    <!-- Admin Floating Control -->
-    <div id="adminFloatingNav" class="admin-nav hidden">
-        <button class="nav-btn" onclick="showSettingsPanel()">⚙️ Configurações</button>
-        <button class="nav-btn" onclick="init()">⚡ Sincronizar</button>
+    <!-- Aura Nav Admin -->
+    <div id="adminNav" class="bottom-nav hidden">
+        <button class="nav-link" onclick="openAuraConfig()">⚙️ Ajustes</button>
+        <button class="nav-link" onclick="init()">⚡ Sincronizar</button>
     </div>
 
     <script>
@@ -603,262 +207,237 @@
             PIX_KEY: "62993362375",
             PIX_HOLDER: "Camila Alves de Lima",
             PIX_BANK: "NUBANK",
-            WA_PHONE: "559296150540"
+            WA_PHONE: "559296150540",
+            RESERVE_MINS: 20
         };
 
-        let appData = [], scheduleCfg = { start: '08:00', end: '20:00', duration: 60 };
-        let adminPass = "", isVipMode = false, activeDateIso = "";
+        let db = [], cfg = { start: '08:00', end: '20:00', duration: 60 };
+        let admKey = "", isAdmin = false, currentDay = "";
 
-        // Welcome Hook
-        setTimeout(() => { document.getElementById('welcomeOverlay').classList.add('fade-out'); }, 3000);
+        // Intro Control
+        setTimeout(() => { 
+            const intro = document.getElementById('auraIntro');
+            if(intro) intro.classList.add('fade'); 
+        }, 3500);
 
         async function init() {
-            setLoading(true);
             try {
-                const cb = 'd_' + Date.now();
+                const cb = 'aura_' + Date.now();
                 const script = document.createElement('script');
                 window[cb] = (r) => {
-                    delete window[cb];
-                    script.remove();
+                    delete window[cb]; script.remove();
                     if (r.status === 'OK') {
-                        appData = r.agenda || [];
-                        scheduleCfg = r.config || scheduleCfg;
-                        isVipMode = r.isAdmin || false;
-                        syncUI();
+                        db = r.agenda || [];
+                        cfg = r.config || cfg;
+                        isAdmin = r.isAdmin || false;
+                        updateApp();
                     }
-                    setLoading(false);
                 };
-                script.src = `${CONFIG.API_URL}?pass=${encodeURIComponent(adminPass)}&_t=${Date.now()}&callback=${cb}`;
+                script.src = `${CONFIG.API_URL}?pass=${encodeURIComponent(admKey)}&_t=${Date.now()}&callback=${cb}`;
                 document.body.appendChild(script);
-            } catch (e) { setLoading(false); }
+            } catch(e) {}
         }
 
-        function syncUI() {
-            if (isVipMode) {
+        function updateApp() {
+            if (isAdmin) {
                 document.body.classList.add('admin-mode');
-                document.getElementById('adminFloatingNav').classList.remove('hidden');
+                document.getElementById('adminNav').classList.remove('hidden');
             }
-            renderDayCarousel();
-            if (activeDateIso) renderAgenda(activeDateIso);
+            renderDays();
+            if (currentDay) renderGrid(currentDay);
         }
 
-        function toggleDashboardTheme() {
-            const isD = document.body.classList.toggle('admin-mode');
-            document.getElementById('themeIcon').textContent = isD ? '☀️' : '🌙';
-            localStorage.setItem('look_diamond_theme', isD ? 'dark' : 'light');
-        }
-
-        function renderDayCarousel() {
+        function renderDays() {
             const container = document.getElementById('dayContainer');
             container.innerHTML = '';
-            const today = new Date();
-            for (let i = 0; i < 14; i++) {
-                const d = new Date(); d.setDate(today.getDate() + i);
+            const now = new Date();
+            for(let i=0; i<14; i++) {
+                const d = new Date(); d.setDate(now.getDate() + i);
                 const iso = d.toISOString().split('T')[0];
-                const card = document.createElement('div');
-                card.className = `day-bubble ${iso === activeDateIso ? 'active' : ''}`;
-                card.onclick = () => selectDiamondDate(iso);
-                card.innerHTML = `
-                    <div class="dow">${d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}</div>
-                    <div class="num">${d.getDate()}</div>
-                    <div class="month">${d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}</div>
-                `;
-                container.appendChild(card);
+                const el = document.createElement('div');
+                el.className = `day-item ${iso === currentDay ? 'active' : ''}`;
+                el.onclick = () => selectDay(iso);
+                el.innerHTML = `<div class="dw">${d.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')}</div><div class="dn">${d.getDate()}</div><div class="dw">${d.toLocaleDateString('pt-BR',{month:'short'}).replace('.','')}</div>`;
+                container.appendChild(el);
             }
         }
 
-        function selectDiamondDate(iso) {
-            activeDateIso = iso;
-            renderDayCarousel();
-            const dStr = new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
-            document.getElementById('selectedDateTitle').textContent = dStr.charAt(0).toUpperCase() + dStr.slice(1);
-            document.getElementById('agendaBox').classList.remove('hidden');
-            renderAgenda(iso);
+        function selectDay(iso) {
+            currentDay = iso;
+            renderDays();
+            const dObj = new Date(iso + 'T12:00:00');
+            const fmt = dObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+            document.getElementById('dateLabel').textContent = fmt.charAt(0).toUpperCase() + fmt.slice(1);
+            document.getElementById('mainAgenda').classList.remove('hidden');
+            renderGrid(iso);
         }
-        function closeAgenda() { document.getElementById('agendaBox').classList.add('hidden'); activeDateIso = ""; renderDayCarousel(); }
+        function closeGrid() { document.getElementById('mainAgenda').classList.add('hidden'); currentDay = ""; renderDays(); }
 
-        function renderAgenda(iso) {
+        function renderGrid(iso) {
             const grid = document.getElementById('slotsGrid');
             grid.innerHTML = '';
             const now = new Date(), todayIso = now.toISOString().split('T')[0];
-            const curMins = now.getHours() * 60 + now.getMinutes();
+            const curT = now.getHours()*60 + now.getMinutes();
 
-            let startTime = scheduleCfg.start || "08:00", endTime = scheduleCfg.end || "20:00";
-            let [sH, sM] = startTime.split(':').map(Number);
-            let [eH, eM] = endTime.split(':').map(Number);
-            let cur = sH * 60 + sM, end = eH * 60 + eM;
+            const [sH, sM] = (cfg.start || "08:00").split(':').map(Number);
+            const [eH, eM] = (cfg.end || "20:00").split(':').map(Number);
+            let cur = sH*60 + sM, end = eH*60 + eM;
 
-            let index = 0;
-            while (cur < end) {
-                const clock = `${Math.floor(cur / 60).toString().padStart(2, '0')}:${(cur % 60).toString().padStart(2, '0')}`;
-                const isPast = (iso < todayIso) || (iso === todayIso && cur < curMins);
-                const reg = appData.find(r => r.data.toString().substring(0, 10) === iso && r.horario.toString().substring(0, 5) === clock);
+            let idx = 0;
+            while(cur < end) {
+                const clock = `${Math.floor(cur/60).toString().padStart(2,'0')}:${(cur%60).toString().padStart(2,'0')}`;
+                const isPast = (iso < todayIso) || (iso === todayIso && cur < curT);
+                const reg = db.find(r => r.data.toString().substring(0,10) === iso && r.horario.toString().substring(0,5) === clock);
+                
+                let st = reg ? reg.status : 'Livre';
+                let dur = reg ? parseInt(reg.duration || 60) : cfg.duration;
+                let reservedUntil = reg ? reg.reservedUntil : null;
+                
+                // Smart 20-min Check
+                let isExpired = false;
+                if (st === 'Aguardando Pagamento' && reservedUntil) {
+                    if (new Date() > new Date(reservedUntil)) isExpired = true;
+                }
 
-                let status = reg ? reg.status : 'Livre';
-                let dur = reg ? parseInt(reg.duration || 60) : scheduleCfg.duration;
+                if (st === 'Aguardando Pagamento' && isExpired && !isAdmin) st = 'Livre';
 
-                if (status === 'Livre') {
-                    const next = appData.filter(r => r.data.toString().substring(0, 10) === iso && r.status !== 'Livre')
-                        .map(r => { const [h, m] = r.horario.split(':').map(Number); return h * 60 + m; })
-                        .filter(m => m > cur).sort((a, b) => a - b)[0];
-                    if (next) dur = Math.min(dur, next - cur);
+                if (st === 'Livre') {
+                    const next = db.filter(r => r.data.toString().substring(0,10) === iso && r.status !== 'Livre')
+                                   .map(r => { const [h,m] = r.horario.split(':').map(Number); return h*60+m; })
+                                   .filter(m => m > cur).sort((a,b)=>a-b)[0];
+                    if (next) {
+                        const gap = next - cur;
+                        if (gap < dur) dur = gap;
+                    }
                 }
 
                 const card = document.createElement('div');
-                let stColor = 'pill-free', displaySt = status;
-                if (status === 'Ocupado') stColor = 'pill-busy';
-                else if (status === 'Bloqueado') stColor = 'pill-lock';
-                else if (status === 'Aguardando Pagamento') { stColor = 'pill-pend'; displaySt = 'RESERVADO (PIX)'; }
+                card.className = `slot-glass ${isPast ? 'pill-past' : ''}`;
+                card.style.animationDelay = `${idx * 0.04}s`;
+                
+                let stTxt = st;
+                if (st === 'Aguardando Pagamento') stTxt = 'QUASE SEU ✨';
+                
+                let countdownHtml = "";
+                if (st === 'Aguardando Pagamento' && reservedUntil && !isExpired) {
+                    const left = Math.ceil((new Date(reservedUntil) - new Date()) / 60000);
+                    countdownHtml = `<div class="countdown">⏳ Expira em ${left} min</div>`;
+                }
 
-                card.className = `slot-pill ${stColor} ${isPast ? 'pill-past' : ''}`;
-                card.style.animationDelay = `${index * 0.05}s`;
+                let client = reg ? reg.cliente : (isPast ? 'Encerrado' : 'Momento Disponível');
+                if (isAdmin && reg && reg.telefone) client += ` <small style="display:block; opacity:0.6;">📱 ${reg.telefone}</small>`;
 
-                let clientLabel = reg ? reg.cliente : (isPast ? 'Encerrado' : 'Disponível');
-                if (isVipMode && reg && reg.telefone) clientLabel += ` <span style="display:block; font-size:0.6rem; color:var(--accent-rose);">📱 ${reg.telefone}</span>`;
-
-                card.innerHTML = `
-                    <div class="slot-time">${clock}</div>
-                    <div class="slot-info">
-                        <div class="slot-status" style="color:var(--deep-text); opacity:0.5;">${displaySt}</div>
-                        <div class="slot-client">${clientLabel}</div>
-                    </div>
-                `;
-                card.onclick = () => onDiamondSlotClick(iso, clock, status);
+                card.innerHTML = `<div class="time-label">${clock}</div><div class="slot-details"><div class="status-badge" style="color:var(--accent-main)">${stTxt}</div><div class="client-name">${client}</div>${countdownHtml}</div>`;
+                card.onclick = () => onAuraSlotClick(iso, clock, st, reservedUntil);
                 grid.appendChild(card);
                 cur += Math.max(30, dur);
-                index++;
+                idx++;
             }
         }
 
-        async function onDiamondSlotClick(d, t, s) {
-            if (!isVipMode) {
+        async function onAuraSlotClick(d, t, s, rUntil) {
+            if (!isAdmin) {
                 if (s !== 'Livre') return;
-                const client = await showDiamondPrompt('Novo Agendamento', `Data: ${d} | Horário: ${t}`);
-                if (!client) return;
+                const r = await showAuraPrompt('Agendar seu momento', `Para reservar o horário das ${t}, preencha seus dados:`);
+                if (!r) return;
                 const token = Math.random().toString(36).substr(2, 5).toUpperCase();
-                await performDiamondUpdate([{
-                    data: d, horario: t, status: 'Aguardando Pagamento', cliente: client.nome,
-                    telefone: client.tel, codigo: token, bookingTime: new Date().toISOString(),
-                    duration: scheduleCfg.duration, password: adminPass
+                const exp = new Date(Date.now() + CONFIG.RESERVE_MINS * 60000).toISOString();
+                await syncAuraUpdate([{ 
+                    data:d, horario:t, status:'Aguardando Pagamento', cliente:r.name, 
+                    telefone:r.phone, codigo:token, bookingTime:new Date().toISOString(), 
+                    reservedUntil:exp, duration:cfg.duration, password:admKey 
                 }]);
-                const friendlyDate = new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
-                await showDiamondPix(client.nome, friendlyDate, t, token);
+                await showAuraPix(r.name, d, t, token);
             } else {
-                const decision = await showActionDiamond(t, s);
-                if (decision === 'lock') await performDiamondUpdate([{ data: d, horario: t, status: 'Bloqueado', cliente: 'INDISPONÍVEL', password: adminPass }]);
-                if (decision === 'free') await performDiamondUpdate([{ data: d, horario: t, status: 'Livre', password: adminPass }]);
-                if (decision === 'manual') {
-                    const r = await showDiamondPrompt('Reserva Manual', 'Dados do Cliente:');
-                    if (r) await performDiamondUpdate([{ data: d, horario: t, status: 'Ocupado', cliente: r.nome, telefone: r.tel, duration: r.dur, password: adminPass }]);
+                const act = await showAdmActions(t, s);
+                if (act === 'lock') await syncAuraUpdate([{data:d, horario:t, status:'Bloqueado', cliente:'INDISPONÍVEL', password:admKey}]);
+                if (act === 'free') await syncAuraUpdate([{data:d, horario:t, status:'Livre', password:admKey}]);
+                if (act === 'man') {
+                    const r = await showAuraPrompt('Admin: Agendar', 'Dados:');
+                    if (r) await syncAuraUpdate([{data:d, horario:t, status:'Ocupado', cliente:r.name, telefone:r.phone, duration:r.dur, password:admKey}]);
                 }
             }
         }
 
-        async function showDiamondSettings() {
-            setSheet('Configurações Maestro', 'Ajuste os parâmetros da sua agenda.');
+        async function syncAuraUpdate(up) {
+            try {
+                await fetch(CONFIG.API_URL, { method:'POST', mode:'no-cors', body:JSON.stringify({updates:up, password:admKey}) });
+                await new Promise(r => setTimeout(r, 2000));
+                await init();
+            } catch(e) {}
+        }
+
+        function showAuraPrompt(ttl, desc) {
+            return new Promise(res => {
+                setSheet(ttl, desc);
+                let h = `<input id="iN" placeholder="Seu Nome" class="aura-input"><input id="iP" placeholder="Seu WhatsApp" class="aura-input">`;
+                if (isAdmin) h += `<input id="iD" type="number" value="${cfg.duration}" class="aura-input">`;
+                document.getElementById('mBody').innerHTML = h;
+                document.getElementById('mActions').innerHTML = `<button class="aura-btn aura-btn-secondary" id="bC">Voltar</button><button class="aura-btn aura-btn-primary" id="bO">Avançar</button>`;
+                document.getElementById('modalOverlay').classList.remove('hidden');
+                document.getElementById('bO').onclick = () => {
+                    const n = document.getElementById('iN').value, p = document.getElementById('iP').value;
+                    const d = isAdmin ? parseInt(document.getElementById('iD').value) : cfg.duration;
+                    if(n&&p) { document.getElementById('modalOverlay').classList.add('hidden'); res({name:n, phone:p, dur:d}); }
+                };
+                document.getElementById('bC').onclick = () => { document.getElementById('modalOverlay').classList.add('hidden'); res(null); };
+            });
+        }
+
+        function showAuraPix(nome, d, t, token) {
+            const dF = new Date(d+'T12:00:00').toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'2-digit'});
+            setSheet('Falta pouquinho! ✨', 'Quase tudo pronto para a sua harmonia. Para garantir sua vaga, envie o comprovante clicando abaixo.');
             document.getElementById('mBody').innerHTML = `
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:1;"><label style="font-size:0.6rem; font-weight:800;">INÍCIO</label><input id="sfS" value="${scheduleCfg.start}" class="input-pill"></div>
-                    <div style="flex:1;"><label style="font-size:0.6rem; font-weight:800;">FIM</label><input id="sfE" value="${scheduleCfg.end}" class="input-pill"></div>
+                <div style="background:var(--bg-aura); padding:25px; border-radius:30px; text-align:center; margin-bottom:20px; border: 1px dashed var(--accent-main);">
+                    <p style="font-size:0.6rem; letter-spacing:2px; font-weight:700; color:var(--accent-main); margin-bottom:10px;">CHAVE PIX (CELULAR)</p>
+                    <p style="font-size:1.6rem; font-weight:700;">${CONFIG.PIX_KEY}</p>
+                    <p style="font-size:0.8rem; margin-top:5px;">${CONFIG.PIX_BANK} | ${CONFIG.PIX_HOLDER}</p>
+                    <button class="aura-btn" style="margin-top:20px; height:50px; padding:0;" onclick="navigator.clipboard.writeText('${CONFIG.PIX_KEY}'); alert('Copiado!')">Copiar Chave</button>
                 </div>
-                <label style="font-size:0.6rem; font-weight:800;">DURAÇÃO PADRÃO (MIN)</label>
-                <select id="sfD" class="input-pill">
-                    <option value="30" ${scheduleCfg.duration == 30 ? 'selected' : ''}>30 min</option>
-                    <option value="60" ${scheduleCfg.duration == 60 ? 'selected' : ''}>1 hora</option>
-                    <option value="90" ${scheduleCfg.duration == 90 ? 'selected' : ''}>1h 30m</option>
-                    <option value="120" ${scheduleCfg.duration == 120 ? 'selected' : ''}>2 horas</option>
-                </select>
+                <div style="text-align:center; padding:15px; background:rgba(155,158,237,0.05); border-radius:20px;">
+                    <p style="font-size:0.8rem;">Agendamento de <b>${nome}</b></p>
+                    <p style="font-size:0.8rem;">${dF} às ${t}</p>
+                    <p style="font-size:0.6rem; font-weight:700; color:var(--accent-main); margin-top:5px;">Código: ${token}</p>
+                </div>
+                <a href="https://wa.me/${CONFIG.WA_PHONE}?text=Olá Camila! Acabei de agendar meu momento pelo site ([Nome: ${nome}]). Escolhi ${dF} às ${t}. Estou enviando o comprovante do PIX para confirmar. Código: ${token}. ✨" target="_blank" class="wa-btn">Enviar Comprovante</a>
             `;
-            document.getElementById('mActions').innerHTML = `<button class="btn-diamond" id="saveCfgBtn">SALVAR ALTERAÇÕES</button>`;
+            document.getElementById('mActions').innerHTML = `<button class="aura-btn aura-btn-secondary" onclick="document.getElementById('modalOverlay').classList.add('hidden')">Fechar</button>`;
             document.getElementById('modalOverlay').classList.remove('hidden');
-            document.getElementById('saveCfgBtn').onclick = async () => {
-                const s = document.getElementById('sfS').value, e = document.getElementById('sfE').value, d = parseInt(document.getElementById('sfD').value);
-                await performDiamondUpdate([{ action: "update_config", config: { start: s, end: e, duration: d }, password: adminPass }]);
+        }
+
+        async function doDashAuth() {
+            const p = prompt('Senha do Painel:');
+            if (p) { admKey = p; init(); }
+        }
+
+        function showAdmActions(t, s) {
+            return new Promise(res => {
+                setSheet('Gestão de Horário', t);
+                document.getElementById('mBody').innerHTML = `<button class="aura-btn aura-btn-primary" onclick="done('man')">Agendar Manual</button><button class="aura-btn aura-btn-secondary" style="margin-top:15px;" onclick="done('${s==='Livre'?'lock':'free'}')">${s==='Livre'?'Bloquear':'Liberar'}</button>`;
+                document.getElementById('mActions').innerHTML = `<button class="aura-btn aura-btn-secondary" style="margin-top:20px;" onclick="done(null)">Voltar</button>`;
+                document.getElementById('modalOverlay').classList.remove('hidden');
+                window.done = (v) => { document.getElementById('modalOverlay').classList.add('hidden'); res(v); };
+            });
+        }
+
+        function openAuraConfig() {
+            setSheet('Ajustes do Painel', 'Expediente e Duração padrão');
+            document.getElementById('mBody').innerHTML = `<div style="display:flex; gap:10px;"><input id="aS" value="${cfg.start}" class="aura-input"><input id="aE" value="${cfg.end}" class="aura-input"></div><select id="aD" class="aura-input"><option value="30" ${cfg.duration==30?'selected':''}>30 min</option><option value="60" ${cfg.duration==60?'selected':''}>1 hora</option><option value="90" ${cfg.duration==90?'selected':''}>1h 30m</option></select>`;
+            document.getElementById('mActions').innerHTML = `<button class="aura-btn aura-btn-primary" id="aSv">Salvar</button>`;
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById('aSv').onclick = async () => {
+                const s = document.getElementById('aS').value, e = document.getElementById('aE').value, d = parseInt(document.getElementById('aD').value);
+                await syncAuraUpdate([{ action:"update_config", config:{start:s, end:e, duration:d}, password:admKey }]);
                 document.getElementById('modalOverlay').classList.add('hidden');
             };
         }
 
-        async function performDiamondUpdate(updates) {
-            setLoading(true);
-            try {
-                await fetch(CONFIG.API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({ updates, password: adminPass })
-                });
-                await new Promise(r => setTimeout(r, 2000));
-                await init();
-            } finally { setLoading(false); }
-        }
-
-        function showDiamondPrompt(title, desc) {
-            return new Promise(resolve => {
-                setSheet(title, desc);
-                let html = `<input id="mN" placeholder="Seu Nome" class="input-pill"><input id="mT" placeholder="WhatsApp (DDD)" class="input-pill">`;
-                if (isVipMode) html += `<label style="font-size:0.6rem; font-weight:800;">DURAÇÃO PERSONALIZADA (MIN)</label><input id="mDur" type="number" value="${scheduleCfg.duration}" class="input-pill">`;
-                document.getElementById('mBody').innerHTML = html;
-                document.getElementById('mActions').innerHTML = `<button class="btn-diamond secondary" id="mBack">CANCELAR</button><button class="btn-diamond" id="mNext">AVANÇAR</button>`;
-                document.getElementById('modalOverlay').classList.remove('hidden');
-                document.getElementById('mNext').onclick = () => {
-                    const n = document.getElementById('mN').value, t = document.getElementById('mT').value;
-                    const d = isVipMode ? parseInt(document.getElementById('mDur').value) : scheduleCfg.duration;
-                    if (n && t) { document.getElementById('modalOverlay').classList.add('hidden'); resolve({ nome: n, tel: t, dur: d }); }
-                };
-                document.getElementById('mBack').onclick = () => { document.getElementById('modalOverlay').classList.add('hidden'); resolve(null); };
-            });
-        }
-
-        function showDiamondPix(nome, dataEx, hora, token) {
-            return new Promise(resolve => {
-                setSheet('Falta pouquinho! ✨', 'Quase tudo pronto para o seu momento de beleza. Para garantir sua vaga, basta fazer o PIX e me enviar o comprovante clicando no botão abaixo.');
-                document.getElementById('mBody').innerHTML = `
-                    <div style="background:var(--glass-gold); padding:25px; border-radius:30px; border: 1px dashed var(--metallic-gold); text-align:center; margin-bottom:20px;">
-                        <p style="font-size:0.65rem; letter-spacing:2px; font-weight:800; color:var(--metallic-gold); margin-bottom:12px;">CHAVE PIX (CELULAR)</p>
-                        <p style="font-size:1.8rem; font-weight:700; letter-spacing:1px; color:var(--deep-text);">${CONFIG.PIX_KEY}</p>
-                        <p style="font-size:0.85rem; margin-top:8px; opacity:0.8;">${CONFIG.PIX_BANK} | ${CONFIG.PIX_HOLDER}</p>
-                        <button class="btn-diamond" style="margin-top:15px; padding:15px;" onclick="navigator.clipboard.writeText('${CONFIG.PIX_KEY}'); alert('Chave PIX copiada!')">Copiar Chave</button>
-                    </div>
-                    
-                    <div style="text-align:center; padding:15px; background:rgba(205,139,139,0.05); border-radius:20px; margin-bottom:20px;">
-                        <p style="font-size:0.8rem; color:var(--deep-text);">Agendamento para <b>${nome}</b></p>
-                        <p style="font-size:0.8rem; color:var(--deep-text); opacity:0.8;">${dataEx} às ${hora}</p>
-                        <p style="font-size:0.7rem; margin-top:5px; font-weight:700; color:var(--accent-rose);">Token: ${token}</p>
-                    </div>
-
-                    <a href="https://wa.me/${CONFIG.WA_PHONE}?text=Olá Camila! Acabei de fazer meu agendamento pelo site no nome de ${nome}. Escolhi ${dataEx} às ${hora}. Estou enviando o comprovante do PIX para confirmar. Meu código é: ${token}. Fico aguardando! ✨" target="_blank" class="wa-pill">Enviar Comprovante</a>
-                `;
-                document.getElementById('mActions').innerHTML = `<button class="btn-diamond secondary" style="background:#eee; color:#333;" onclick="document.getElementById('modalOverlay').classList.add('hidden'); resolve()">FECHAR</button>`;
-                document.getElementById('modalOverlay').classList.remove('hidden');
-            });
-        }
-
-        async function doAdminAuth() {
-            const p = prompt('Senha DIAMOND:');
-            if (p) { adminPass = p; init(); }
-        }
-
-        function showActionDiamond(t, s) {
-            return new Promise(resolve => {
-                setSheet('Gestão de Horário', `Horário: ${t}`);
-                document.getElementById('mBody').innerHTML = `
-                    <button class="btn-diamond" onclick="finish('manual')">REGISTRO MANUAL</button>
-                    ${s === 'Livre' ? '<button class="btn-diamond secondary" onclick="finish(\'lock\')">BLOQUEAR AGORA</button>' : '<button class="btn-diamond secondary" onclick="finish(\'free\')">LIBERAR HORÁRIO</button>'}
-                `;
-                document.getElementById('mActions').innerHTML = `<button class="btn-diamond secondary" style="background:#eee; color:#333;" onclick="finish(null)">FECHAR</button>`;
-                document.getElementById('modalOverlay').classList.remove('hidden');
-                window.finish = (v) => { document.getElementById('modalOverlay').classList.add('hidden'); resolve(v); };
-            });
-        }
-
         function setSheet(t, d) { document.getElementById('mTitle').textContent = t; document.getElementById('mDesc').textContent = d; document.getElementById('mBody').innerHTML = ''; }
-        function setLoading(v) { document.getElementById('mainLoader').classList.toggle('hidden', !v); }
-        function showSettingsPanel() { showDiamondSettings(); }
 
         window.onload = () => {
-            if (localStorage.getItem('look_diamond_theme') === 'dark') document.body.classList.add('admin-mode');
             init();
+            setInterval(() => { if (currentDay) renderGrid(currentDay); }, 60000); // Auto-refresh timers
         };
     </script>
 </body>
-
 </html>
