@@ -70,7 +70,15 @@ function maskPhone(str) {
   if (!str) return "";
   const c = str.replace(/\D/g, '');
   if (c.length < 4) return str;
+  // Exemplo: (92) 9****-**40
   return `(${c.substring(0,2)}) ${c.substring(2,3)}****-**${c.slice(-2)}`;
+}
+
+function maskToken(str) {
+  if (!str) return "";
+  const len = str.length;
+  const hide = Math.floor(len * 0.5);
+  return "*".repeat(hide) + str.substring(hide);
 }
 
 function jsonOut(data) {
@@ -93,25 +101,52 @@ function respond(callback, data) {
 //  📖  CONFIG HELPERS
 // ════════════════════════════════════════════════════════════════
 
+// ════════════════════════════════════════════════════════════════
+//  ⚙️  GESTÃO DE CONFIGURAÇÕES (RESILIÊNCIA TOTAL)
+// ════════════════════════════════════════════════════════════════
+
 function getConfig(ss) {
-  const defaults = { start: "08:00", end: "20:00", duration: 60 };
+  const defaults = { start: "08:00", end: "20:00", duration: 60, pix_value: "0.00" };
   try {
-    const sh = ss.getSheetByName(CONFIG_SHEET);
-    if (!sh) return defaults;
-    const d = sh.getDataRange().getValues();
-    if (d.length < 2) return defaults;
-    const tz = ss.getSpreadsheetTimeZone();
+    const props = PropertiesService.getScriptProperties();
+    const saved = props.getProperties();
+    
+    // Se nunca foi salvo nada, retorna os padrões
+    if (!saved.start) return defaults;
+
     return {
-      start:    fmtTime(d[1][0], tz) || defaults.start,
-      end:      fmtTime(d[1][1], tz) || defaults.end,
-      duration: parseInt(d[1][2]) || defaults.duration
+      start:     saved.start    || defaults.start,
+      end:       saved.end      || defaults.end,
+      duration:  parseInt(saved.duration) || defaults.duration,
+      pix_value: saved.pix_value || defaults.pix_value
     };
-  } catch(e) { return defaults; }
+  } catch(e) {
+    appendLog(ss || SpreadsheetApp.getActiveSpreadsheet(), { type:"ERRO", msg: "Erro ao ler config: " + e.message });
+    return defaults;
+  }
 }
 
 function saveConfig(ss, cfg) {
-  const sh = getOrCreateSheet(ss, CONFIG_SHEET, ["Início","Fim","Duração (min)"]);
-  sh.getRange(2,1,1,3).setValues([[cfg.start, cfg.end, Number(cfg.duration)]]);
+  const props = PropertiesService.getScriptProperties();
+  
+  // Limpar valor do PIX e garantir que os dados sejam strings seguras
+  let p = (cfg.pix_value || "0.00").toString().replace(",", ".").trim();
+  if (p === "" || isNaN(parseFloat(p))) p = "0.00";
+
+  const newProps = {
+    start:     cfg.start || "08:00",
+    end:       cfg.end   || "20:00",
+    duration:  cfg.duration.toString(),
+    pix_value: p
+  };
+
+  props.setProperties(newProps);
+
+  // Opcional: Atualiza a planilha CONFIG apenas para registro visual
+  try {
+    const sh = getOrCreateSheet(ss, CONFIG_SHEET, ["Início","Fim","Duração (min)","Valor PIX"]);
+    sh.getRange(2,1,1,4).setValues([[newProps.start, newProps.end, Number(newProps.duration), newProps.pix_value]]);
+  } catch(e) {}
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -141,13 +176,33 @@ function appendLog(ss, entry) {
 function doGet(e) {
   const ss  = SpreadsheetApp.getActiveSpreadsheet();
   const tz  = ss.getSpreadsheetTimeZone();
-  const cb  = e && e.parameter && e.parameter.callback ? e.parameter.callback : null;
+  const cb  = (e && e.parameter && e.parameter.callback) || null;
   const sh  = ss.getSheetByName(SHEET_NAME);
 
   if (!sh) return respond(cb, { status:"ERRO", message:`Aba "${SHEET_NAME}" não encontrada.` });
 
   const passIn   = ((e && e.parameter && e.parameter.pass) || "").toString().trim();
   const adminOk  = passIn.length > 0 && passIn === ADMIN_PASSWORD.trim();
+
+  // ── ATUALIZAÇÃO DE CONFIG VIA GET (Resiliência Total) ──
+  if (e && e.parameter && e.parameter.action === "update_config") {
+    if (!adminOk) return respond(cb, { status:"ERRO", message:"Senha admin incorreta para configurar." });
+    
+    // Pega o valor, limpa e garante que seja número válido
+    let vPix = (e.parameter.pix_value || "0.00").toString().replace(",", ".").trim();
+    if (!vPix || isNaN(parseFloat(vPix))) vPix = "0.00";
+
+    saveConfig(ss, {
+      start:    e.parameter.start,
+      end:      e.parameter.end,
+      duration: e.parameter.duration,
+      pix_value: vPix
+    });
+    
+    appendLog(ss, { type:"CONFIG", msg:`Config salva com sucesso: R$ ${vPix}` });
+    // Continua para retornar agenda e config já atualizada
+  }
+
   const data     = sh.getDataRange().getValues();
   const agenda   = [];
 
@@ -174,7 +229,7 @@ function doGet(e) {
       status:        status,
       cliente:       adminOk ? cliente    : maskName(cliente),
       telefone:      adminOk ? telefone   : maskPhone(telefone),
-      codigo:        codigo,
+      codigo:        adminOk ? codigo     : maskToken(codigo),
       bookingTime:   adminOk ? bookingTime   : "",
       reservedUntil: reservedUntil,
       log:           adminOk ? log        : "",
@@ -192,6 +247,7 @@ function doGet(e) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 //  📝  POST — Salva / atualiza registros
 // ════════════════════════════════════════════════════════════════
 
@@ -208,11 +264,7 @@ function doPost(e) {
     try { body = JSON.parse(e.postData.contents); }
     catch(_) { return jsonOut({ status:"ERRO", message:"JSON inválido." }); }
 
-    // Handle single object (update_config or {updates:[]})
-    const updates = Array.isArray(body)
-      ? body
-      : (body.updates ? body.updates : [body]);
-
+    const updates = Array.isArray(body) ? body : (body.updates ? body.updates : [body]);
     if (!updates.length) return jsonOut({ status:"ERRO", message:"Nenhuma atualização." });
 
     const passIn    = ((updates[0].password) || "").toString().trim();
@@ -222,96 +274,75 @@ function doPost(e) {
     if (updates[0].action === "update_config") {
       if (!adminOk) return jsonOut({ status:"ERRO", message:"Senha incorreta." });
       const c = updates[0].config;
-      const timeRx = /^([01]\d|2[0-3]):[0-5]\d$/;
-      if (!timeRx.test(c.start) || !timeRx.test(c.end)) {
-        return jsonOut({ status:"ERRO", message:"Horário inválido (use HH:mm)." });
-      }
-      const allowed = [15,30,45,60,75,90,120,180];
-      if (!allowed.includes(Number(c.duration))) c.duration = 60;
       saveConfig(ss, c);
       appendLog(ss, { type:"CONFIG", msg:`Config atualizada: ${JSON.stringify(c)}` });
       return jsonOut({ status:"OK", message:"Configurações salvas." });
     }
 
     // ── agenda updates ──────────────────────────────────
-    const sh = ss.getSheetByName(SHEET_NAME);
-    if (!sh) {
-      // Create with headers if missing
-      const newSh = ss.insertSheet(SHEET_NAME);
-      newSh.appendRow(["Data","Horário","Status","Cliente","Telefone","Código","Início Reserva","Expira em","Log","Duração"]);
+    const sh = getOrCreateSheet(ss, SHEET_NAME, ["Data","Horário","Status","Cliente","Telefone","Código","Início Reserva","Expira em","Log","Duração"]);
+    const data  = sh.getDataRange().getValues();
+    let rowsModified = 0;
+    let newBookingNotify = null;
+
+    updates.forEach(upd => {
+      const rowIdx = data.findIndex(r => fmtDate(r[0], tz) === upd.data && fmtTime(r[1], tz) === upd.horario);
+      if (rowIdx > -1) {
+        const curStatus = data[rowIdx][2];
+        // Permite salvar se for admin ou se estiver livre
+        if (adminOk || curStatus === "Livre" || (curStatus === "Aguardando Pagamento" && upd.codigo === data[rowIdx][5])) {
+          sh.getRange(rowIdx + 1, 3, 1, 8).setValues([[
+            upd.status, upd.cliente, upd.telefone, upd.codigo,
+            upd.bookingTime, upd.reservedUntil, upd.log || "", upd.duration || 60
+          ]]);
+          rowsModified++;
+          
+          // Se for uma NOVA reserva pendente, prepara notificação do sistema
+          if (upd.status === "Aguardando Pagamento" && curStatus === "Livre") {
+            newBookingNotify = upd;
+          }
+        }
+      }
+    });
+
+    // Dispara a Notificação Silenciosa para a Gerente (Se houver nova reserva)
+    if (newBookingNotify) {
+      sendInternalNotification(newBookingNotify);
     }
 
-    const sheet = ss.getSheetByName(SHEET_NAME);
-    const data  = sheet.getDataRange().getValues();
-    let saved   = 0;
+    return jsonOut({ status:"OK", modified: rowsModified });
 
-    for (const upd of updates) {
-      const targetDate = (upd.data    || "").toString().trim().substring(0,10);
-      const targetTime = (upd.horario || "").toString().trim().substring(0,5);
-      const newStatus  = (upd.status  || "").toString().trim();
+  } catch (err) {
+    return jsonOut({ status:"ERRO", message: err.toString() });
+  }
+}
 
-      if (!targetDate || !targetTime || !newStatus) continue;
+/**
+ * 📧 NOTIFICAÇÃO DO SISTEMA (Gerente)
+ * Envia um e-mail automático assim que alguém faz uma reserva.
+ */
+function sendInternalNotification(booking) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ownerEmail = Session.getEffectiveUser().getEmail(); // Envia para o dono do script
+  
+  const subject = `🔔 NOVA RESERVA: ${booking.cliente} - ${booking.data} ${booking.horario}`;
+  const body = 
+    `Olá, Gerente!\n\n` +
+    `Acaba de entrar uma NOVA reserva pelo site:\n\n` +
+    `📌 DETALHES:\n` +
+    `• Cliente: ${booking.cliente}\n` +
+    `• Telefone: ${booking.telefone}\n` +
+    `• Data: ${booking.data}\n` +
+    `• Horário: ${booking.horario}\n` +
+    `• Token de Reserva: ${booking.codigo}\n\n` +
+    `O cliente está na tela de pagamento. Fique atento ao WhatsApp para receber o comprovante do PIX.\n\n` +
+    `LINK DA PLANILHA:\n${ss.getUrl()}`;
 
-      // Security: block restricted ops for non-admins
-      const restrictedStatuses = ["Bloqueado"];
-      if (restrictedStatuses.includes(newStatus) && !adminOk) continue;
-      if (newStatus === "Livre" && !adminOk) continue;
-
-      // Sanitize inputs
-      const newClient  = (upd.cliente   || "").toString().trim().substring(0, 120);
-      const newPhone   = (upd.telefone  || "").toString().trim().replace(/[^0-9+\-() ]/g,'').substring(0, 20);
-      const newCodigo  = (upd.codigo    || "").toString().trim().substring(0, 10);
-      const bTime      = (upd.bookingTime   || "").toString().trim();
-      const rUntil     = (upd.reservedUntil || "").toString().trim();
-      const durMin     = Math.min(Math.max(Number(upd.duration)||60, 15), 480);
-
-      // Find existing row
-      let foundRow = -1;
-      for (let i = 1; i < data.length; i++) {
-        const rDate = fmtDate(data[i][0], tz).substring(0,10);
-        const rTime = fmtTime(data[i][1], tz).substring(0,5);
-        if (rDate === targetDate && rTime === targetTime) { foundRow = i; break; }
-      }
-
-      if (foundRow > -1) {
-        sheet.getRange(foundRow+1, 3).setValue(newStatus);
-        sheet.getRange(foundRow+1, 4).setValue(newClient);
-        sheet.getRange(foundRow+1, 5).setValue(newPhone);
-        if (newCodigo) sheet.getRange(foundRow+1, 6).setValue(newCodigo);
-        if (bTime)     sheet.getRange(foundRow+1, 7).setValue(bTime);
-        if (rUntil)    sheet.getRange(foundRow+1, 8).setValue(rUntil);
-        if (durMin)    sheet.getRange(foundRow+1, 10).setValue(durMin);
-
-        // Clear sensitive fields when freeing
-        if (newStatus === "Livre") {
-          sheet.getRange(foundRow+1, 4, 1, 5).clearContent(); // D–H
-        }
-        if (newStatus === "Ocupado") {
-          sheet.getRange(foundRow+1, 8).clearContent(); // Clear expiry
-        }
-      } else {
-        sheet.appendRow([targetDate, targetTime, newStatus, newClient, newPhone, newCodigo, bTime, rUntil, "", durMin]);
-      }
-
-      // Log the action
-      appendLog(ss, {
-        type: `AGEND:${newStatus}`,
-        dataAgend: targetDate,
-        horario: targetTime,
-        cliente: newClient,
-        telefone: newPhone,
-        token: newCodigo,
-        msg: `Status definido como "${newStatus}" por ${adminOk?'ADMIN':'cliente'}.`
-      });
-
-      saved++;
-    }
-
-    return jsonOut({ status:"OK", message:`${saved} registro(s) salvos.` });
-
-  } catch(err) {
-    Logger.log("doPost ERROR: " + err.message + " | Stack: " + err.stack);
-    return jsonOut({ status:"ERRO", message:"Erro interno: " + err.message });
+  try {
+    MailApp.sendEmail(ownerEmail, subject, body);
+    appendLog(ss, { type:"NOTIFICAÇÃO", msg: `Aviso enviado para ${ownerEmail}` });
+  } catch(e) {
+    appendLog(ss, { type:"ERRO", msg: `Falha ao enviar notificação: ${e.message}` });
   }
 }
 
