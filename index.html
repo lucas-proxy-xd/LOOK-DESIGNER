@@ -578,8 +578,8 @@
             position: sticky;
             top: 10px;
             z-index: 100;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         #multiSelectBar.vis {
@@ -1216,7 +1216,8 @@
             <div id="multiSelectBar">
                 <span id="selCount">0 selecionados</span>
                 <div style="display:flex;gap:8px">
-                    <button class="cancel-sel" onclick="clearSelection()" style="background:#eee; color:#666;">Limpar</button>
+                    <button class="cancel-sel" onclick="clearSelection()"
+                        style="background:#eee; color:#666;">Limpar</button>
                     <button onclick="selectAll()" style="background:var(--gold); color:white;">✓ Tudo</button>
                     <button onclick="blockSelected()">🔒 Bloquear</button>
                     <button onclick="freeSelected()">🔓 Liberar</button>
@@ -1262,7 +1263,7 @@
             <button class="nav-admin-login" onclick="promptAdmin()">🔐 Admin</button>
         </div>
         <div id="adminNav">
-            <button class="nav-btn primary" onclick="syncData()">↻ Atualizar</button>
+            <button id="syncBtn" class="nav-btn primary" onclick="syncData()">↻ Atualizar</button>
         </div>
     </div>
 
@@ -1297,6 +1298,8 @@
 
         // ─── INIT ─────────────────────────────────────────────
         async function syncData() {
+            const btn = document.getElementById('syncBtn');
+            if (btn) { btn.textContent = '⏱ Sincronizando...'; btn.style.opacity = '0.7'; }
             try {
                 const cb = '_ld_' + Date.now();
                 await new Promise((res, rej) => {
@@ -1319,7 +1322,9 @@
                     if (currentDay) renderGrid(currentDay);
                     updateAdminStats();
                 });
-            } catch (e) { }
+            } catch (e) { } finally {
+                if (btn) { btn.textContent = '↻ Atualizar'; btn.style.opacity = '1'; }
+            }
         }
 
         // ─── DAYS ─────────────────────────────────────────────
@@ -1473,10 +1478,10 @@
                 card.dataset.status = st;
                 card.style.animationDelay = `${idx * 0.04}s`;
                 card.className = 'slot-card' + (isPast && !isAdmin ? ' past' : '');
-                card.onclick = () => handleSlotClick(card, iso, clock, st, reservedUntil, reg);
+                card.onclick = (e) => handleSlotClick(e, card, iso, clock, st, reservedUntil, reg);
 
                 card.innerHTML = `
-            <div class="slot-check" data-chk>✓</div>
+            <div class="slot-check" data-chk="true">✓</div>
             <div class="slot-pip" style="background:${pipColor}"></div>
             <div class="slot-time">${clock}</div>
             <div class="slot-info">
@@ -1506,30 +1511,25 @@
         }
 
         // ─── SLOT CLICK ────────────────────────────────────────
-        function handleSlotClick(card, iso, clock, st, rUntil, reg) {
+        function handleSlotClick(event, card, iso, clock, st, rUntil, reg) {
             if (isAdmin) {
-                // Multi-select mode
-                const key = `${iso}|${clock}`;
-                if (selectedSlots.has(key)) {
-                    selectedSlots.delete(key);
-                    card.classList.remove('selected');
-                } else {
-                    selectedSlots.add(key);
-                    card.classList.add('selected');
-                }
-                updateMultiBar();
+                // Check if user clicked the CHECK element
+                const isCheck = event.target.getAttribute('data-chk') === 'true' ||
+                    event.target.closest('[data-chk="true"]');
 
-                // If only 1 selected, show detail modal after short delay
-                if (selectedSlots.size === 1) {
-                    clearTimeout(window._singleTimer);
-                    window._singleTimer = setTimeout(() => {
-                        if (selectedSlots.size === 1) {
-                            clearSelection();
-                            showAdminSlotSheet(iso, clock, st, reg);
-                        }
-                    }, 400);
+                if (isCheck) {
+                    const key = `${iso}|${clock}`;
+                    if (selectedSlots.has(key)) {
+                        selectedSlots.delete(key);
+                        card.classList.remove('selected');
+                    } else {
+                        selectedSlots.add(key);
+                        card.classList.add('selected');
+                    }
+                    updateMultiBar();
                 } else {
-                    clearTimeout(window._singleTimer);
+                    // Clicou no CARD (fora do check) - abrir modal IMEDIATAMENTE
+                    showAdminSlotSheet(iso, clock, st, reg);
                 }
             } else {
                 if (st !== 'Livre') return;
@@ -1765,7 +1765,7 @@
                     method: 'POST', mode: 'no-cors',
                     body: Array.isArray(updates) && updates[0].action ? body : JSON.stringify({ updates })
                 });
-                await new Promise(r => setTimeout(r, 2000));
+                await new Promise(r => setTimeout(r, 800));
                 await syncData();
             } catch (e) { }
         }
