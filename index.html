@@ -22,7 +22,34 @@
             --status-busy: #CD8B8B;
             --status-pend: #B38600;
             --status-lock: #999;
+            --admin-glow: transparent;
         }
+
+        body.dark-theme {
+            --bg: #1A1716;
+            --text: #EBE4E0;
+            --slate: #A59B96;
+            --glass-bg: rgba(45, 38, 36, 0.85);
+            --border: rgba(205, 139, 139, 0.3);
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            --primary-soft: rgba(205, 139, 139, 0.2);
+        }
+
+        body.admin-vip {
+            --admin-glow: rgba(205, 139, 139, 0.4);
+            border: 6px solid var(--pink);
+            box-shadow: inset 0 0 100px var(--admin-glow);
+        }
+
+        body.admin-vip::after {
+            content: "MODO ADMINISTRADOR ATIVO";
+            position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+            background: var(--pink); color: white; padding: 2px 20px;
+            font-size: 0.6rem; font-weight: 800; letter-spacing: 2px;
+            border-radius: 0 0 10px 10px; z-index: 9999; animation: pulseBanner 2s infinite;
+        }
+
+        @keyframes pulseBanner { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body {
@@ -36,6 +63,7 @@
             line-height: 1.6;
             overflow-x: hidden;
             min-height: 100vh;
+            transition: background 0.4s, color 0.4s, border 0.4s;
         }
 
         .app { max-width: 480px; margin: 0 auto; padding-bottom: 120px; transition: 0.5s; }
@@ -43,10 +71,17 @@
         h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.2rem; letter-spacing: 5px; font-weight: 300; line-height: 0.9; cursor: pointer; animation: fadeInDown 1s ease-out; }
         h1 span { display: block; font-family: 'Outfit', sans-serif; font-size: 0.9rem; letter-spacing: 8px; font-weight: 400; color: var(--slate); margin-top: 10px; opacity: 0.7; }
 
+        .theme-toggle { position: absolute; right: 25px; top: 45px; font-size: 1.4rem; cursor: pointer; opacity: 0.6; transition: 0.3s; z-index: 10; }
+        .theme-toggle:hover { opacity: 1; transform: rotate(15deg); }
+
         /* Day Picker Horizontal */
         .dash-controls { padding: 0 20px 20px; animation: fadeInUp 0.8s ease-out 0.2s backwards; }
-        .day-scroller { display: flex; overflow-x: auto; gap: 12px; padding: 15px 5px 25px; scrollbar-width: none; }
+        .day-nav { display: flex; align-items: center; gap: 10px; margin-top: 15px; }
+        .day-scroller { display: flex; overflow-x: auto; gap: 12px; padding: 10px 5px 20px; scrollbar-width: none; flex: 1; }
         .day-scroller::-webkit-scrollbar { display: none; }
+
+        .btn-week { background: var(--glass-bg); border: 1px solid var(--border); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--pink); font-weight: 700; transition: 0.3s; flex-shrink: 0; box-shadow: var(--shadow); }
+        .btn-week:hover { background: var(--pink); color: white; border-color: var(--pink); }
 
         .day-box {
             min-width: 85px; background: var(--glass-bg); backdrop-filter: blur(10px);
@@ -88,22 +123,15 @@
 
         /* Modals */
         #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(74, 64, 58, 0.4); backdrop-filter: blur(5px); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 15px; }
-        .modal { background: white; width: 100%; max-width: 390px; border-radius: 28px; padding: 30px; box-shadow: 0 30px 60px rgba(0,0,0,0.15); animation: modalIn 0.5s cubic-bezier(0.19, 1, 0.22, 1); }
+        .modal { background: white; width: 100%; max-width: 390px; border-radius: 28px; padding: 30px; box-shadow: 0 30px 60px rgba(0,0,0,0.15); animation: modalIn 0.5s cubic-bezier(0.19, 1, 0.22, 1); color: #4A403A; }
         .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 700; margin-bottom: 5px; }
-        .modal-input { width: 100%; padding: 15px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 12px; font-family: inherit; font-size: 1rem; outline: none; transition: 0.3s; }
+        .modal-input { width: 100%; padding: 15px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 12px; font-family: inherit; font-size: 1rem; outline: none; transition: 0.3s; background: white; color: black; }
         .modal-input:focus { border-color: var(--pink); box-shadow: 0 0 0 3px var(--primary-soft); }
-        .modal-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 8px; }
+        .modal-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 8px; font-size: 0.9rem; }
         .modal-btn.primary { background: var(--pink); color: white; }
-        .modal-btn.secondary { background: #F0F0F0; color: var(--text); }
+        .modal-btn.secondary { background: #F0F0F0; color: #4A403A; }
 
-        /* Responsive */
-        .hidden { display: none !important; }
-        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes cardEntrance { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes modalIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-
-        /* Loader LD Pulse */
+        /* Loader */
         #loader { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; transition: 0.5s; }
         .pulse-logo { width: 85px; height: 85px; background: white; border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 2.22rem; color: var(--pink); box-shadow: var(--shadow); animation: pulseLD 2s infinite; font-weight: 600; }
         @keyframes pulseLD { 
@@ -111,44 +139,49 @@
             70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(205, 139, 139, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(205, 139, 139, 0); }
         }
+
+        .hidden { display: none !important; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes cardEntrance { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         
         .whatsapp-btn { display: inline-block; margin-top: 8px; text-decoration: none; background: rgba(37, 211, 102, 0.1); color: #25D366; padding: 6px 12px; border-radius: 8px; font-size: 0.65rem; font-weight: 700; border: 1px solid rgba(37, 211, 102, 0.2); }
-        .pend-timer { margin-top: 6px; font-size: 0.7rem; color: var(--status-pend); background: rgba(179, 134, 0, 0.08); padding: 4px 10px; border-radius: 8px; font-weight: 700; }
         .reserve-cta { font-weight: 700; font-size: 0.8rem; color: var(--pink); letter-spacing: 0.5px; text-transform: uppercase; }
-        .admin-view { border: 2px solid var(--pink) !important; padding: 10px; background: rgba(205,139,139,0.03); }
     </style>
 </head>
 <body>
 
-    <!-- Premium Loader -->
     <div id="loader">
         <div class="pulse-logo">LD</div>
-        <div id="loaderText" style="font-size:0.65rem; letter-spacing:2px; font-weight:700; color:var(--slate);">SINCRONIZANDO AGENDA...</div>
+        <div id="loaderText" style="font-size:0.65rem; letter-spacing:2px; font-weight:700; color:var(--slate);">SINCRONIZANDO...</div>
     </div>
 
     <div class="app" id="appBody">
         <header>
             <div id="adminBadge" onclick="doAdminAuth()" style="cursor:pointer; font-size:1.5rem; position:absolute; left:25px; top:45px; opacity:0.3; transition:0.3s;" title="Acesso Admin">🔒</div>
+            <div class="theme-toggle" onclick="toggleTheme()" id="themeIcon">🌙</div>
             <h1 onclick="window.location.reload()">LOOK<span>DESIGNER</span></h1>
         </header>
 
-        <!-- Seletor de Datas Premium -->
         <section class="dash-controls">
             <p style="font-size:0.65rem; font-weight:800; color:var(--slate); margin-bottom:10px; letter-spacing:3px; text-transform:uppercase;">Selecione um dia</p>
-            <div class="day-scroller" id="dayContainer"></div>
+            <div class="day-nav">
+                <button class="btn-week hidden" id="btnPrevWeek" onclick="changeWeek(-7)">‹</button>
+                <div class="day-scroller" id="dayContainer"></div>
+                <button class="btn-week hidden" id="btnNextWeek" onclick="changeWeek(7)">›</button>
+            </div>
         </section>
 
-        <!-- Grid de Horários -->
         <main id="mainGrid" class="hidden">
             <div style="padding:0 22px 10px; display:flex; justify-content:space-between; align-items:center;">
                 <h3 id="dateTitle" style="font-family:'Playfair Display', serif; font-size:1.4rem; font-style:italic;">Data Selecionada</h3>
-                <button onclick="closeAgenda()" style="background:transparent; border:none; color:var(--pink); font-weight:700; font-size:0.8rem; cursor:pointer;">ESCOLHER OUTRO DIA</button>
+                <button onclick="closeAgenda()" style="background:transparent; border:none; color:var(--pink); font-weight:700; font-size:0.8rem; cursor:pointer;">OUTRO DIA</button>
             </div>
             <div id="slotsContainer" class="agenda-grid"></div>
         </main>
     </div>
 
-    <!-- Modais Genéricos Premium -->
     <div id="modalOverlay" class="hidden">
         <div class="modal">
             <h2 class="modal-title" id="modalTitle"></h2>
@@ -158,10 +191,9 @@
         </div>
     </div>
 
-    <!-- Admin Floating Actions -->
     <div id="adminFab" class="fab-container hidden">
-        <button class="fab" onclick="toggleMultiSelect()">⚙️ AJUSTE RÁPIDO</button>
-        <button class="fab secondary" id="historyBtn" onclick="toggleHistoryView()">HISTÓRICO</button>
+        <button class="fab" onclick="showSettingsModal()">⚙️ CONFIGS</button>
+        <button class="fab secondary" onclick="init()">⚡ ATUALIZAR</button>
     </div>
 
     <script>
@@ -169,11 +201,9 @@
             API_URL: "https://script.google.com/macros/s/AKfycbxewOegi1-rnQwTEieU5hJAHVDuk5kh38rjRU4CJOqMAWOv2fxicwux96U1XR9HsvU6/exec",
             PIX_KEY: "62993362375",
             PIX_HOLDER: "Camila Alves de Lima",
-            PIX_BANK: "NU PAGAMENTOS - NUBANK",
+            PIX_BANK: "NUBANK",
             PIX_VALUE: "R$ 25,00",
-            WA_PHONE: "559296150540",
-            WA_MANAGER: "CAMILA ALVES",
-            RESERVE_MINUTES: 20
+            WA_PHONE: "559296150540"
         };
 
         const VALIDATOR = {
@@ -181,13 +211,11 @@
                 if (!t) return "08:00";
                 const m = t.toString().match(/(\d{1,2}:\d{2})/);
                 return m ? m[1].padStart(5, '0') : "08:00";
-            },
-            duration: (d) => [30, 60, 90, 120, 180].includes(Number(d)) ? Number(d) : 60
+            }
         };
 
-        let agendaData = [], scheduleConfig = { start: '08:00', end: '20:00', duration: 90 };
-        let adminPass = "", isAdminActive = false, selectedDayIso = "";
-        let isMultiMode = false, selectedSlots = [], isSaving = false, viewingHistory = false, serverTimeOffset = 0;
+        let agendaData = [], scheduleConfig = { start: '08:00', end: '20:00', duration: 60 };
+        let adminPass = "", isAdminActive = false, selectedDayIso = "", currentWeekOffset = 0;
 
         function toLocalISO(date) { return date.getFullYear()+'-'+(date.getMonth()+1).toString().padStart(2,'0')+'-'+date.getDate().toString().padStart(2,'0'); }
         function normalizeDate(d) { return d ? d.toString().substring(0,10) : ""; }
@@ -198,39 +226,53 @@
             try {
                 const url = `${CONFIG.API_URL}?pass=${encodeURIComponent(adminPass)}&_t=${Date.now()}`;
                 const script = document.createElement('script');
-                const callbackName = 'handleData_' + Date.now();
-                window[callbackName] = (data) => {
-                    delete window[callbackName];
+                const cb = 'h_' + Date.now();
+                window[cb] = (data) => {
+                    delete window[cb];
                     if (script.parentNode) script.parentNode.removeChild(script);
                     if (data.status === 'OK') {
                         agendaData = data.agenda || [];
                         if (data.config) scheduleConfig = data.config;
                         isAdminActive = data.isAdmin || false;
-                        if (data.serverTime) serverTimeOffset = new Date(data.serverTime) - new Date();
                         updateUI();
                     }
                     setLoading(false);
                 };
-                script.src = `${url}&callback=${callbackName}`;
+                script.src = `${url}&callback=${cb}`;
                 document.body.appendChild(script);
-                setTimeout(() => { if (window[callbackName]) setLoading(false); }, 10000);
             } catch(e) { setLoading(false); }
         }
 
         function updateUI() {
+            if (isAdminActive) {
+                document.body.classList.add('admin-vip');
+                document.getElementById('adminFab').classList.remove('hidden');
+                document.getElementById('btnPrevWeek').classList.remove('hidden');
+                document.getElementById('btnNextWeek').classList.remove('hidden');
+            }
             drawDaysMenu();
-            if (isAdminActive) document.getElementById('adminFab').classList.remove('hidden');
             if (selectedDayIso) renderSlots(selectedDayIso);
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            const isDark = document.body.classList.contains('dark-theme');
+            document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('look_theme', isDark ? 'dark' : 'light');
+        }
+
+        function changeWeek(offset) {
+            currentWeekOffset += offset;
+            drawDaysMenu();
         }
 
         function drawDaysMenu() {
             const container = document.getElementById('dayContainer');
             container.innerHTML = '';
             const now = new Date();
-            const startOff = viewingHistory ? -7 : 0;
-            const count = viewingHistory ? 7 : 14;
-            for(let i=startOff; i<count; i++) {
-                const d = new Date(); d.setDate(now.getDate()+i);
+            for(let i=0; i<14; i++) {
+                const d = new Date();
+                d.setDate(now.getDate() + i + currentWeekOffset);
                 const iso = toLocalISO(d);
                 const card = document.createElement('div');
                 card.className = `day-box ${iso === selectedDayIso ? 'active' : ''}`;
@@ -258,14 +300,14 @@
             const container = document.getElementById('slotsContainer');
             container.innerHTML = '';
             const now = new Date(), todayIso = toLocalISO(now);
-            const curMins = now.getHours()*60 + now.getMinutes();
+            const curMins = (now.getHours() * 60) + now.getMinutes();
 
             const [sH, sM] = VALIDATOR.time(scheduleConfig.start).split(':').map(Number);
             const [eH, eM] = VALIDATOR.time(scheduleConfig.end).split(':').map(Number);
             let cur = sH*60 + sM, end = eH*60 + eM;
 
             if (cur >= end) {
-                container.innerHTML = `<div style="padding:40px; text-align:center; opacity:0.6;">✧ Agenda fechada para este dia ✧</div>`;
+                container.innerHTML = `<div style="padding:40px; text-align:center; opacity:0.6;">✧ Expediente encerrado ✧</div>`;
                 return;
             }
 
@@ -275,7 +317,15 @@
                 const reg = agendaData.find(r => normalizeDate(r.data)===iso && normalizeTime(r.horario)===t);
                 
                 let st = reg ? reg.status : 'Livre';
-                let blockDur = Math.max(30, reg ? parseInt(reg.duration || scheduleConfig.duration) : scheduleConfig.duration || 60);
+                let blockDur = reg ? parseInt(reg.duration || scheduleConfig.duration) : scheduleConfig.duration;
+
+                if (st === 'Livre') {
+                    const nextReg = agendaData
+                        .filter(r => normalizeDate(r.data) === iso && r.status !== 'Livre')
+                        .map(r => { const [h, m] = r.horario.split(':').map(Number); return h * 60 + m; })
+                        .filter(m => m > cur).sort((a,b)=>a-b)[0];
+                    if (nextReg) blockDur = Math.min(blockDur, nextReg - cur);
+                }
 
                 const card = document.createElement('div');
                 let colorClass = 'c-free', bClass = 'b-free', displayStatus = st;
@@ -283,92 +333,104 @@
                 else if (st === 'Bloqueado') { colorClass = 'c-lock'; bClass = 'b-lock'; }
                 else if (st === 'Aguardando Pagamento') { colorClass = 'c-pend'; bClass = 'b-pend'; displayStatus = "RESERVADO (PIX)"; }
 
-                card.className = `slot-card ${bClass} ${selectedSlots.includes(t) ? 'selected' : ''}`;
-                if (isPast && !isAdminActive) { card.style.opacity = '0.35'; card.style.pointerEvents = 'none'; }
+                card.className = `slot-card ${bClass}`;
+                if (isPast) {
+                    card.style.opacity = '0.35';
+                    if (!isAdminActive) {
+                        card.style.pointerEvents = 'none';
+                        displayStatus = "INDISPONÍVEL";
+                        colorClass = 'c-lock';
+                    }
+                }
                 card.onclick = () => onSlotClick(iso, t, st);
 
-                let clHtml = reg ? reg.cliente : (isPast ? '' : '<span class="reserve-cta">✦ Reservar agora</span>');
+                let clHtml = reg ? reg.cliente : (isPast ? 'Encerrado' : '<span class="reserve-cta">✦ Reservar</span>');
                 if (isAdminActive && reg && reg.telefone) {
-                    const tel = reg.telefone.replace(/\D/g,'');
-                    clHtml += `<br><a href="https://wa.me/55${tel}" target="_blank" class="whatsapp-btn" onclick="event.stopPropagation()">📱 WHATSAPP</a>`;
+                    clHtml += `<br><a href="https://wa.me/55${reg.telefone}" target="_blank" class="whatsapp-btn" onclick="event.stopPropagation()">📱 CONTATO</a>`;
                 }
 
-                card.innerHTML = `
-                    <div class="slot-time">${t}</div>
-                    <div class="slot-body">
-                        <div class="slot-st ${colorClass}">${displayStatus}</div>
-                        <div class="slot-cl">${clHtml}</div>
-                    </div>
-                `;
+                card.innerHTML = `<div class="slot-time">${t}</div><div class="slot-body"><div class="slot-st ${colorClass}">${displayStatus}</div><div class="slot-cl">${clHtml}</div></div>`;
                 container.appendChild(card);
-                cur += blockDur;
+                cur += Math.max(30, blockDur);
             }
         }
 
         async function onSlotClick(d, t, s) {
-            if (isMultiMode) {
-                const i = selectedSlots.indexOf(t);
-                if (i>-1) selectedSlots.splice(i,1); else selectedSlots.push(t);
-                renderSlots(d); return;
-            }
             if (!isAdminActive) {
-                if (s !== 'Livre') { await showAlert('Indisponível', 'Por favor, escolha outro horário.'); return; }
-                const res = await showBookingPrompt('Novo Agendamento', `Reservar vaga para às ${t}:`);
+                if (s !== 'Livre') return;
+                const res = await showBookingPrompt('Novo Agendamento', `Horário: ${t}`);
                 if (!res) return;
-                const slotCode = (Date.now().toString(36) + Math.random().toString(36).substr(2, 5)).toUpperCase();
-                setLoading(true);
+                const slotCode = (Date.now().toString(36).slice(-4) + Math.random().toString(36).substr(2, 4)).toUpperCase();
                 await saveUpdates([{
                     data:d, horario:t, status:'Aguardando Pagamento', cliente:res.nome, telefone:res.telefone,
-                    codigo:slotCode, bookingTime:new Date().toISOString(), duration:res.duration, password:adminPass
+                    codigo:slotCode, bookingTime:new Date().toISOString(), duration:scheduleConfig.duration, password:adminPass
                 }]);
                 await showPixModal(res.nome, `${d} às ${t}`, slotCode);
-                setLoading(false);
             } else {
-                const action = await showActionSheet('Gerenciar', t, [
+                const action = await showActionSheet('Painel Admin', `Horário: ${t}`, [
                     {label: s==='Livre'?'🔒 Bloquear':'🔓 Liberar', value: s==='Livre'?'bloquear':'liberar'},
-                    {label: '📝 Agendar Manual', value: 'manual'}
+                    {label: '📝 Registro Manual', value: 'manual'}
                 ]);
                 if (action === 'bloquear') await saveUpdates([{data:d, horario:t, status:'Bloqueado', cliente:'RESERVADO', password:adminPass}]);
                 if (action === 'liberar') await saveUpdates([{data:d, horario:t, status:'Livre', password:adminPass}]);
                 if (action === 'manual') {
-                    const r = await showBookingPrompt('Admin', 'Dados:');
+                    const r = await showBookingPrompt('Admin: Novo Registro', 'Dados do cliente:');
                     if (r) await saveUpdates([{data:d, horario:t, status:'Ocupado', cliente:r.nome, telefone:r.telefone, duration:r.duration, password:adminPass}]);
                 }
             }
         }
 
-        async function saveUpdates(updates) {
-            setLoading(true); isSaving = true;
-            try {
-                await fetch(CONFIG.API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ updates, password: adminPass }) });
-                await new Promise(r => setTimeout(r, 1500)); // Espera o GAS processar
-                await init();
-            } finally { isSaving = false; setLoading(false); }
+        async function showSettingsModal() {
+            _setup('Configurações', 'Expediente e Duração padrão:');
+            document.getElementById('modalBody').innerHTML = `
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <div style="flex:1;"><label style="font-size:0.6rem; font-weight:700; color:var(--pink);">INÍCIO</label><input id="cfgStart" value="${scheduleConfig.start}" class="modal-input"></div>
+                    <div style="flex:1;"><label style="font-size:0.6rem; font-weight:700; color:var(--pink);">FIM</label><input id="cfgEnd" value="${scheduleConfig.end}" class="modal-input"></div>
+                </div>
+                <label style="font-size:0.6rem; font-weight:700; color:var(--pink);">DURAÇÃO PADRÃO (MIN)</label>
+                <select id="cfgDur" class="modal-input">
+                    <option value="30" ${scheduleConfig.duration==30?'selected':''}>30 min</option>
+                    <option value="60" ${scheduleConfig.duration==60?'selected':''}>1 hora</option>
+                    <option value="90" ${scheduleConfig.duration==90?'selected':''}>1h 30m</option>
+                    <option value="120" ${scheduleConfig.duration==120?'selected':''}>2 horas</option>
+                </select>
+            `;
+            document.getElementById('modalActions').innerHTML = `<button class="modal-btn secondary" onclick="document.getElementById('modalOverlay').classList.add('hidden')">Cancelar</button><button class="modal-btn primary" id="btnSaveCfg">Salvar</button>`;
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById('btnSaveCfg').onclick = async () => {
+                const s = document.getElementById('cfgStart').value, e = document.getElementById('cfgEnd').value, d = parseInt(document.getElementById('cfgDur').value);
+                await saveUpdates([{ action: "update_config", config: { start: s, end: e, duration: d }, password: adminPass }]);
+                document.getElementById('modalOverlay').classList.add('hidden');
+            };
         }
 
-        function setLoading(v) { document.getElementById('loader').classList.toggle('hidden', !v); }
+        async function saveUpdates(updates) {
+            setLoading(true);
+            try {
+                await fetch(CONFIG.API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ updates, password: adminPass }) });
+                await new Promise(r => setTimeout(r, 2000));
+                await init();
+            } finally { setLoading(false); }
+        }
+
+        async function doAdminAuth() {
+            const p = prompt('Senha administrativa:');
+            if (p) { adminPass = p; init(); }
+        }
 
         function showBookingPrompt(title, desc) {
             return new Promise(resolve => {
                 _setup(title, desc);
-                document.getElementById('modalBody').innerHTML = `
-                    <input id="mNome" placeholder="Seu Nome" class="modal-input">
-                    <input id="mTel" placeholder="Seu Telefone" class="modal-input">
-                    <select id="mDur" class="modal-input" ${isAdminActive ? '' : 'disabled'}>
-                        <option value="30">30 min</option>
-                        <option value="60" selected>1 hora</option>
-                        <option value="90">1h 30min</option>
-                        <option value="120">2 horas</option>
-                    </select>
-                `;
-                document.getElementById('modalActions').innerHTML = `<button class="modal-btn secondary" id="mCan">Cancelar</button><button class="modal-btn primary" id="mOk">Avançar</button>`;
+                let html = `<input id="mNome" placeholder="Nome" class="modal-input"><input id="mTel" placeholder="WhatsApp" class="modal-input">`;
+                if (isAdminActive) html += `<label style="font-size:0.6rem;">DURAÇÃO (MIN)</label><input id="mDur" type="number" value="${scheduleConfig.duration}" class="modal-input">`;
+                document.getElementById('modalBody').innerHTML = html;
+                document.getElementById('modalActions').innerHTML = `<button class="modal-btn secondary" id="mCan">Voltar</button><button class="modal-btn primary" id="mOk">Avançar</button>`;
                 document.getElementById('modalOverlay').classList.remove('hidden');
                 document.getElementById('mOk').onclick = () => {
-                    const n = document.getElementById('mNome').value;
-                    const t = document.getElementById('mTel').value;
-                    if(!n || !t) return alert('Campos obrigatórios!');
+                    const n = document.getElementById('mNome').value, t = document.getElementById('mTel').value;
+                    const d = isAdminActive ? parseInt(document.getElementById('mDur').value) : scheduleConfig.duration;
                     document.getElementById('modalOverlay').classList.add('hidden');
-                    resolve({nome:n, telefone:t, duration:parseInt(document.getElementById('mDur').value)});
+                    resolve(n && t ? {nome:n, telefone:t, duration:d} : null);
                 };
                 document.getElementById('mCan').onclick = () => { document.getElementById('modalOverlay').classList.add('hidden'); resolve(null); };
             });
@@ -376,16 +438,16 @@
 
         function showPixModal(nome, dataEx, code) {
             return new Promise(resolve => {
-                _setup('Pagamento', 'Siga os passos abaixo:');
+                _setup('Pagamento', 'IMPORTANTE: Para concluir o agendamento é necessário pagar a taxa e enviar o comprovante.');
                 document.getElementById('modalBody').innerHTML = `
-                    <div style="background:#F0F0F0; padding:15px; border-radius:15px; text-align:center;">
-                        <p style="font-size:0.7rem; color:var(--slate);">VALOR: ${CONFIG.PIX_VALUE}</p>
-                        <p style="font-size:1.1rem; font-weight:700; margin:10px 0;">${CONFIG.PIX_KEY}</p>
+                    <div style="background:var(--primary-soft); padding:20px; border-radius:20px; text-align:center; border: 1px dashed var(--pink);">
+                        <p style="font-size:1.4rem; font-weight:700;">${CONFIG.PIX_KEY}</p>
+                        <p style="font-size:0.7rem;">${CONFIG.PIX_BANK} - ${CONFIG.PIX_HOLDER}</p>
                         <button class="modal-btn primary" onclick="navigator.clipboard.writeText('${CONFIG.PIX_KEY}'); alert('Copiado!')">COPIAR CHAVE PIX</button>
                     </div>
-                    <div style="margin-top:15px; text-align:center;">
+                    <div style="margin-top:20px; text-align:center;">
                         <p style="font-size:0.7rem;">Token: <b>${code}</b></p>
-                        <a href="https://wa.me/${CONFIG.WA_PHONE}?text=Fiz o pix de ${nome} para o dia ${dataEx}. Token: ${code}" target="_blank" class="modal-btn primary" style="display:block; text-decoration:none;">ENVIAR COMPROVANTE</a>
+                        <a href="https://wa.me/${CONFIG.WA_PHONE}?text=Olá Camila! Agendamento: ${nome} p/ ${dataEx}. Segue o comprovante. Token: ${code}" target="_blank" class="modal-btn primary" style="display:block; text-decoration:none; background:#25D366;">ENVIAR COMPROVANTE</a>
                     </div>
                 `;
                 document.getElementById('modalActions').innerHTML = `<button class="modal-btn secondary" onclick="document.getElementById('modalOverlay').classList.add('hidden'); resolve()">Fechar</button>`;
@@ -394,10 +456,13 @@
         }
 
         function _setup(t, d) { document.getElementById('modalTitle').textContent=t; document.getElementById('modalDesc').textContent=d; document.getElementById('modalBody').innerHTML=''; }
-        function showAlert(t, d) { return new Promise(r => { _setup(t,d); document.getElementById('modalActions').innerHTML=`<button class="modal-btn primary" onclick="document.getElementById('modalOverlay').classList.add('hidden'); r()">Entendido</button>`; document.getElementById('modalOverlay').classList.remove('hidden'); }); }
-        function showActionSheet(t, d, c) { return new Promise(resolve => { _setup(t,d); const b = document.getElementById('modalBody'); c.forEach(x => { const d = document.createElement('div'); d.className = 'modal-btn secondary'; d.textContent = x.label; d.onclick = () => { document.getElementById('modalOverlay').classList.add('hidden'); resolve(x.value); }; b.appendChild(d); }); document.getElementById('modalOverlay').classList.remove('hidden'); }); }
+        function showActionSheet(t, d, c) { return new Promise(resolve => { _setup(t,d); const b = document.getElementById('modalBody'); c.forEach(x => { const d = document.createElement('div'); d.className = 'modal-btn secondary'; d.textContent = x.label; d.style.textAlign = 'center'; d.onclick = () => { document.getElementById('modalOverlay').classList.add('hidden'); resolve(x.value); }; b.appendChild(d); }); document.getElementById('modalOverlay').classList.remove('hidden'); }); }
+        function setLoading(v) { document.getElementById('loader').classList.toggle('hidden', !v); }
 
-        window.onload = init;
+        window.onload = () => {
+            if (localStorage.getItem('look_theme') === 'dark') toggleTheme();
+            init();
+        };
     </script>
 </body>
 </html>
