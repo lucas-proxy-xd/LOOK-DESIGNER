@@ -1,370 +1,407 @@
 /**
- * LOOK DESIGNER — Google Apps Script Backend (v2.0)
- * 
- * 📝 INSTRUÇÕES DE INSTALAÇÃO:
- * 1. No Google Sheets: Extensões > Apps Script.
- * 2. Cole este código no arquivo .gs.
- * 3. Clique em "Implantar" (Deploy) > "Nova implantação".
- * 4. Selecione "App da Web".
- * 5. Configurações:
- *    - Descrição: Backend Look Designer
- *    - Executar como: Eu (seu e-mail)
- *    - Quem tem acesso: Qualquer pessoa
- * 6. Copie a "URL do app da web" e cole no `index.html` (API_URL).
- * 7. GATILHO AUTOMÁTICO:
- *    - Clique no ícone de Relógio (Gatilhos) à esquerda.
- *    - Adicionar Gatilho > Escolha: `autoReleaseExpiredSlots`.
- *    - Origem: Baseado no tempo > Temporizador de minutos > A cada 5 ou 10 minutos.
+ * ╔══════════════════════════════════════════════════════════════╗
+ * ║         LOOK DESIGNER — Backend Google Apps Script           ║
+ * ║              Studio de Cílios · Versão 3.0                   ║
+ * ╠══════════════════════════════════════════════════════════════╣
+ * ║  INSTALAÇÃO:                                                  ║
+ * ║  1. Abra seu Google Sheets                                    ║
+ * ║  2. Extensões > Apps Script                                   ║
+ * ║  3. Cole este código e salve                                  ║
+ * ║  4. Implantar > Nova implantação > App da Web               ║
+ * ║     - Executar como: Você (seu e-mail)                       ║
+ * ║     - Quem acessa: Qualquer pessoa                           ║
+ * ║  5. Copie a URL gerada e cole no index.html (CFG.API_URL)    ║
+ * ║                                                              ║
+ * ║  GATILHO AUTOMÁTICO (Auto-Release):                          ║
+ * ║  - Ícone de Relógio (Gatilhos) > Adicionar Gatilho          ║
+ * ║  - Função: autoReleaseExpiredSlots                           ║
+ * ║  - Origem: Baseado no tempo > Minutos > A cada 5 minutos    ║
+ * ╚══════════════════════════════════════════════════════════════╝
  */
 
-// ============================================================
-// CONFIGURAÇÕES (AJUSTE AQUI)
-// ============================================================
-const ADMIN_PASSWORD = "borboletas"; // Troque por uma senha segura
-const SHEET_NAME     = "TRONCO";     // Nome da aba no seu Google Sheets
-const PREFS_SHEET    = "CONFIG_AGENDA"; // Nome da aba de configurações
-const TIME_ZONE      = "GMT-4";      // Seu fuso horário (ex: GMT-3 para Brasília)
+// ════════════════════════════════════════════════════════════════
+//  ⚙️  CONFIGURAÇÕES — EDITE APENAS AQUI
+// ════════════════════════════════════════════════════════════════
+const ADMIN_PASSWORD = "ALVES20";   // ← Troque por uma senha forte
+const SHEET_NAME     = "AGENDA";           // Nome da aba principal
+const CONFIG_SHEET   = "CONFIG";           // Nome da aba de configurações
+const LOG_SHEET      = "LOG_SISTEMA";      // Nome da aba de log do sistema
+const TIME_ZONE      = "America/Manaus";   // Fuso horário (GMT-4)
 
-// ============================================================
-// HELPERS
-// ============================================================
+// ════════════════════════════════════════════════════════════════
+//  🔧  UTILITÁRIOS
+// ════════════════════════════════════════════════════════════════
 
-function isDateObject(v) {
-  return v !== null && typeof v === 'object' && typeof v.getFullYear === 'function';
+function getOrCreateSheet(ss, name, headers) {
+  let sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    if (headers && headers.length) sh.appendRow(headers);
+  }
+  return sh;
 }
 
-function formatDateValue(val, tz) {
+function fmt(val, tz, pattern) {
   try {
-    if (isDateObject(val)) {
-      return Utilities.formatDate(val, tz, "yyyy-MM-dd");
+    if (val && typeof val.getFullYear === 'function') {
+      return Utilities.formatDate(val, tz, pattern);
     }
   } catch(e) {}
   return (val || "").toString().trim();
 }
 
-function formatTimeValue(val, tz) {
-  try {
-    if (isDateObject(val)) {
-      return Utilities.formatDate(val, tz, "HH:mm");
-    }
-  } catch(e) {}
-  const s = (val || "").toString().trim();
-  const match = s.match(/(\d{1,2}:\d{2})/);
-  return match ? match[1].padStart(5, '0') : s;
+function fmtDate(val, tz) { return fmt(val, tz, "yyyy-MM-dd"); }
+function fmtTime(val, tz) {
+  const s = fmt(val, tz, "HH:mm");
+  const m = s.match(/(\d{1,2}:\d{2})/);
+  return m ? m[1].padStart(5,'0') : s;
 }
 
-function maskString(str) {
-  if (!str) return "";
-  if (str === "RESERVADO" || str === "INDISPONÍVEL") return str;
-  const parts = str.split(' ');
-  const maskedParts = parts.map(p => {
+function maskName(str) {
+  if (!str || str === "INDISPONÍVEL" || str === "RESERVADO") return str;
+  return str.split(' ').map(p => {
     if (p.length <= 1) return p;
     if (p.length === 2) return p[0] + "*";
     return p[0] + "*".repeat(p.length - 2) + p[p.length - 1];
-  });
-  return maskedParts.join(' ');
+  }).join(' ');
 }
 
 function maskPhone(str) {
   if (!str) return "";
-  const clean = str.replace(/\D/g, '');
-  if (clean.length < 4) return str;
-  const init = clean.substring(0, clean.length - 4);
-  const end = clean.substring(clean.length - 2);
-  return `(${clean.substring(0, 2)}) ${clean.substring(2, 3)}****-**${end}`;
+  const c = str.replace(/\D/g, '');
+  if (c.length < 4) return str;
+  return `(${c.substring(0,2)}) ${c.substring(2,3)}****-**${c.slice(-2)}`;
 }
 
-// ============================================================
-// GET — retorna agenda em JSON
-// ============================================================
+function jsonOut(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function jsOut(callback, data) {
+  return ContentService
+    .createTextOutput(`${callback}(${JSON.stringify(data)})`)
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function respond(callback, data) {
+  return callback ? jsOut(callback, data) : jsonOut(data);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  📖  CONFIG HELPERS
+// ════════════════════════════════════════════════════════════════
+
+function getConfig(ss) {
+  const defaults = { start: "08:00", end: "20:00", duration: 60 };
+  try {
+    const sh = ss.getSheetByName(CONFIG_SHEET);
+    if (!sh) return defaults;
+    const d = sh.getDataRange().getValues();
+    if (d.length < 2) return defaults;
+    const tz = ss.getSpreadsheetTimeZone();
+    return {
+      start:    fmtTime(d[1][0], tz) || defaults.start,
+      end:      fmtTime(d[1][1], tz) || defaults.end,
+      duration: parseInt(d[1][2]) || defaults.duration
+    };
+  } catch(e) { return defaults; }
+}
+
+function saveConfig(ss, cfg) {
+  const sh = getOrCreateSheet(ss, CONFIG_SHEET, ["Início","Fim","Duração (min)"]);
+  sh.getRange(2,1,1,3).setValues([[cfg.start, cfg.end, Number(cfg.duration)]]);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  📋  LOG HELPERS
+// ════════════════════════════════════════════════════════════════
+
+function appendLog(ss, entry) {
+  const sh = getOrCreateSheet(ss, LOG_SHEET, [
+    "Data/Hora","Tipo","Data Agend.","Horário","Cliente","Telefone","Token","Mensagem"
+  ]);
+  sh.appendRow([
+    new Date(),
+    entry.type || "SISTEMA",
+    entry.dataAgend || "",
+    entry.horario || "",
+    entry.cliente || "",
+    entry.telefone || "",
+    entry.token || "",
+    entry.msg || ""
+  ]);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  🌐  GET — Retorna agenda
+// ════════════════════════════════════════════════════════════════
+
 function doGet(e) {
-  const ss       = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet    = ss.getSheetByName(SHEET_NAME);
-  const tz       = ss.getSpreadsheetTimeZone();
-  const callback = (e && e.parameter && e.parameter.callback) ? e.parameter.callback : null;
+  const ss  = SpreadsheetApp.getActiveSpreadsheet();
+  const tz  = ss.getSpreadsheetTimeZone();
+  const cb  = e && e.parameter && e.parameter.callback ? e.parameter.callback : null;
+  const sh  = ss.getSheetByName(SHEET_NAME);
 
-  if (!sheet) {
-    const err = JSON.stringify({ status: "ERRO", message: "Aba '" + SHEET_NAME + "' não encontrada." });
-    return callback
-      ? ContentService.createTextOutput(callback + "(" + err + ")").setMimeType(ContentService.MimeType.JAVASCRIPT)
-      : ContentService.createTextOutput(err).setMimeType(ContentService.MimeType.JSON);
-  }
+  if (!sh) return respond(cb, { status:"ERRO", message:`Aba "${SHEET_NAME}" não encontrada.` });
 
-  const passProvided = ((e && e.parameter && e.parameter.pass) ? e.parameter.pass : "").toString().trim();
-  const isAdmin      = (passProvided.length > 0 && passProvided === ADMIN_PASSWORD.trim());
+  const passIn   = ((e && e.parameter && e.parameter.pass) || "").toString().trim();
+  const adminOk  = passIn.length > 0 && passIn === ADMIN_PASSWORD.trim();
+  const data     = sh.getDataRange().getValues();
+  const agenda   = [];
 
-  // Garante que o cabeçalho existe ou expande a área se necessário
-  const data   = sheet.getDataRange().getValues();
-  const agenda = [];
-
-  for (var i = 1; i < data.length; i++) {
-    var row = data[i];
-
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
     if (!row[0] && !row[1]) continue;
 
-    var rowDate = formatDateValue(row[0], tz);
-    var rowTime = formatTimeValue(row[1], tz);
-
+    const rowDate = fmtDate(row[0], tz);
+    const rowTime = fmtTime(row[1], tz);
     if (!rowDate || !rowTime) continue;
 
-    var status   = ((row[2] || "Livre") + "").trim();
-    var client   = ((row[3] || "")      + "").trim();
-    var telefone = ((row[4] || "")      + "").trim(); // Coluna E
-    var codigo   = ((row[5] || "")      + "").trim(); // Coluna F
-    var bTime    = ((row[6] || "")      + "").trim(); // Coluna G
-    var rUntil   = ((row[7] || "")      + "").trim(); // Coluna H
-    var log      = ((row[8] || "")      + "").trim(); // Coluna I
-    var duration = ((row[9] || "")      + "").trim(); // Coluna J
+    const status       = (row[2]  || "Livre").toString().trim();
+    const cliente      = (row[3]  || "").toString().trim();
+    const telefone     = (row[4]  || "").toString().trim();
+    const codigo       = (row[5]  || "").toString().trim();
+    const bookingTime  = (row[6]  || "").toString().trim();
+    const reservedUntil= (row[7]  || "").toString().trim();
+    const log          = (row[8]  || "").toString().trim();
+    const duration     = (row[9]  || "").toString().trim();
 
-    var clienteExibicao = "";
-    var telefoneExibicao = "";
-    var codigoExibicao = "";
-    var bookingTimeExibicao = "";
-    var reservedUntilExibicao = "";
-    
-    if (isAdmin) {
-      clienteExibicao = client;
-      telefoneExibicao = telefone;
-      codigoExibicao = codigo;
-      bookingTimeExibicao = bTime;
-      reservedUntilExibicao = rUntil;
-    } else if (status === "Ocupado" || status === "Bloqueado" || status === "Aguardando Pagamento") {
-      clienteExibicao = maskString(client);
-      telefoneExibicao = maskPhone(telefone);
-      codigoExibicao = codigo; // Agora liberado para todos verem o token v6
-    }
-
-  agenda.push({
-      data:    rowDate,
-      horario: rowTime,
-      status:  status,
-      cliente: clienteExibicao,
-      telefone: telefoneExibicao,
-      codigo: codigoExibicao,
-      bookingTime: bookingTimeExibicao,
-      reservedUntil: reservedUntilExibicao,
-      duration: duration
+    agenda.push({
+      data:          rowDate,
+      horario:       rowTime,
+      status:        status,
+      cliente:       adminOk ? cliente    : maskName(cliente),
+      telefone:      adminOk ? telefone   : maskPhone(telefone),
+      codigo:        codigo,
+      bookingTime:   adminOk ? bookingTime   : "",
+      reservedUntil: reservedUntil,
+      log:           adminOk ? log        : "",
+      duration:      duration
     });
   }
 
-  const config = getScheduleConfig(ss);
-  var result = JSON.stringify({ 
-    status: "OK", 
-    agenda: agenda, 
-    isAdmin: isAdmin, 
-    serverTime: new Date().toISOString(),
-    config: config 
+  return respond(cb, {
+    status:     "OK",
+    agenda:     agenda,
+    isAdmin:    adminOk,
+    config:     getConfig(ss),
+    serverTime: new Date().toISOString()
   });
-
-  return callback
-    ? ContentService.createTextOutput(callback + "(" + result + ")").setMimeType(ContentService.MimeType.JAVASCRIPT)
-    : ContentService.createTextOutput(result).setMimeType(ContentService.MimeType.JSON);
 }
 
-// ============================================================
-// POST — salva/atualiza registros na aba TRONCO
-// ============================================================
+// ════════════════════════════════════════════════════════════════
+//  📝  POST — Salva / atualiza registros
+// ════════════════════════════════════════════════════════════════
+
 function doPost(e) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const tz = ss.getSpreadsheetTimeZone();
 
   try {
     if (!e || !e.postData || !e.postData.contents) {
-      return jsonResponse("ERRO", "Requisição sem corpo.");
+      return jsonOut({ status:"ERRO", message:"Corpo vazio." });
     }
 
-    var rawBody = e.postData.contents;
-    var updates;
-    try {
-      var parsed = JSON.parse(rawBody);
-      updates = Array.isArray(parsed) ? parsed : [parsed];
-    } catch (jsonErr) {
-      try {
-        var match = rawBody.match(/^payload=(.+)$/);
-        if (match) {
-          var parsed2 = JSON.parse(decodeURIComponent(match[1]));
-          updates = Array.isArray(parsed2) ? parsed2 : [parsed2];
-        } else {
-          return jsonResponse("ERRO", "Formato de corpo inválido.");
-        }
-      } catch (legacyErr) {
-        return jsonResponse("ERRO", "Falha ao parsear: " + legacyErr.message);
-      }
-    }
+    let body;
+    try { body = JSON.parse(e.postData.contents); }
+    catch(_) { return jsonOut({ status:"ERRO", message:"JSON inválido." }); }
 
-    if (!updates || updates.length === 0) {
-      return jsonResponse("ERRO", "Nenhuma atualização recebida.");
-    }
+    // Handle single object (update_config or {updates:[]})
+    const updates = Array.isArray(body)
+      ? body
+      : (body.updates ? body.updates : [body]);
 
-    var sheet = ss.getSheetByName(SHEET_NAME);
-    if (!sheet) return jsonResponse("ERRO", "Aba '" + SHEET_NAME + "' não encontrada.");
+    if (!updates.length) return jsonOut({ status:"ERRO", message:"Nenhuma atualização." });
 
-    var providedPass = ((updates[0].password) || "").toString().trim();
-    var callerIsAdmin = (providedPass === ADMIN_PASSWORD.trim());
+    const passIn    = ((updates[0].password) || "").toString().trim();
+    const adminOk   = passIn === ADMIN_PASSWORD.trim();
 
-    // ACTION: UPDATE_CONFIG (Saneamento e Validação)
+    // ── update_config ──────────────────────────────────
     if (updates[0].action === "update_config") {
-      if (!callerIsAdmin) return jsonResponse("ERRO", "Senha administrativa incorreta.");
-      
-      var newCfg = updates[0].config;
-      // Validação básica de horários HH:mm
-      var timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
-      if (!timeRegex.test(newCfg.start) || !timeRegex.test(newCfg.end)) {
-        return jsonResponse("ERRO", "Formatos de hora inválidos (use HH:mm).");
+      if (!adminOk) return jsonOut({ status:"ERRO", message:"Senha incorreta." });
+      const c = updates[0].config;
+      const timeRx = /^([01]\d|2[0-3]):[0-5]\d$/;
+      if (!timeRx.test(c.start) || !timeRx.test(c.end)) {
+        return jsonOut({ status:"ERRO", message:"Horário inválido (use HH:mm)." });
       }
-      
-      // Validação de duração (apenas valores permitidos)
-      var allowedDurs = [30, 60, 90, 120, 180];
-      if (!allowedDurs.includes(Number(newCfg.duration))) {
-        newCfg.duration = 60; // Fallback
-      }
-
-      updateScheduleConfig(ss, newCfg);
-      return jsonResponse("OK", "Configurações atualizadas e validadas.");
+      const allowed = [15,30,45,60,75,90,120,180];
+      if (!allowed.includes(Number(c.duration))) c.duration = 60;
+      saveConfig(ss, c);
+      appendLog(ss, { type:"CONFIG", msg:`Config atualizada: ${JSON.stringify(c)}` });
+      return jsonOut({ status:"OK", message:"Configurações salvas." });
     }
 
-    var tz           = ss.getSpreadsheetTimeZone();
-    var data         = sheet.getDataRange().getValues();
-    var savedCount = 0;
+    // ── agenda updates ──────────────────────────────────
+    const sh = ss.getSheetByName(SHEET_NAME);
+    if (!sh) {
+      // Create with headers if missing
+      const newSh = ss.insertSheet(SHEET_NAME);
+      newSh.appendRow(["Data","Horário","Status","Cliente","Telefone","Código","Início Reserva","Expira em","Log","Duração"]);
+    }
 
-    for (var u = 0; u < updates.length; u++) {
-      var update     = updates[u];
-      var targetDate = (update.data    || "").toString().trim();
-      var targetTime = (update.horario || "").toString().trim();
-      var newStatus  = (update.status  || "").toString().trim();
-      
-      // Limpeza de campos para segurança
-      var newClient  = (update.cliente || "").toString().trim().substring(0, 100);
-      var newPhone   = (update.telefone || "").toString().trim().replace(/[^0-9]/g, '');
-      var newCodigo  = (update.codigo   || "").toString().trim();
-      var bTime      = (update.bookingTime || "").toString().trim();
-      var rUntil     = (update.reservedUntil || "").toString().trim();
-      var dMinutes   = Number(update.duration) || 60;
+    const sheet = ss.getSheetByName(SHEET_NAME);
+    const data  = sheet.getDataRange().getValues();
+    let saved   = 0;
+
+    for (const upd of updates) {
+      const targetDate = (upd.data    || "").toString().trim().substring(0,10);
+      const targetTime = (upd.horario || "").toString().trim().substring(0,5);
+      const newStatus  = (upd.status  || "").toString().trim();
 
       if (!targetDate || !targetTime || !newStatus) continue;
 
-      var isRestricted = (newStatus === "Bloqueado" || newStatus === "Livre");
-      if (isRestricted && !callerIsAdmin) continue;
+      // Security: block restricted ops for non-admins
+      const restrictedStatuses = ["Bloqueado"];
+      if (restrictedStatuses.includes(newStatus) && !adminOk) continue;
+      if (newStatus === "Livre" && !adminOk) continue;
 
-      var foundRow = -1;
-      for (var i = 1; i < data.length; i++) {
-        var sDate = formatDateValue(data[i][0], tz);
-        var sTime = formatTimeValue(data[i][1], tz);
+      // Sanitize inputs
+      const newClient  = (upd.cliente   || "").toString().trim().substring(0, 120);
+      const newPhone   = (upd.telefone  || "").toString().trim().replace(/[^0-9+\-() ]/g,'').substring(0, 20);
+      const newCodigo  = (upd.codigo    || "").toString().trim().substring(0, 10);
+      const bTime      = (upd.bookingTime   || "").toString().trim();
+      const rUntil     = (upd.reservedUntil || "").toString().trim();
+      const durMin     = Math.min(Math.max(Number(upd.duration)||60, 15), 480);
 
-        var sDateNorm = sDate.substring(0, 10);
-        var sTimeNorm = sTime.substring(0, 5);
-        var tDateNorm = targetDate.substring(0, 10);
-        var tTimeNorm = targetTime.substring(0, 5);
-
-        if (sDateNorm === tDateNorm && sTimeNorm === tTimeNorm) {
-          foundRow = i;
-          break;
-        }
+      // Find existing row
+      let foundRow = -1;
+      for (let i = 1; i < data.length; i++) {
+        const rDate = fmtDate(data[i][0], tz).substring(0,10);
+        const rTime = fmtTime(data[i][1], tz).substring(0,5);
+        if (rDate === targetDate && rTime === targetTime) { foundRow = i; break; }
       }
 
       if (foundRow > -1) {
-        sheet.getRange(foundRow + 1, 3).setValue(newStatus);
-        sheet.getRange(foundRow + 1, 4).setValue(newClient);
-        sheet.getRange(foundRow + 1, 5).setValue(newPhone);
-        if (newCodigo) sheet.getRange(foundRow + 1, 6).setValue(newCodigo);
-        if (bTime)     sheet.getRange(foundRow + 1, 7).setValue(bTime);
-        if (rUntil)    sheet.getRange(foundRow + 1, 8).setValue(rUntil);
-        if (dMinutes)  sheet.getRange(foundRow + 1, 10).setValue(dMinutes);
-        
-        // Limpa campos de tempo se liberado ou ocupado definitivamente
-        if (newStatus === "Livre" || newStatus === "Ocupado" || newStatus === "Bloqueado") {
-            if (newStatus === "Livre" && !callerIsAdmin) {
-               // Se "Livre" não foi por admin (improvável via app, mas para segurança), apenas limpa
-               sheet.getRange(foundRow + 1, 6, 1, 3).clearContent();
-            } else if (newStatus === "Livre" && callerIsAdmin) {
-                sheet.getRange(foundRow + 1, 6, 1, 3).clearContent();
-            } else if (newStatus === "Ocupado") {
-                sheet.getRange(foundRow + 1, 8).clearContent(); // Limpa expiração (H)
-            }
-        }
+        sheet.getRange(foundRow+1, 3).setValue(newStatus);
+        sheet.getRange(foundRow+1, 4).setValue(newClient);
+        sheet.getRange(foundRow+1, 5).setValue(newPhone);
+        if (newCodigo) sheet.getRange(foundRow+1, 6).setValue(newCodigo);
+        if (bTime)     sheet.getRange(foundRow+1, 7).setValue(bTime);
+        if (rUntil)    sheet.getRange(foundRow+1, 8).setValue(rUntil);
+        if (durMin)    sheet.getRange(foundRow+1, 10).setValue(durMin);
 
+        // Clear sensitive fields when freeing
+        if (newStatus === "Livre") {
+          sheet.getRange(foundRow+1, 4, 1, 5).clearContent(); // D–H
+        }
+        if (newStatus === "Ocupado") {
+          sheet.getRange(foundRow+1, 8).clearContent(); // Clear expiry
+        }
       } else {
-        sheet.appendRow([targetDate, targetTime, newStatus, newClient, newPhone, newCodigo, bTime, rUntil, "", dMinutes]);
+        sheet.appendRow([targetDate, targetTime, newStatus, newClient, newPhone, newCodigo, bTime, rUntil, "", durMin]);
       }
 
-      savedCount++;
+      // Log the action
+      appendLog(ss, {
+        type: `AGEND:${newStatus}`,
+        dataAgend: targetDate,
+        horario: targetTime,
+        cliente: newClient,
+        telefone: newPhone,
+        token: newCodigo,
+        msg: `Status definido como "${newStatus}" por ${adminOk?'ADMIN':'cliente'}.`
+      });
+
+      saved++;
     }
 
-    return jsonResponse("OK", savedCount + " registro(s) salvo(s).");
+    return jsonOut({ status:"OK", message:`${saved} registro(s) salvos.` });
 
-  } catch (err) {
-    return jsonResponse("ERRO", "Erro interno: " + err.message);
+  } catch(err) {
+    Logger.log("doPost ERROR: " + err.message + " | Stack: " + err.stack);
+    return jsonOut({ status:"ERRO", message:"Erro interno: " + err.message });
   }
 }
 
-// ============================================================
-// HELPERS CONFIG
-// ============================================================
-function getScheduleConfig(ss) {
-  let sheet = ss.getSheetByName(PREFS_SHEET);
-  const defaults = { start: "08:00", end: "20:00", duration: 30 };
-  
-  if (!sheet) return defaults;
-  
-  const data = sheet.getDataRange().getValues();
-  if (data.length < 2) return defaults;
-  
-  return {
-    start: formatTimeValue(data[1][0], ss.getSpreadsheetTimeZone()) || defaults.start,
-    end: formatTimeValue(data[1][1], ss.getSpreadsheetTimeZone()) || defaults.end,
-    duration: parseInt(data[1][2] || defaults.duration)
-  };
-}
+// ════════════════════════════════════════════════════════════════
+//  ⏰  AUTO-RELEASE — Ativar via Gatilho de Tempo (5 min)
+// ════════════════════════════════════════════════════════════════
 
-function updateScheduleConfig(ss, config) {
-  let sheet = ss.getSheetByName(PREFS_SHEET);
-  if (!sheet) {
-    sheet = ss.insertSheet(PREFS_SHEET);
-    sheet.appendRow(["Hora Início", "Hora Fim", "Duração (min)"]);
-  }
-  
-  sheet.getRange(2, 1, 1, 3).setValues([[
-    config.start, 
-    config.end, 
-    config.duration
-  ]]);
-}
-
-// ============================================================
-// AUTO-RELEASE (Deve ser ativado por Trigger de Tempo)
-// ============================================================
 function autoReleaseExpiredSlots() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const tz    = ss.getSpreadsheetTimeZone();
   const sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) return;
 
   const data = sheet.getDataRange().getValues();
-  const now = new Date();
+  const now  = new Date();
+  const nowStr = Utilities.formatDate(now, tz, "dd/MM/yyyy HH:mm");
+  let released = 0;
 
   for (let i = 1; i < data.length; i++) {
-    const status = (data[i][2] || "").toString();
-    const client = (data[i][3] || "").toString();
-    const phone  = (data[i][4] || "").toString(); // Coluna E
-    const token  = (data[i][5] || "").toString(); // Col F
-    const expiryStr = (data[i][7] || "").toString(); // Coluna H
-    
+    const status     = (data[i][2] || "").toString().trim();
+    const cliente    = (data[i][3] || "").toString().trim();
+    const telefone   = (data[i][4] || "").toString().trim();
+    const token      = (data[i][5] || "").toString().trim();
+    const expiryStr  = (data[i][7] || "").toString().trim();
+    const dataAgend  = fmtDate(data[i][0], tz);
+    const horario    = fmtTime(data[i][1], tz);
+
     if (status === "Aguardando Pagamento" && expiryStr) {
-      const expiryDate = new Date(expiryStr);
+      let expiryDate;
+      try { expiryDate = new Date(expiryStr); }
+      catch(_) { continue; }
+
       if (expiryDate < now) {
-        // Libera a vaga e gera o Log de Auditoria na Coluna I
-        const logMsg = "[SISTEMA " + Utilities.formatDate(now, TIME_ZONE, "HH:mm") + "] Vaga liberada por falta de confirmação. Cliente: " + client + " (" + phone + ") / Token: " + token;
-        
-        sheet.getRange(i + 1, 3).setValue("Livre");
-        sheet.getRange(i + 1, 4, 1, 5).clearContent(); // Limpa D, E, F, G, H
-        sheet.getRange(i + 1, 9).setValue(logMsg); // Coluna I
-        
+        // Build detailed log message
+        const logMsg = `[AUTO-RELEASE ${nowStr}] Reserva expirada sem confirmação. Cliente: "${cliente}" | Tel: ${telefone} | Token: ${token} | Slot: ${dataAgend} ${horario}`;
+
+        // Free the slot
+        sheet.getRange(i+1, 3).setValue("Livre");
+        sheet.getRange(i+1, 4, 1, 5).clearContent(); // Limpa D-H
+
+        // Write log to column I (visible to admin in agenda view)
+        sheet.getRange(i+1, 9).setValue(logMsg);
+
+        // Also append to system log sheet
+        appendLog(ss, {
+          type:      "AUTO-RELEASE",
+          dataAgend: dataAgend,
+          horario:   horario,
+          cliente:   cliente,
+          telefone:  telefone,
+          token:     token,
+          msg:       "Reserva expirada sem confirmação. Vaga liberada automaticamente."
+        });
+
         Logger.log(logMsg);
+        released++;
       }
     }
   }
+
+  if (released > 0) {
+    Logger.log(`[AUTO-RELEASE] ${released} vaga(s) liberada(s) em ${nowStr}`);
+  }
 }
 
-function jsonResponse(status, msg) {
-  return ContentService
-    .createTextOutput(JSON.stringify({ status: status, message: msg }))
-    .setMimeType(ContentService.MimeType.JSON);
+// ════════════════════════════════════════════════════════════════
+//  🔍  TESTE — Execute manualmente para verificar tudo
+// ════════════════════════════════════════════════════════════════
+
+function testSetup() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const tz = ss.getSpreadsheetTimeZone();
+
+  Logger.log("=== LOOK DESIGNER — Verificação de Setup ===");
+  Logger.log("Spreadsheet: " + ss.getName());
+  Logger.log("Fuso horário: " + tz);
+  Logger.log("Hora atual: " + Utilities.formatDate(new Date(), tz, "dd/MM/yyyy HH:mm"));
+
+  const agendaSh = ss.getSheetByName(SHEET_NAME);
+  Logger.log("Aba AGENDA: " + (agendaSh ? "✅ Encontrada" : "❌ Não encontrada (será criada no 1º POST)"));
+
+  const cfgSh = ss.getSheetByName(CONFIG_SHEET);
+  Logger.log("Aba CONFIG: " + (cfgSh ? "✅ Encontrada" : "⚠️ Não existe ainda"));
+
+  const logSh = ss.getSheetByName(LOG_SHEET);
+  Logger.log("Aba LOG: " + (logSh ? "✅ Encontrada" : "⚠️ Não existe ainda (criada automaticamente)"));
+
+  const cfg = getConfig(ss);
+  Logger.log("Config atual: " + JSON.stringify(cfg));
+
+  Logger.log("Admin password configurada: " + (ADMIN_PASSWORD !== "SUA_SENHA_AQUI" ? "✅" : "⚠️  AINDA É O PADRÃO! Troque antes de implantar."));
+  Logger.log("===========================================");
 }
