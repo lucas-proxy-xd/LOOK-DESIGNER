@@ -1571,6 +1571,27 @@
             el.value = f;
         }
 
+        function normalizePhone(phone) {
+            let clean = (phone || '').replace(/\D/g, '');
+            if (clean.startsWith('55') && clean.length > 11) clean = clean.slice(2);
+            return clean;
+        }
+
+        function showPendingBookingBlock() {
+            openSheet('Reserva Pendente ⏳', 'Você já possui uma reserva aguardando pagamento no sistema.');
+            document.getElementById('sheetBody').innerHTML = `
+                <div class="info-box" style="border-color:var(--rose);">
+                    Sua reserva anterior ainda está ativa. Durante os ${CFG.RESERVE_MIN} minutos de espera, não é possível reservar outro horário.
+                    Finalize o pagamento ou fale com a nossa gerente caso precise de ajuda.
+                </div>
+                <a href="https://wa.me/${CFG.WA}?text=${encodeURIComponent('Olá Camila, gostaria de tirar uma dúvida sobre minha reserva que está em aguardo.')}" 
+                   target="_blank" class="wa-link">💬 Falar com a Gerente agora</a>
+            `;
+            document.getElementById('sheetActions').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeSheet()">Fechar e voltar</button>
+            `;
+        }
+
         function renderDays() {
             const c = document.getElementById('dayScroller');
             c.innerHTML = '';
@@ -1864,6 +1885,10 @@
             const name = document.getElementById('bName').value.trim();
             const phone = document.getElementById('bPhone').value.trim();
             if (!name || !phone) { alert('Preencha todos os campos.'); return; }
+            const normalizedPhone = normalizePhone(phone);
+
+            // Sincroniza antes de validar para evitar múltiplas reservas em aparelhos diferentes
+            await syncData();
 
             // Verificação de reserva duplicada (Restriction)
             const activeBooking = localStorage.getItem('last_booking_v3');
@@ -1871,29 +1896,25 @@
                 const b = JSON.parse(activeBooking);
                 const stillWaiting = db.find(r => r.codigo === b.token && r.status === 'Aguardando Pagamento');
                 if (stillWaiting) {
-                    openSheet('Reserva Pendente ⏳', 'Você já possui uma reserva aguardando pagamento no sistema.');
-                    document.getElementById('sheetBody').innerHTML = `
-                        <div class="info-box" style="border-color:var(--rose);">
-                            Sua reserva anterior ainda está ativa. Por favor, finalize o pagamento ou fale com a nossa gerente caso precise de ajuda.
-                        </div>
-                        <a href="https://wa.me/${CFG.WA}?text=${encodeURIComponent('Olá Camila, gostaria de tirar uma dúvida sobre minha reserva que está em aguardo.')}" 
-                           target="_blank" class="wa-link">💬 Falar com a Gerente agora</a>
-                    `;
-                    document.getElementById('sheetActions').innerHTML = `
-                        <button class="btn btn-secondary" onclick="closeSheet()">Fechar e voltar</button>
-                    `;
+                    showPendingBookingBlock();
                     return;
                 }
+            }
+
+            const pendingByPhone = db.find(r =>
+                r.status === 'Aguardando Pagamento' &&
+                normalizePhone(r.telefone) === normalizedPhone
+            );
+            if (pendingByPhone) {
+                showPendingBookingBlock();
+                return;
             }
 
             const token = Math.random().toString(36).substring(2, 7).toUpperCase();
             const exp = new Date(Date.now() + CFG.RESERVE_MIN * 60000).toISOString();
             const bTime = new Date().toISOString();
 
-            localStorage.setItem('last_booking_v3', JSON.stringify({ token, iso, clock }));
-
-            // Sincroniza uma última vez para pegar o valor do PIX mais recente
-            await syncData();
+            localStorage.setItem('last_booking_v3', JSON.stringify({ token, iso, clock, phone: normalizedPhone }));
 
             // Mostra o PIX IMEDIATAMENTE (Interface Otimista)
             showPixSheet(name, phone, iso, clock, df, token, exp);
