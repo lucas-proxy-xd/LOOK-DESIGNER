@@ -22,7 +22,7 @@
 // ════════════════════════════════════════════════════════════════
 //  ⚙️  CONFIGURAÇÕES — EDITE APENAS AQUI
 // ════════════════════════════════════════════════════════════════
-const ADMIN_PASSWORD = "ALVES20";   // ← Troque por uma senha forte
+const ADMIN_PASSWORD = "";          // Deixe vazio no repositório e configure em Script Properties
 const SHEET_NAME     = "AGENDA";           // Nome da aba principal
 const CONFIG_SHEET   = "CONFIG";           // Nome da aba de configurações
 const LOG_SHEET      = "LOG_SISTEMA";      // Nome da aba de log do sistema
@@ -31,6 +31,10 @@ const TIME_ZONE      = "America/Manaus";   // Fuso horário (GMT-4)
 // ════════════════════════════════════════════════════════════════
 //  🔧  UTILITÁRIOS
 // ════════════════════════════════════════════════════════════════
+
+const DEVICE_SHEET   = "PUSH_DEVICES";     // Tokens dos celulares autorizados
+const PUSH_WEBHOOK_URL = "";               // Cole aqui a URL do seu gateway de push
+const PUSH_WEBHOOK_SECRET = "";            // Segredo opcional enviado no header X-Clock-Secret
 
 function getOrCreateSheet(ss, name, headers) {
   let sh = ss.getSheetByName(name);
@@ -97,6 +101,11 @@ function respond(callback, data) {
   return callback ? jsOut(callback, data) : jsonOut(data);
 }
 
+function getAdminPassword() {
+  const props = PropertiesService.getScriptProperties();
+  return (props.getProperty("admin_password") || ADMIN_PASSWORD || "").toString().trim();
+}
+
 // ════════════════════════════════════════════════════════════════
 //  📖  CONFIG HELPERS
 // ════════════════════════════════════════════════════════════════
@@ -149,6 +158,140 @@ function saveConfig(ss, cfg) {
   } catch(e) {}
 }
 
+function getPushSettings() {
+  const props = PropertiesService.getScriptProperties();
+  return {
+    url: (props.getProperty("push_webhook_url") || PUSH_WEBHOOK_URL || "").toString().trim(),
+    secret: (props.getProperty("push_webhook_secret") || PUSH_WEBHOOK_SECRET || "").toString().trim()
+  };
+}
+
+function normalizeToken(token) {
+  return (token || "").toString().trim();
+}
+
+function upsertPushDevice(ss, device) {
+  const sh = getOrCreateSheet(ss, DEVICE_SHEET, ["Token","Plataforma","Rotulo","Ativo","Atualizado em"]);
+  const token = normalizeToken(device.token);
+  if (!token) throw new Error("Token do dispositivo nao informado.");
+
+  const values = sh.getDataRange().getValues();
+  const now = new Date();
+  const rowIdx = values.findIndex((row, idx) => idx > 0 && normalizeToken(row[0]) === token);
+  const rowData = [
+    token,
+    (device.platform || "android").toString().trim(),
+    (device.label || "Gerente").toString().trim(),
+    device.active === false ? "NAO" : "SIM",
+    now
+  ];
+
+  if (rowIdx > -1) {
+    sh.getRange(rowIdx + 1, 1, 1, rowData.length).setValues([rowData]);
+  } else {
+    sh.appendRow(rowData);
+  }
+
+  return { token: token, updatedAt: now.toISOString() };
+}
+
+function getActivePushDevices(ss) {
+  const sh = getOrCreateSheet(ss, DEVICE_SHEET, ["Token","Plataforma","Rotulo","Ativo","Atualizado em"]);
+  const values = sh.getDataRange().getValues();
+  return values
+    .slice(1)
+    .map(row => ({
+      token: normalizeToken(row[0]),
+      platform: (row[1] || "android").toString().trim(),
+      label: (row[2] || "Gerente").toString().trim(),
+      active: (row[3] || "SIM").toString().trim().toUpperCase() !== "NAO"
+    }))
+    .filter(device => device.token && device.active);
+}
+
+function sendMobilePushNotification(booking) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const cfg = getPushSettings();
+  const devices = getActivePushDevices(ss);
+
+  if (!cfg.url) {
+    appendLog(ss, {
+      type:"PUSH",
+      cliente: booking.cliente,
+      telefone: booking.telefone,
+      token: booking.codigo,
+      dataAgend: booking.data,
+      horario: booking.horario,
+      msg:"Push ignorado: PUSH_WEBHOOK_URL nao configurado."
+    });
+    return { ok:false, reason:"missing_webhook" };
+  }
+
+  if (!devices.length) {
+    appendLog(ss, {
+      type:"PUSH",
+      cliente: booking.cliente,
+      telefone: booking.telefone,
+      token: booking.codigo,
+      dataAgend: booking.data,
+      horario: booking.horario,
+      msg:"Push ignorado: nenhum celular cadastrado."
+    });
+    return { ok:false, reason:"missing_device" };
+  }
+
+  const payload = {
+    event: "booking_pending_payment",
+    title: "Nova reserva aguardando pagamento",
+    body: `${booking.cliente} • ${booking.data} as ${booking.horario}`,
+    tokens: devices.map(device => device.token),
+    devices: devices,
+    booking: {
+      cliente: booking.cliente,
+      telefone: booking.telefone,
+      data: booking.data,
+      horario: booking.horario,
+      codigo: booking.codigo
+    }
+  };
+
+  const headers = {};
+  if (cfg.secret) headers["X-Clock-Secret"] = cfg.secret;
+
+  try {
+    const response = UrlFetchApp.fetch(cfg.url, {
+      method: "post",
+      contentType: "application/json",
+      muteHttpExceptions: true,
+      headers: headers,
+      payload: JSON.stringify(payload)
+    });
+    const code = response.getResponseCode();
+    const body = response.getContentText().slice(0, 300);
+    appendLog(ss, {
+      type:"PUSH",
+      cliente: booking.cliente,
+      telefone: booking.telefone,
+      token: booking.codigo,
+      dataAgend: booking.data,
+      horario: booking.horario,
+      msg:`Webhook push retornou ${code}: ${body}`
+    });
+    return { ok: code >= 200 && code < 300, code: code, body: body };
+  } catch (e) {
+    appendLog(ss, {
+      type:"ERRO",
+      cliente: booking.cliente,
+      telefone: booking.telefone,
+      token: booking.codigo,
+      dataAgend: booking.data,
+      horario: booking.horario,
+      msg:`Falha ao enviar push: ${e.message}`
+    });
+    return { ok:false, reason:"fetch_error", message:e.message };
+  }
+}
+
 // ════════════════════════════════════════════════════════════════
 //  📋  LOG HELPERS
 // ════════════════════════════════════════════════════════════════
@@ -182,7 +325,8 @@ function doGet(e) {
   if (!sh) return respond(cb, { status:"ERRO", message:`Aba "${SHEET_NAME}" não encontrada.` });
 
   const passIn   = ((e && e.parameter && e.parameter.pass) || "").toString().trim();
-  const adminOk  = passIn.length > 0 && passIn === ADMIN_PASSWORD.trim();
+  const adminPassword = getAdminPassword();
+  const adminOk  = adminPassword.length > 0 && passIn.length > 0 && passIn === adminPassword;
 
   // ── ATUALIZAÇÃO DE CONFIG VIA GET (Resiliência Total) ──
   if (e && e.parameter && e.parameter.action === "update_config") {
@@ -268,7 +412,8 @@ function doPost(e) {
     if (!updates.length) return jsonOut({ status:"ERRO", message:"Nenhuma atualização." });
 
     const passIn    = ((updates[0].password) || "").toString().trim();
-    const adminOk   = passIn === ADMIN_PASSWORD.trim();
+    const adminPassword = getAdminPassword();
+    const adminOk   = adminPassword.length > 0 && passIn === adminPassword;
 
     // ── update_config ──────────────────────────────────
     if (updates[0].action === "update_config") {
@@ -282,6 +427,30 @@ function doPost(e) {
     // ── agenda updates ──────────────────────────────────
     const sh = getOrCreateSheet(ss, SHEET_NAME, ["Data","Horário","Status","Cliente","Telefone","Código","Início Reserva","Expira em","Log","Duração"]);
     const data  = sh.getDataRange().getValues();
+    if (updates[0].action === "register_push_device") {
+      if (!adminOk) return jsonOut({ status:"ERRO", message:"Senha incorreta." });
+      const saved = upsertPushDevice(ss, {
+        token: updates[0].deviceToken,
+        platform: updates[0].devicePlatform,
+        label: updates[0].deviceLabel,
+        active: updates[0].active
+      });
+      appendLog(ss, { type:"PUSH", msg:`Celular cadastrado para push: ${saved.token.substring(0, 12)}...` });
+      return jsonOut({ status:"OK", message:"Celular cadastrado para notificaÃ§Ãµes.", device:saved });
+    }
+
+    if (updates[0].action === "test_push") {
+      if (!adminOk) return jsonOut({ status:"ERRO", message:"Senha incorreta." });
+      const result = sendMobilePushNotification({
+        cliente: "Teste do App",
+        telefone: "APP",
+        data: Utilities.formatDate(new Date(), tz, "yyyy-MM-dd"),
+        horario: Utilities.formatDate(new Date(), tz, "HH:mm"),
+        codigo: "TESTE"
+      });
+      return jsonOut({ status: result.ok ? "OK" : "ERRO", push: result });
+    }
+
     let rowsModified = 0;
     let newBookingNotify = null;
 
@@ -308,6 +477,7 @@ function doPost(e) {
     // Dispara a Notificação Silenciosa para a Gerente (Se houver nova reserva)
     if (newBookingNotify) {
       sendInternalNotification(newBookingNotify);
+      sendMobilePushNotification(newBookingNotify);
     }
 
     return jsonOut({ status:"OK", modified: rowsModified });
@@ -320,6 +490,7 @@ function doPost(e) {
 /**
  * 📧 NOTIFICAÇÃO DO SISTEMA (Gerente)
  * Envia um e-mail automático assim que alguém faz uma reserva.
+ * Observação: este backend não integra com a API do WhatsApp.
  */
 function sendInternalNotification(booking) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -433,6 +604,6 @@ function testSetup() {
   const cfg = getConfig(ss);
   Logger.log("Config atual: " + JSON.stringify(cfg));
 
-  Logger.log("Admin password configurada: " + (ADMIN_PASSWORD !== "SUA_SENHA_AQUI" ? "✅" : "⚠️  AINDA É O PADRÃO! Troque antes de implantar."));
+  Logger.log("Admin password configurada: " + (getAdminPassword() ? "✅" : "⚠️  AUSENTE! Configure admin_password em Script Properties."));
   Logger.log("===========================================");
 }
