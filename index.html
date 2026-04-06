@@ -51,23 +51,40 @@
         /* INTRO */
         #intro {
             position: fixed; inset: 0;
-            background: var(--ink);
+            background: linear-gradient(160deg, #1A1010 0%, #2A1820 60%, #1A1010 100%);
             z-index: 9999;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 12px;
+            gap: 16px;
             transition: opacity 1.4s var(--ease), visibility 1.4s;
+            overflow: hidden;
         }
         #intro.out { opacity: 0; visibility: hidden; }
-        .intro-eye {
-            font-size: 2.5rem;
-            animation: eyeBlink 3s ease-in-out infinite;
+
+        /* Petal particles */
+        .intro-petals {
+            position: absolute; inset: 0; pointer-events: none;
         }
-        @keyframes eyeBlink {
-            0%,100% { opacity: 1; transform: scaleY(1); }
-            48% { opacity: 1; transform: scaleY(1); }
-            50% { opacity: 0.2; transform: scaleY(0.1); }
-            52% { opacity: 1; transform: scaleY(1); }
+        .petal {
+            position: absolute;
+            width: 6px; height: 6px;
+            border-radius: 50% 50% 50% 0;
+            background: var(--rose);
+            opacity: 0;
+            animation: petalFall linear infinite;
         }
+        @keyframes petalFall {
+            0%   { opacity: 0; transform: translateY(-20px) rotate(0deg) scale(0.5); }
+            10%  { opacity: 0.6; }
+            90%  { opacity: 0.3; }
+            100% { opacity: 0; transform: translateY(100vh) rotate(720deg) scale(1.2); }
+        }
+
+        /* Lash SVG icon */
+        .intro-icon {
+            opacity: 0;
+            animation: fadeUp 1.2s 0.3s var(--ease) forwards;
+        }
+
         .intro-title {
             font-family: 'Cormorant Garamond', serif;
             font-size: 2.2rem;
@@ -76,7 +93,7 @@
             color: var(--gold);
             text-transform: uppercase;
             opacity: 0;
-            animation: fadeUp 1.2s 0.5s var(--ease) forwards;
+            animation: fadeUp 1.2s 0.7s var(--ease) forwards;
         }
         .intro-sub {
             font-size: 0.6rem;
@@ -84,9 +101,141 @@
             color: rgba(255,255,255,0.35);
             text-transform: uppercase;
             opacity: 0;
-            animation: fadeUp 1.2s 0.9s var(--ease) forwards;
+            animation: fadeUp 1.2s 1s var(--ease) forwards;
         }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* SIGNATURE SECTION */
+        .signature-section {
+            margin: 40px 0 20px;
+            text-align: center;
+            padding: 32px 24px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        .signature-section::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--rose), var(--gold), var(--rose));
+        }
+        .sig-lash-deco {
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .sig-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-style: italic;
+            font-weight: 400;
+            color: var(--ink);
+            margin-bottom: 2px;
+        }
+        .sig-title {
+            font-size: 0.5rem;
+            letter-spacing: 4px;
+            font-weight: 700;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .sig-exp {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--rose), var(--deep-rose));
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        .sig-wa {
+            display: block;
+            background: #25D366;
+            color: white;
+            text-decoration: none;
+            padding: 14px 20px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(37,211,102,0.3);
+            transition: all 0.3s;
+        }
+        .sig-wa:active { transform: scale(0.98); }
+
+        /* ADMIN PANEL SECTION */
+        #adminPanel {
+            display: none;
+            margin: 24px 0;
+        }
+        body.admin-on #adminPanel { display: block; }
+        .admin-panel-title {
+            font-size: 0.5rem;
+            letter-spacing: 5px;
+            font-weight: 700;
+            color: var(--rose);
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .admin-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .admin-card {
+            background: white;
+            border-radius: 18px;
+            padding: 20px 16px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            border: 1.5px solid transparent;
+            transition: all 0.3s var(--ease);
+        }
+        .admin-card:hover { border-color: var(--rose); transform: translateY(-3px); box-shadow: var(--shadow-deep); }
+        .admin-card .ac-icon { font-size: 1.6rem; margin-bottom: 8px; display: block; }
+        .admin-card .ac-label {
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--rose);
+            margin-bottom: 4px;
+        }
+        .admin-card .ac-desc { font-size: 0.72rem; color: var(--ink-soft); line-height: 1.4; }
+        .admin-stats {
+            background: var(--ink);
+            border-radius: 18px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .stat-item { text-align: center; }
+        .stat-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            color: var(--gold);
+            display: block;
+            line-height: 1;
+        }
+        .stat-lbl {
+            font-size: 0.5rem;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.4);
+            text-transform: uppercase;
+            margin-top: 4px;
+            display: block;
+        }
 
         /* ADMIN BADGE */
         body.admin-on::after {
@@ -658,7 +807,22 @@
 <body>
 
 <div id="intro">
-    <div class="intro-eye">👁️</div>
+    <div class="intro-petals" id="introPetals"></div>
+    <div class="intro-icon">
+        <svg width="72" height="48" viewBox="0 0 72 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 38 Q18 14 36 10 Q54 14 68 38" stroke="#C9A86C" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <line x1="12" y1="30" x2="8"  y2="12" stroke="#C4848A" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="20" y1="22" x2="18" y2="4"  stroke="#C4848A" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="28" y1="16" x2="28" y2="0"  stroke="#C4848A" stroke-width="2"   stroke-linecap="round"/>
+            <line x1="36" y1="14" x2="36" y2="0"  stroke="#C9A86C" stroke-width="2.2" stroke-linecap="round"/>
+            <line x1="44" y1="16" x2="44" y2="0"  stroke="#C4848A" stroke-width="2"   stroke-linecap="round"/>
+            <line x1="52" y1="22" x2="54" y2="4"  stroke="#C4848A" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="60" y1="30" x2="64" y2="12" stroke="#C4848A" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="36" cy="38" r="3.5" fill="#C9A86C" opacity="0.9"/>
+            <circle cx="22" cy="34" r="2"   fill="#C4848A" opacity="0.6"/>
+            <circle cx="50" cy="34" r="2"   fill="#C4848A" opacity="0.6"/>
+        </svg>
+    </div>
     <div class="intro-title">Look Designer</div>
     <div class="intro-sub">Studio de Cílios · Agende seu olhar</div>
 </div>
@@ -673,13 +837,47 @@
     <div class="section-label">✦ Escolha sua data ✦</div>
     <div class="day-scroller" id="dayScroller"></div>
 
+    <!-- PAINEL ADMIN - visível só quando logado -->
+    <section id="adminPanel">
+        <div class="admin-panel-title">✦ Painel Administrativo ✦</div>
+        <div class="admin-stats">
+            <div class="stat-item"><span class="stat-num" id="statLivre">—</span><span class="stat-lbl">Livres hoje</span></div>
+            <div class="stat-item"><span class="stat-num" id="statOcupado">—</span><span class="stat-lbl">Ocupados</span></div>
+            <div class="stat-item"><span class="stat-num" id="statAguard">—</span><span class="stat-lbl">Aguardando</span></div>
+        </div>
+        <div class="admin-cards">
+            <div class="admin-card" onclick="openConfig()">
+                <span class="ac-icon">⚙️</span>
+                <div class="ac-label">Expediente</div>
+                <div class="ac-desc">Horário de início, fim e duração padrão</div>
+            </div>
+            <div class="admin-card" onclick="openDurPanel()">
+                <span class="ac-icon">⏱️</span>
+                <div class="ac-label">Procedimentos</div>
+                <div class="ac-desc">Editar duração de horários agendados</div>
+            </div>
+            <div class="admin-card" onclick="openBlockPanel()">
+                <span class="ac-icon">🔒</span>
+                <div class="ac-label">Bloqueios em Lote</div>
+                <div class="ac-desc">Folgas e horários indisponíveis</div>
+            </div>
+            <div class="admin-card" onclick="openLogSheet()">
+                <span class="ac-icon">📋</span>
+                <div class="ac-label">Registros</div>
+                <div class="ac-desc">Log de reservas expiradas e eventos</div>
+            </div>
+        </div>
+        <div style="text-align:center;margin-top:4px;">
+            <button class="nav-btn" onclick="logoutAdmin()" style="color:var(--rose);font-size:0.65rem;padding:10px 20px;">Sair do painel</button>
+        </div>
+    </section>
+
     <section id="gridSection">
         <div class="grid-head">
             <div class="grid-date" id="gridDate"></div>
             <button class="back-btn" onclick="closeGrid()">← Voltar</button>
         </div>
 
-        <!-- Admin multi-select bar -->
         <div id="multiSelectBar">
             <span id="selCount">0 selecionados</span>
             <div style="display:flex;gap:8px">
@@ -691,12 +889,33 @@
 
         <div class="slots" id="slotsContainer"></div>
 
-        <!-- ADMIN LOG -->
         <div id="logPanel">
             <div class="log-title">✦ Registros do Sistema</div>
             <div id="logEntries"></div>
         </div>
     </section>
+
+    <!-- ASSINATURA E CONTATO -->
+    <div class="signature-section">
+        <span class="sig-lash-deco">
+            <svg width="40" height="26" viewBox="0 0 40 26" fill="none">
+                <path d="M2 22 Q10 8 20 6 Q30 8 38 22" stroke="#C9A86C" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                <line x1="7" y1="17" x2="5" y2="7" stroke="#C4848A" stroke-width="1.4" stroke-linecap="round"/>
+                <line x1="12" y1="12" x2="11" y2="2" stroke="#C4848A" stroke-width="1.4" stroke-linecap="round"/>
+                <line x1="17" y1="8" x2="17" y2="0" stroke="#C4848A" stroke-width="1.6" stroke-linecap="round"/>
+                <line x1="20" y1="7" x2="20" y2="0" stroke="#C9A86C" stroke-width="1.8" stroke-linecap="round"/>
+                <line x1="23" y1="8" x2="23" y2="0" stroke="#C4848A" stroke-width="1.6" stroke-linecap="round"/>
+                <line x1="28" y1="12" x2="29" y2="2" stroke="#C4848A" stroke-width="1.4" stroke-linecap="round"/>
+                <line x1="33" y1="17" x2="35" y2="7" stroke="#C4848A" stroke-width="1.4" stroke-linecap="round"/>
+                <circle cx="20" cy="22" r="2.2" fill="#C9A86C" opacity="0.9"/>
+            </svg>
+        </span>
+        <div class="sig-name">Camila Alves</div>
+        <div class="sig-title">Gerente · Studio de Cílios</div>
+        <div class="sig-exp" id="expBadge">✦ 15 anos de experiência ✦</div>
+        <a id="sigWa" href="#" class="sig-wa" target="_blank">💬 Falar com a Camila — Dúvidas? Chame aqui!</a>
+    </div>
+
 </div>
 
 <!-- NAV -->
@@ -705,9 +924,7 @@
         <button class="nav-btn" onclick="scrollToTop()">Início</button>
     </div>
     <div id="adminNav">
-        <button class="nav-btn" onclick="openConfig()">⚙ Ajustes</button>
-        <button class="nav-btn primary" onclick="syncData()">↻ Sync</button>
-        <button class="nav-btn" onclick="logoutAdmin()" style="color:var(--rose)">Sair</button>
+        <button class="nav-btn primary" onclick="syncData()">↻ Atualizar</button>
     </div>
 </div>
 
@@ -762,6 +979,7 @@ async function syncData() {
             }
             renderDays();
             if(currentDay) renderGrid(currentDay);
+            updateAdminStats();
         });
     } catch(e) {}
 }
@@ -1211,8 +1429,129 @@ function handleOverlayClick(e) {
     if(e.target === document.getElementById('overlay')) closeSheet();
 }
 
+// ─── EXPERIÊNCIA AUTO-CALCULADA ────────────────────────────
+function calcExperience() {
+    const start = new Date(2010, 0, 1); // 1 jan 2010
+    const now = new Date();
+    const years = now.getFullYear() - start.getFullYear()
+        - (now < new Date(now.getFullYear(), 0, 1) ? 1 : 0);
+    const badge = document.getElementById('expBadge');
+    if(badge) badge.textContent = `✦ ${years} anos de experiência ✦`;
+}
+
+// ─── WHATSAPP ASSINATURA ──────────────────────────────
+function initSigWa() {
+    const waText = encodeURIComponent(
+        `Olá, Camila! 💗 Vim pelo site da Look Designer e tenho uma dúvida sobre agendamento.`
+    );
+    const el = document.getElementById('sigWa');
+    if(el) el.href = `https://wa.me/${CFG.WA}?text=${waText}`;
+}
+
+// ─── ADMIN STATS ────────────────────────────────────────────
+function updateAdminStats() {
+    if(!isAdmin) return;
+    const todayIso = new Date().toISOString().split('T')[0];
+    const todayRecs = db.filter(r => String(r.data).substring(0,10) === todayIso);
+    const livre = todayRecs.filter(r=>r.status==='Livre').length;
+    const ocupado = todayRecs.filter(r=>r.status==='Ocupado').length;
+    const aguard = todayRecs.filter(r=>r.status==='Aguardando Pagamento').length;
+    const el = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+    el('statLivre', livre);
+    el('statOcupado', ocupado);
+    el('statAguard', aguard);
+}
+
+// ─── ADMIN: PAINEL DURAÇÃO DE PROCEDIMENTOS ────────────────────
+function openDurPanel() {
+    openSheet('Duração dos Procedimentos', 'Selecione um dia e clique em qualquer horário agendado para editar sua duração. Isso reflete imediatamente na agenda dos clientes.');
+    document.getElementById('sheetBody').innerHTML = `
+        <div class="info-box">
+            ✨ Escolha uma data no calendário acima e toque em qualquer card <strong>Ocupado</strong> para alterar o tempo do procedimento. A grade se atualiza em tempo real para todos os clientes.
+        </div>
+        <div style="background:var(--cream);border-radius:14px;padding:16px 20px;margin-bottom:16px;">
+            <div style="font-size:0.55rem;letter-spacing:2px;font-weight:700;color:var(--gold);text-transform:uppercase;margin-bottom:8px;">Duração padrão atual</div>
+            <div style="font-size:1.4rem;font-family:'Cormorant Garamond',serif;">${srvCfg.duration} minutos</div>
+            <div style="font-size:0.7rem;color:var(--ink-soft);margin-top:4px;">Aplica-se a novos agendamentos sem duração definida</div>
+        </div>
+    `;
+    document.getElementById('sheetActions').innerHTML = `
+        <button class="btn btn-primary" onclick="closeSheet();if(!currentDay){alert('Escolha uma data primeiro.');}">Ver agenda e editar</button>
+        <button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>
+    `;
+}
+
+// ─── ADMIN: PAINEL BLOQUEIO EM LOTE ─────────────────────
+function openBlockPanel() {
+    openSheet('Bloqueios em Lote', 'Selecione uma data, depois marque vários horários e use a barra de seleção para bloquear ou liberar em lote.');
+    document.getElementById('sheetBody').innerHTML = `
+        <div class="info-box">
+            🔒 <strong>Como usar:</strong><br>
+            1. Feche este painel<br>
+            2. Escolha a data desejada no calendário<br>
+            3. Toque nos horários que deseja bloquear (aparecerão marcados)<br>
+            4. Use a barra rosa no topo para Bloquear ou Liberar em lote
+        </div>
+        <div class="info-box" style="border-color:var(--rose);">
+            💡 Dica: Para folga do dia inteiro, selecione todos os horários e clique em Bloquear.
+        </div>
+    `;
+    document.getElementById('sheetActions').innerHTML = `
+        <button class="btn btn-primary" onclick="closeSheet()">Entendido — ir para agenda</button>
+    `;
+}
+
+// ─── ADMIN: LOG SHEET ──────────────────────────────────
+function openLogSheet() {
+    const expired = db.filter(r => {
+        if(r.status !== 'Aguardando Pagamento') return false;
+        if(!r.reservedUntil) return false;
+        return new Date() > new Date(r.reservedUntil);
+    });
+    const logHtml = expired.length === 0
+        ? '<div class="info-box">Nenhuma reserva expirada registrada neste ciclo. ✨</div>'
+        : expired.map(r => `
+            <div class="log-entry">
+                <strong>⏱ ${r.horario} — ${r.data} — Reserva Não Confirmada</strong>
+                Cliente: ${r.cliente || '—'}<br>
+                Expiry log registrado na planilha.
+                <div class="log-meta">Token: ${r.codigo || '—'} · ${r.telefone || '—'}</div>
+            </div>
+        `).join('');
+
+    openSheet('Registros do Sistema', 'Reservas expiradas e eventos desta sessão.');
+    document.getElementById('sheetBody').innerHTML = logHtml;
+    document.getElementById('sheetActions').innerHTML = `
+        <button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>
+    `;
+}
+
+// ─── INTRO PETALS ────────────────────────────────────────
+function spawnPetals() {
+    const container = document.getElementById('introPetals');
+    if(!container) return;
+    const colors = ['#C4848A','#C9A86C','#E8D5B0','#F2D9D9'];
+    for(let i=0;i<18;i++) {
+        const p = document.createElement('div');
+        p.className = 'petal';
+        p.style.cssText = `
+            left:${Math.random()*100}%;
+            top:-10px;
+            background:${colors[Math.floor(Math.random()*colors.length)]};
+            width:${4+Math.random()*6}px;
+            height:${4+Math.random()*6}px;
+            animation-duration:${3+Math.random()*4}s;
+            animation-delay:${Math.random()*3}s;
+        `;
+        container.appendChild(p);
+    }
+}
+
 // ─── BOOT ──────────────────────────────────────────────
 window.onload = () => {
+    spawnPetals();
+    calcExperience();
+    initSigWa();
     syncData();
     renderDays();
     setInterval(() => { if(currentDay) renderGrid(currentDay); }, 60000);
