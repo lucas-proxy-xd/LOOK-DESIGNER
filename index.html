@@ -1615,14 +1615,16 @@
             const exp = new Date(Date.now() + CFG.RESERVE_MIN * 60000).toISOString();
             const bTime = new Date().toISOString();
 
-            await postUpdates([{
+            // Mostra o PIX IMEDIATAMENTE (Interface Otimista)
+            showPixSheet(name, phone, iso, clock, df, token, exp);
+
+            // Dispara a Gravação no Banco de Dados em Segundo Plano
+            postUpdates([{
                 data: iso, horario: clock, status: 'Aguardando Pagamento',
                 cliente: name, telefone: phone, codigo: token,
                 bookingTime: bTime, reservedUntil: exp,
                 duration: srvCfg.duration, password: adminPass
             }]);
-
-            showPixSheet(name, phone, iso, clock, df, token, exp);
         }
 
         function showPixSheet(name, phone, iso, clock, df, token, exp) {
