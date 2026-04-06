@@ -494,7 +494,7 @@ function doPost(e) {
  */
 function sendInternalNotification(booking) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const ownerEmail = Session.getEffectiveUser().getEmail(); // Envia para o dono do script
+  const ownerEmail = "camilameury@gmail.com";
   
   const subject = `🔔 NOVA RESERVA: ${booking.cliente} - ${booking.data} ${booking.horario}`;
   const body = 
@@ -507,7 +507,7 @@ function sendInternalNotification(booking) {
     `• Horário: ${booking.horario}\n` +
     `• Token de Reserva: ${booking.codigo}\n\n` +
     `O cliente está na tela de pagamento. Fique atento ao WhatsApp para receber o comprovante do PIX.\n\n` +
-    `LINK DA PLANILHA:\n${ss.getUrl()}`;
+    `LINK DO SITE:\nhttps://lucas-proxy-xd.github.io/LOOK-DESIGNER/`;
 
   try {
     MailApp.sendEmail(ownerEmail, subject, body);
