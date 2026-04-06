@@ -290,14 +290,23 @@
             vertical-align: middle;
         }
         #adminKey {
-            position: absolute; right: 0; top: 48px;
-            width: 36px; height: 36px;
-            cursor: pointer; opacity: 0.08;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem;
-            transition: opacity 0.3s;
+            display: none; /* hidden - login via nav button below */
         }
-        #adminKey:hover { opacity: 0.3; }
+        /* Admin login button in nav - always visible */
+        .nav-admin-login {
+            background: none; border: 1.5px solid rgba(196,132,138,0.3);
+            font-family: "DM Sans", sans-serif;
+            font-size: 0.55rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--rose);
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 40px;
+            transition: all 0.3s;
+        }
+        .nav-admin-login:hover { background: rgba(196,132,138,0.08); border-color: var(--rose); }
 
         /* SECTION LABEL */
         .section-label {
@@ -920,8 +929,9 @@
 
 <!-- NAV -->
 <div class="nav-float">
-    <div id="userNav">
+    <div id="userNav" style="display:flex;gap:4px;align-items:center;">
         <button class="nav-btn" onclick="scrollToTop()">Início</button>
+        <button class="nav-admin-login" onclick="promptAdmin()">🔐 Admin</button>
     </div>
     <div id="adminNav">
         <button class="nav-btn primary" onclick="syncData()">↻ Atualizar</button>
