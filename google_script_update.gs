@@ -32,9 +32,11 @@ const TIME_ZONE      = "America/Manaus";   // Fuso horário (GMT-4)
 //  🔧  UTILITÁRIOS
 // ════════════════════════════════════════════════════════════════
 
-const DEVICE_SHEET   = "PUSH_DEVICES";     // Tokens dos celulares autorizados
-const PUSH_WEBHOOK_URL = "";               // Cole aqui a URL do seu gateway de push
-const PUSH_WEBHOOK_SECRET = "";            // Segredo opcional enviado no header X-Clock-Secret
+const DEVICE_SHEET   = "PUSH_DEVICES";     // Legado: mantido apenas para compatibilidade
+const PUSH_WEBHOOK_URL = "";               // Legado: nao usado com OneSignal direto
+const PUSH_WEBHOOK_SECRET = "";            // Legado: nao usado com OneSignal direto
+const ONESIGNAL_APP_ID = "1246a184-5550-4e12-b1f4-24efd53c6f02";
+const ONESIGNAL_API_KEY = "";              // Configure em Script Properties como onesignal_api_key
 
 function getOrCreateSheet(ss, name, headers) {
   let sh = ss.getSheetByName(name);
@@ -166,6 +168,14 @@ function getPushSettings() {
   };
 }
 
+function getOneSignalSettings() {
+  const props = PropertiesService.getScriptProperties();
+  return {
+    appId: (props.getProperty("onesignal_app_id") || ONESIGNAL_APP_ID || "").toString().trim(),
+    apiKey: (props.getProperty("onesignal_api_key") || ONESIGNAL_API_KEY || "").toString().trim()
+  };
+}
+
 function normalizeToken(token) {
   return (token || "").toString().trim();
 }
@@ -211,10 +221,9 @@ function getActivePushDevices(ss) {
 
 function sendMobilePushNotification(booking) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const cfg = getPushSettings();
-  const devices = getActivePushDevices(ss);
+  const cfg = getOneSignalSettings();
 
-  if (!cfg.url) {
+  if (!cfg.appId || !cfg.apiKey) {
     appendLog(ss, {
       type:"PUSH",
       cliente: booking.cliente,
@@ -222,48 +231,45 @@ function sendMobilePushNotification(booking) {
       token: booking.codigo,
       dataAgend: booking.data,
       horario: booking.horario,
-      msg:"Push ignorado: PUSH_WEBHOOK_URL nao configurado."
+      msg:"Push ignorado: OneSignal app id / api key nao configurados."
     });
-    return { ok:false, reason:"missing_webhook" };
-  }
-
-  if (!devices.length) {
-    appendLog(ss, {
-      type:"PUSH",
-      cliente: booking.cliente,
-      telefone: booking.telefone,
-      token: booking.codigo,
-      dataAgend: booking.data,
-      horario: booking.horario,
-      msg:"Push ignorado: nenhum celular cadastrado."
-    });
-    return { ok:false, reason:"missing_device" };
+    return { ok:false, reason:"missing_onesignal_config" };
   }
 
   const payload = {
-    event: "booking_pending_payment",
-    title: "Nova reserva aguardando pagamento",
-    body: `${booking.cliente} • ${booking.data} as ${booking.horario}`,
-    tokens: devices.map(device => device.token),
-    devices: devices,
-    booking: {
-      cliente: booking.cliente,
-      telefone: booking.telefone,
-      data: booking.data,
-      horario: booking.horario,
-      codigo: booking.codigo
+    app_id: cfg.appId,
+    target_channel: "push",
+    filters: [
+      { field: "tag", key: "user_type", relation: "=", value: "admin" }
+    ],
+    headings: {
+      en: "Nova reserva aguardando pagamento",
+      pt: "Nova reserva aguardando pagamento",
+      "pt-BR": "Nova reserva aguardando pagamento"
+    },
+    contents: {
+      en: `${booking.cliente} • ${booking.data} as ${booking.horario}`,
+      pt: `${booking.cliente} • ${booking.data} as ${booking.horario}`,
+      "pt-BR": `${booking.cliente} • ${booking.data} as ${booking.horario}`
+    },
+    data: {
+      event: "booking_pending_payment",
+      cliente: booking.cliente || "",
+      telefone: booking.telefone || "",
+      data: booking.data || "",
+      horario: booking.horario || "",
+      codigo: booking.codigo || ""
     }
   };
 
-  const headers = {};
-  if (cfg.secret) headers["X-Clock-Secret"] = cfg.secret;
-
   try {
-    const response = UrlFetchApp.fetch(cfg.url, {
+    const response = UrlFetchApp.fetch("https://api.onesignal.com/notifications", {
       method: "post",
       contentType: "application/json",
       muteHttpExceptions: true,
-      headers: headers,
+      headers: {
+        Authorization: "Key " + cfg.apiKey
+      },
       payload: JSON.stringify(payload)
     });
     const code = response.getResponseCode();
@@ -275,7 +281,7 @@ function sendMobilePushNotification(booking) {
       token: booking.codigo,
       dataAgend: booking.data,
       horario: booking.horario,
-      msg:`Webhook push retornou ${code}: ${body}`
+      msg:`OneSignal push retornou ${code}: ${body}`
     });
     return { ok: code >= 200 && code < 300, code: code, body: body };
   } catch (e) {
