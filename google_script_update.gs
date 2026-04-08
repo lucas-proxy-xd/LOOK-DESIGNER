@@ -27,6 +27,14 @@ const SHEET_NAME     = "AGENDA";           // Nome da aba principal
 const CONFIG_SHEET   = "CONFIG";           // Nome da aba de configurações
 const LOG_SHEET      = "LOG_SISTEMA";      // Nome da aba de log do sistema
 const TIME_ZONE      = "America/Manaus";   // Fuso horário (GMT-4)
+const IMPORTANT_LOG_TYPES = {
+  "RESERVA": true,
+  "CONFIRMACAO": true,
+  "BLOQUEIO": true,
+  "LIBERACAO": true,
+  "AUTO-RELEASE": true,
+  "ERRO": true
+};
 
 // ════════════════════════════════════════════════════════════════
 //  🔧  UTILITÁRIOS
@@ -310,12 +318,15 @@ function sendMobilePushNotification(booking) {
 // ════════════════════════════════════════════════════════════════
 
 function appendLog(ss, entry) {
+  const type = (entry.type || "SISTEMA").toString().trim();
+  if (!IMPORTANT_LOG_TYPES[type]) return;
+
   const sh = getOrCreateSheet(ss, LOG_SHEET, [
     "Data/Hora","Tipo","Data Agend.","Horário","Cliente","Telefone","Token","Mensagem"
   ]);
   sh.appendRow([
     new Date(),
-    entry.type || "SISTEMA",
+    type,
     entry.dataAgend || "",
     entry.horario || "",
     entry.cliente || "",
@@ -335,6 +346,7 @@ function getSystemLogs(ss, tz, limit) {
   return rows
     .slice(1)
     .filter(row => row.some(cell => String(cell || "").trim() !== ""))
+    .filter(row => IMPORTANT_LOG_TYPES[(row[1] || "").toString().trim()])
     .map(row => {
       const rawDate = row[0];
       const timestamp = rawDate && typeof rawDate.getFullYear === "function"
@@ -358,6 +370,17 @@ function getSystemLogs(ss, tz, limit) {
     })
     .sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)))
     .slice(0, limit || 100);
+}
+
+function clearSystemLogs(ss) {
+  const sh = ss.getSheetByName(LOG_SHEET);
+  if (!sh) return 0;
+
+  const lastRow = sh.getLastRow();
+  if (lastRow <= 1) return 0;
+
+  sh.deleteRows(2, lastRow - 1);
+  return lastRow - 1;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -469,7 +492,6 @@ function doPost(e) {
       if (!adminOk) return jsonOut({ status:"ERRO", message:"Senha incorreta." });
       const c = updates[0].config;
       saveConfig(ss, c);
-      appendLog(ss, { type:"CONFIG", msg:`Config atualizada: ${JSON.stringify(c)}` });
       return jsonOut({ status:"OK", message:"Configurações salvas." });
     }
 
@@ -484,7 +506,6 @@ function doPost(e) {
         label: updates[0].deviceLabel,
         active: updates[0].active
       });
-      appendLog(ss, { type:"PUSH", msg:`Celular cadastrado para push: ${saved.token.substring(0, 12)}...` });
       return jsonOut({ status:"OK", message:"Celular cadastrado para notificaÃ§Ãµes.", device:saved });
     }
 
@@ -498,6 +519,12 @@ function doPost(e) {
         codigo: "TESTE"
       });
       return jsonOut({ status: result.ok ? "OK" : "ERRO", push: result });
+    }
+
+    if (updates[0].action === "clear_logs") {
+      if (!adminOk) return jsonOut({ status:"ERRO", message:"Senha incorreta." });
+      const cleared = clearSystemLogs(ss);
+      return jsonOut({ status:"OK", cleared: cleared });
     }
 
     let rowsModified = 0;
