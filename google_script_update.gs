@@ -180,6 +180,13 @@ function normalizeToken(token) {
   return (token || "").toString().trim();
 }
 
+function toComparableTime(value) {
+  const s = (value || "").toString().trim();
+  const m = s.match(/(\d{1,2}):(\d{2})/);
+  if (!m) return "";
+  return `${m[1].padStart(2, "0")}:${m[2]}`;
+}
+
 function upsertPushDevice(ss, device) {
   const sh = getOrCreateSheet(ss, DEVICE_SHEET, ["Token","Plataforma","Rotulo","Ativo","Atualizado em"]);
   const token = normalizeToken(device.token);
@@ -461,7 +468,11 @@ function doPost(e) {
     let newBookingNotify = null;
 
     updates.forEach(upd => {
-      const rowIdx = data.findIndex(r => fmtDate(r[0], tz) === upd.data && fmtTime(r[1], tz) === upd.horario);
+      const updDate = (upd.data || "").toString().trim();
+      const updTime = toComparableTime(upd.horario);
+      if (!updDate || !updTime) return;
+
+      const rowIdx = data.findIndex(r => fmtDate(r[0], tz) === updDate && toComparableTime(fmtTime(r[1], tz)) === updTime);
       if (rowIdx > -1) {
         const curStatus = data[rowIdx][2];
         // Permite salvar se for admin ou se estiver livre
@@ -477,11 +488,30 @@ function doPost(e) {
             newBookingNotify = upd;
           }
         }
+      } else if (adminOk || upd.status === "Aguardando Pagamento") {
+        // Se o slot nao existir na planilha, cria a linha para nao perder reserva pendente.
+        sh.appendRow([
+          updDate,
+          updTime,
+          upd.status || "Livre",
+          upd.cliente || "",
+          upd.telefone || "",
+          upd.codigo || "",
+          upd.bookingTime || "",
+          upd.reservedUntil || "",
+          upd.log || "",
+          upd.duration || 60
+        ]);
+        rowsModified++;
+
+        if (upd.status === "Aguardando Pagamento") {
+          newBookingNotify = upd;
+        }
       }
     });
 
     // Dispara a Notificação Silenciosa para a Gerente (Se houver nova reserva)
-    if (newBookingNotify) {
+    if (newBookingNotify && rowsModified > 0) {
       sendInternalNotification(newBookingNotify);
       sendMobilePushNotification(newBookingNotify);
     }
