@@ -1945,13 +1945,27 @@
             // Mostra o PIX IMEDIATAMENTE (Interface Otimista)
             showPixSheet(name, phone, iso, clock, df, token, exp);
 
-            // Dispara a Gravação no Banco de Dados em Segundo Plano
-            postUpdates([{
+            // Grava no banco e valida se ficou realmente pendente
+            const ok = await postUpdates([{
                 data: iso, horario: clock, status: 'Aguardando Pagamento',
                 cliente: name, telefone: phone, codigo: token,
                 bookingTime: bTime, reservedUntil: exp,
                 duration: srvCfg.duration, password: adminPass
             }]);
+
+            if (!ok) {
+                alert('Não foi possível registrar sua reserva agora. Verifique sua internet e tente novamente.');
+                return;
+            }
+
+            const persisted = db.find(r =>
+                String(r.data).substring(0, 10) === iso &&
+                String(r.horario).substring(0, 5) === clock &&
+                r.status === 'Aguardando Pagamento'
+            );
+            if (!persisted) {
+                alert('Sua reserva ainda não foi confirmada no sistema. Toque em Atualizar e tente novamente.');
+            }
         }
 
         function showPixSheet(name, phone, iso, clock, df, token, exp) {
@@ -2194,7 +2208,11 @@
                 });
                 await new Promise(r => setTimeout(r, 800));
                 await syncData();
-            } catch (e) { }
+                return true;
+            } catch (e) {
+                console.warn('postUpdates failed:', e);
+                return false;
+            }
         }
 
         // ─── SHEET HELPERS ─────────────────────────────────────
@@ -2257,6 +2275,10 @@
                 nativeOneSignal.User.addTag(key, value);
                 return;
             }
+            if (nativeOneSignal && typeof nativeOneSignal.sendTag === 'function') {
+                nativeOneSignal.sendTag(key, value);
+                return;
+            }
 
             if (window.OneSignal && window.OneSignal.User && typeof window.OneSignal.User.addTag === 'function') {
                 window.OneSignal.User.addTag(key, value);
@@ -2270,12 +2292,28 @@
                     }
                 });
             }
+
+            if (window.OneSignalDeferred && Array.isArray(window.OneSignalDeferred)) {
+                window.OneSignalDeferred.push(function (OneSignal) {
+                    try {
+                        if (OneSignal && OneSignal.User && typeof OneSignal.User.addTag === 'function') {
+                            OneSignal.User.addTag(key, value);
+                        }
+                    } catch (err) {
+                        console.warn('Deferred addTag failed:', err);
+                    }
+                });
+            }
         }
 
         function removeNotificationTag(key) {
             const nativeOneSignal = getNativeOneSignal();
             if (nativeOneSignal && nativeOneSignal.User && typeof nativeOneSignal.User.removeTag === 'function') {
                 nativeOneSignal.User.removeTag(key);
+                return;
+            }
+            if (nativeOneSignal && typeof nativeOneSignal.deleteTag === 'function') {
+                nativeOneSignal.deleteTag(key);
                 return;
             }
 
@@ -2288,6 +2326,18 @@
                 window.OneSignal.push(function () {
                     if (typeof OneSignal.deleteTag === 'function') {
                         OneSignal.deleteTag(key);
+                    }
+                });
+            }
+
+            if (window.OneSignalDeferred && Array.isArray(window.OneSignalDeferred)) {
+                window.OneSignalDeferred.push(function (OneSignal) {
+                    try {
+                        if (OneSignal && OneSignal.User && typeof OneSignal.User.removeTag === 'function') {
+                            OneSignal.User.removeTag(key);
+                        }
+                    } catch (err) {
+                        console.warn('Deferred removeTag failed:', err);
                     }
                 });
             }
