@@ -325,6 +325,41 @@ function appendLog(ss, entry) {
   ]);
 }
 
+function getSystemLogs(ss, tz, limit) {
+  const sh = ss.getSheetByName(LOG_SHEET);
+  if (!sh) return [];
+
+  const rows = sh.getDataRange().getValues();
+  if (rows.length <= 1) return [];
+
+  return rows
+    .slice(1)
+    .filter(row => row.some(cell => String(cell || "").trim() !== ""))
+    .map(row => {
+      const rawDate = row[0];
+      const timestamp = rawDate && typeof rawDate.getFullYear === "function"
+        ? Utilities.formatDate(rawDate, tz, "yyyy-MM-dd'T'HH:mm:ss")
+        : (row[0] || "").toString().trim();
+      const displayTime = rawDate && typeof rawDate.getFullYear === "function"
+        ? Utilities.formatDate(rawDate, tz, "dd/MM/yyyy HH:mm")
+        : timestamp;
+
+      return {
+        timestamp: timestamp,
+        displayTime: displayTime,
+        type: (row[1] || "").toString().trim(),
+        dataAgend: (row[2] || "").toString().trim(),
+        horario: (row[3] || "").toString().trim(),
+        cliente: (row[4] || "").toString().trim(),
+        telefone: (row[5] || "").toString().trim(),
+        token: (row[6] || "").toString().trim(),
+        msg: (row[7] || "").toString().trim()
+      };
+    })
+    .sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)))
+    .slice(0, limit || 100);
+}
+
 // ════════════════════════════════════════════════════════════════
 //  🌐  GET — Retorna agenda
 // ════════════════════════════════════════════════════════════════
@@ -397,6 +432,7 @@ function doGet(e) {
   return respond(cb, {
     status:     "OK",
     agenda:     agenda,
+    logs:       adminOk ? getSystemLogs(ss, tz, 100) : [],
     isAdmin:    adminOk,
     config:     getConfig(ss),
     serverTime: new Date().toISOString()
@@ -466,6 +502,15 @@ function doPost(e) {
 
     let rowsModified = 0;
     let newBookingNotify = null;
+    const logAgendaChange = (type, upd, msg) => appendLog(ss, {
+      type: type,
+      dataAgend: upd.data || "",
+      horario: upd.horario || "",
+      cliente: upd.cliente || "",
+      telefone: upd.telefone || "",
+      token: upd.codigo || "",
+      msg: msg
+    });
 
     updates.forEach(upd => {
       const updDate = (upd.data || "").toString().trim();
@@ -475,6 +520,9 @@ function doPost(e) {
       const rowIdx = data.findIndex(r => fmtDate(r[0], tz) === updDate && toComparableTime(fmtTime(r[1], tz)) === updTime);
       if (rowIdx > -1) {
         const curStatus = data[rowIdx][2];
+        const prevCliente = (data[rowIdx][3] || "").toString().trim();
+        const prevTelefone = (data[rowIdx][4] || "").toString().trim();
+        const prevToken = (data[rowIdx][5] || "").toString().trim();
         // Permite salvar se for admin ou se estiver livre
         if (adminOk || curStatus === "Livre" || (curStatus === "Aguardando Pagamento" && upd.codigo === data[rowIdx][5])) {
           sh.getRange(rowIdx + 1, 3, 1, 8).setValues([[
@@ -486,6 +534,19 @@ function doPost(e) {
           // Se for uma NOVA reserva pendente, prepara notificação do sistema
           if (upd.status === "Aguardando Pagamento" && curStatus === "Livre") {
             newBookingNotify = upd;
+            logAgendaChange("RESERVA", upd, `Reserva iniciada para ${upd.cliente || "cliente não informado"}.`);
+          } else if (upd.status === "Ocupado") {
+            logAgendaChange("CONFIRMACAO", upd, `Agendamento confirmado. Status anterior: ${curStatus || "desconhecido"}.`);
+          } else if (upd.status === "Bloqueado") {
+            logAgendaChange("BLOQUEIO", upd, "Horário bloqueado manualmente no painel admin.");
+          } else if (upd.status === "Livre" && curStatus !== "Livre") {
+            logAgendaChange("LIBERACAO", {
+              data: upd.data,
+              horario: upd.horario,
+              cliente: prevCliente,
+              telefone: prevTelefone,
+              codigo: prevToken
+            }, `Horário liberado. Status anterior: ${curStatus}.`);
           }
         }
       } else if (adminOk || upd.status === "Aguardando Pagamento") {
@@ -506,6 +567,11 @@ function doPost(e) {
 
         if (upd.status === "Aguardando Pagamento") {
           newBookingNotify = upd;
+          logAgendaChange("RESERVA", upd, `Reserva criada para ${upd.cliente || "cliente não informado"}.`);
+        } else if (upd.status === "Bloqueado") {
+          logAgendaChange("BLOQUEIO", upd, "Horário bloqueado manualmente no painel admin.");
+        } else if (upd.status === "Ocupado") {
+          logAgendaChange("CONFIRMACAO", upd, "Agendamento confirmado e criado na agenda.");
         }
       }
     });
@@ -519,6 +585,7 @@ function doPost(e) {
     return jsonOut({ status:"OK", modified: rowsModified });
 
   } catch (err) {
+    appendLog(ss, { type:"ERRO", msg: "Falha no doPost: " + err.toString() });
     return jsonOut({ status:"ERRO", message: err.toString() });
   }
 }
