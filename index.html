@@ -1511,11 +1511,23 @@
         };
 
         let db = [], srvCfg = { start: '08:00', end: '20:00', duration: 60 };
+        let systemLogs = [];
         let adminPass = localStorage.getItem('look_admin_pass') || "";
         let isAdmin = false;
         let isUserView = false;
         let currentDay = "";
         let selectedSlots = new Set(); // multi-select
+
+        function pad2(n) { return String(n).padStart(2, '0'); }
+
+        function formatLocalIsoDate(date) {
+            return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+        }
+
+        function parseIsoDateLocal(iso) {
+            const [year, month, day] = String(iso).split('-').map(Number);
+            return new Date(year, (month || 1) - 1, day || 1, 12, 0, 0, 0);
+        }
 
         // ─── INTRO ───────────────────────────────────────────
         setTimeout(() => document.getElementById('intro').classList.add('out'), 3500);
@@ -1542,6 +1554,7 @@
                     setTimeout(rej, 10000);
                 }).then(r => {
                     db = r.agenda || [];
+                    systemLogs = r.logs || [];
                     srvCfg = r.config || srvCfg;
                     isAdmin = !!r.isAdmin;
                     updateAppMode();
@@ -1624,7 +1637,7 @@
             const now = new Date();
             for (let i = 0; i < 14; i++) {
                 const d = new Date(); d.setDate(now.getDate() + i);
-                const iso = d.toISOString().split('T')[0];
+                const iso = formatLocalIsoDate(d);
                 const el = document.createElement('div');
                 el.className = 'day-pill' + (iso === currentDay ? ' active' : '');
                 el.onclick = () => selectDay(iso);
@@ -1639,7 +1652,7 @@
             currentDay = iso;
             clearSelection();
             renderDays();
-            const d = new Date(iso + 'T12:00:00');
+            const d = parseIsoDateLocal(iso);
             document.getElementById('gridDate').textContent =
                 d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
                     .replace(/^\w/, c => c.toUpperCase());
@@ -1664,7 +1677,7 @@
             logContainer.innerHTML = '';
 
             const now = new Date();
-            const todayIso = now.toISOString().split('T')[0];
+            const todayIso = formatLocalIsoDate(now);
             const curMins = now.getHours() * 60 + now.getMinutes();
 
             const [sH, sM] = srvCfg.start.split(':').map(Number);
@@ -1889,7 +1902,7 @@
 
         // ─── BOOKING SHEET (CLIENTE) ───────────────────────────
         function showBookingSheet(iso, clock) {
-            const d = new Date(iso + 'T12:00:00');
+            const d = parseIsoDateLocal(iso);
             const df = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
             openSheet('Agendar seu olhar ✨', `Preencha seus dados para reservar o horário das ${clock}.`);
             document.getElementById('sheetBody').innerHTML = `
@@ -2451,7 +2464,7 @@
         // ─── ADMIN STATS ────────────────────────────────────────────
         function updateAdminStats() {
             if (!isAdmin || isUserView) return;
-            const target = currentDay || new Date().toISOString().split('T')[0];
+            const target = currentDay || formatLocalIsoDate(new Date());
             const recs = db.filter(r => String(r.data).substring(0, 10) === target);
 
             const livre = recs.filter(r => r.status === 'Livre').length;
@@ -2466,7 +2479,7 @@
 
             // Próximo agendamento (Online ou Presencial)
             const now = new Date();
-            const curIso = now.toISOString().split('T')[0];
+            const curIso = formatLocalIsoDate(now);
             const curMins = now.getHours() * 60 + now.getMinutes();
 
             const next = db
@@ -2524,19 +2537,34 @@
         let logSortRev = true; // true = Recentes primeiro (DESC), false = Antigas (ASC)
 
         function openLogSheet() {
-            const allLogs = db.filter(r => r.status !== 'Livre')
+            const allLogs = [...systemLogs]
                 .sort((a, b) => {
-                    const timeA = a.bookingTime || (a.data + 'T' + a.horario);
-                    const timeB = b.bookingTime || (b.data + 'T' + b.horario);
+                    const timeA = String(a.timestamp || '');
+                    const timeB = String(b.timestamp || '');
                     return logSortRev ? timeB.localeCompare(timeA) : timeA.localeCompare(timeB);
                 })
-                .slice(0, 50); // Mostra mais no log agora
+                .slice(0, 100);
 
             const logHtml = allLogs.length === 0
                 ? '<div class="info-box">Nenhum evento registrado. ✨</div>'
                 : allLogs.map(r => {
-                    const isEx = r.status === 'Aguardando Pagamento' && r.reservedUntil && (new Date() > new Date(r.reservedUntil));
-                    const stColor = r.status === 'Ocupado' ? 'var(--st-ocupado)' : 'var(--st-aguard)';
+                    const stColor = ({
+                        'CONFIRMACAO': 'var(--st-ocupado)',
+                        'AUTO-RELEASE': 'var(--st-aguard)',
+                        'RESERVA': 'var(--st-aguard)',
+                        'BLOQUEIO': 'var(--st-block)',
+                        'LIBERACAO': 'var(--st-livre)',
+                        'ERRO': 'var(--rose)',
+                        'CONFIG': 'var(--gold)'
+                    }[r.type] || 'var(--gold)');
+                    const when = r.displayTime || 'Sem data';
+                    const slot = [r.dataAgend, r.horario].filter(Boolean).join(' às ');
+                    const person = r.cliente || 'Sistema';
+                    const meta = [
+                        r.type || 'SISTEMA',
+                        r.token ? `Token: ${r.token}` : '',
+                        r.telefone || ''
+                    ].filter(Boolean).join(' · ');
                     return `
                 <div class="log-entry" style="border-left-color:${stColor}">
                     <strong>${r.status === 'Ocupado' ? '✅ Vaga Confirmada' : (isEx ? '❌ Reserva Expirada' : '⏳ Aguardando Pagamento')}</strong>
@@ -2598,6 +2626,59 @@
                 updateAppMode();
             }
             setInterval(() => { if (currentDay) renderGrid(currentDay); }, 60000);
+        };
+
+        openLogSheet = function () {
+            const allLogs = [...systemLogs]
+                .sort((a, b) => {
+                    const timeA = String(a.timestamp || '');
+                    const timeB = String(b.timestamp || '');
+                    return logSortRev ? timeB.localeCompare(timeA) : timeA.localeCompare(timeB);
+                })
+                .slice(0, 100);
+
+            const logHtml = allLogs.length === 0
+                ? '<div class="info-box">Nenhum evento registrado. ✨</div>'
+                : allLogs.map(r => {
+                    const stColor = ({
+                        'CONFIRMACAO': 'var(--st-ocupado)',
+                        'AUTO-RELEASE': 'var(--st-aguard)',
+                        'RESERVA': 'var(--st-aguard)',
+                        'BLOQUEIO': 'var(--st-block)',
+                        'LIBERACAO': 'var(--st-livre)',
+                        'ERRO': 'var(--rose)',
+                        'CONFIG': 'var(--gold)'
+                    }[r.type] || 'var(--gold)');
+                    const when = r.displayTime || 'Sem data';
+                    const slot = [r.dataAgend, r.horario].filter(Boolean).join(' às ');
+                    const person = r.cliente || 'Sistema';
+                    const meta = [
+                        r.type || 'SISTEMA',
+                        r.token ? `Token: ${r.token}` : '',
+                        r.telefone || ''
+                    ].filter(Boolean).join(' · ');
+
+                    return `
+                <div class="log-entry" style="border-left-color:${stColor}">
+                    <strong>${when}</strong>
+                    <p style="margin:4px 0">${person}${slot ? ` — ${slot}` : ''}</p>
+                    <p style="margin:4px 0">${r.msg || 'Sem detalhes.'}</p>
+                    <div class="log-meta">${meta || 'Sem metadados'}</div>
+                </div>
+            `;
+                }).join('');
+
+            openSheet('Registros do Sistema', 'Histórico real da agenda e do backend.');
+            document.getElementById('sheetBody').innerHTML = `
+                <div style="display:flex; gap:8px; margin-bottom:16px;">
+                    <button class="dur-opt ${logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=true;openLogSheet()">⬇ Recentes Primeiro</button>
+                    <button class="dur-opt ${!logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=false;openLogSheet()">⬆ Antigas Primeiro</button>
+                </div>
+                ${logHtml}
+            `;
+            document.getElementById('sheetActions').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>
+            `;
         };
     </script>
 </body>
