@@ -8,6 +8,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;700&display=swap"
         rel="stylesheet">
+    <!-- OneSignal SDK for Notifications -->
+    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
     <style>
         :root {
             --blush: #F2D9D9;
@@ -1475,9 +1477,13 @@
         <div id="userNav" style="display:flex;gap:4px;align-items:center;">
             <button class="nav-btn" onclick="scrollToTop()">Início</button>
             <button class="nav-admin-login" onclick="promptAdmin()">🔐 Admin</button>
+            <button id="backToAdminBtn" class="nav-btn" onclick="toggleUserView()"
+                style="display:none; color:var(--rose); font-weight:bold;">🛠 Voltar Admin</button>
         </div>
         <div id="adminNav" style="display:none;gap:4px;align-items:center;">
             <button id="syncBtn" class="nav-btn primary" onclick="syncData()">↻ Atualizar</button>
+            <button class="nav-btn" onclick="toggleUserView()"
+                style="border: 1px solid var(--gold); color: var(--gold);">👁 Ver Cliente</button>
             <button class="nav-btn" onclick="logoutAdmin()"
                 style="color:var(--rose);border-color:var(--rose);">Sair</button>
         </div>
@@ -1505,7 +1511,9 @@
         };
 
         let db = [], srvCfg = { start: '08:00', end: '20:00', duration: 60 };
-        let adminPass = "", isAdmin = false;
+        let adminPass = localStorage.getItem('look_admin_pass') || "";
+        let isAdmin = false;
+        let isUserView = false;
         let currentDay = "";
         let selectedSlots = new Set(); // multi-select
 
@@ -1536,17 +1544,35 @@
                     db = r.agenda || [];
                     srvCfg = r.config || srvCfg;
                     isAdmin = !!r.isAdmin;
-                    if (isAdmin) {
-                        document.body.classList.add('admin-on');
-                    } else {
-                        document.body.classList.remove('admin-on');
-                    }
+                    updateAppMode();
                     renderDays();
                     if (currentDay) renderGrid(currentDay);
                     updateAdminStats();
                 });
             } catch (e) { } finally {
                 if (btn) { btn.textContent = '↻ Atualizar'; btn.style.opacity = '1'; }
+            }
+        }
+
+        // Gerencia o que aparece na tela baseado no modo (Admin ou Cliente)
+        function updateAppMode() {
+            const body = document.body;
+            const adminNav = document.getElementById('adminNav');
+            const userNav = document.getElementById('userNav');
+
+            if (isAdmin && !isUserView) {
+                body.classList.add('admin-on');
+                setupAdminNotifications();
+                document.getElementById('backToAdminBtn').style.display = 'none';
+                document.querySelector('.nav-admin-login').style.display = 'none';
+                if (adminNav) adminNav.style.display = 'flex';
+                if (userNav) userNav.style.display = 'none';
+            } else {
+                if (isAdmin) document.getElementById('backToAdminBtn').style.display = 'block';
+                if (isAdmin) document.querySelector('.nav-admin-login').style.display = 'none';
+                body.classList.remove('admin-on');
+                if (adminNav) adminNav.style.display = 'none';
+                if (userNav) userNav.style.display = 'flex';
             }
         }
 
@@ -2129,15 +2155,31 @@
         // ─── ADMIN AUTH ────────────────────────────────────────
         function promptAdmin() {
             const p = prompt('Senha do painel administrativo:');
-            if (p) { adminPass = p; syncData(); }
+            if (p) {
+                adminPass = p;
+                localStorage.setItem('look_admin_pass', p);
+                syncData();
+            }
         }
 
         function logoutAdmin() {
+            if (!confirm("Deseja realmente sair e remover a senha salva?")) return;
             adminPass = '';
             isAdmin = false;
-            document.body.classList.remove('admin-on');
+            localStorage.removeItem('look_admin_pass');
             clearSelection();
+            updateAppMode();
             if (currentDay) renderGrid(currentDay);
+        }
+
+        // Alterna entre ver como Admin ou ver como Cliente
+        function toggleUserView() {
+            isUserView = !isUserView;
+            updateAppMode();
+            if (currentDay) renderGrid(currentDay);
+
+            const msg = isUserView ? "Modo Cliente: Admin oculto" : "Modo Admin: Ativado";
+            console.log(msg);
         }
 
         // ─── POST ──────────────────────────────────────────────
@@ -2189,9 +2231,176 @@
             if (el) el.href = `https://wa.me/${CFG.WA}?text=${waText}`;
         }
 
+        // ─── PUSH NOTIFICATIONS (OneSignal) ──────────────────
+        const ONESIGNAL_APP_ID = "1246a184-5550-4e12-b1f4-24efd53c6f02";
+        let notificationsInitialized = false;
+        let waitingForNativeNotifications = false;
+
+        function isNativeApp() {
+            try {
+                if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function') {
+                    return window.Capacitor.isNativePlatform();
+                }
+            } catch (err) {
+                console.warn('Capacitor detection failed:', err);
+            }
+            return !!window.cordova;
+        }
+
+        function getNativeOneSignal() {
+            return window.plugins && window.plugins.OneSignal ? window.plugins.OneSignal : null;
+        }
+
+        function addNotificationTag(key, value) {
+            const nativeOneSignal = getNativeOneSignal();
+            if (nativeOneSignal && nativeOneSignal.User && typeof nativeOneSignal.User.addTag === 'function') {
+                nativeOneSignal.User.addTag(key, value);
+                return;
+            }
+
+            if (window.OneSignal && window.OneSignal.User && typeof window.OneSignal.User.addTag === 'function') {
+                window.OneSignal.User.addTag(key, value);
+                return;
+            }
+
+            if (window.OneSignal && window.OneSignal.push) {
+                window.OneSignal.push(function () {
+                    if (typeof OneSignal.sendTag === 'function') {
+                        OneSignal.sendTag(key, value);
+                    }
+                });
+            }
+        }
+
+        function removeNotificationTag(key) {
+            const nativeOneSignal = getNativeOneSignal();
+            if (nativeOneSignal && nativeOneSignal.User && typeof nativeOneSignal.User.removeTag === 'function') {
+                nativeOneSignal.User.removeTag(key);
+                return;
+            }
+
+            if (window.OneSignal && window.OneSignal.User && typeof window.OneSignal.User.removeTag === 'function') {
+                window.OneSignal.User.removeTag(key);
+                return;
+            }
+
+            if (window.OneSignal && window.OneSignal.push) {
+                window.OneSignal.push(function () {
+                    if (typeof OneSignal.deleteTag === 'function') {
+                        OneSignal.deleteTag(key);
+                    }
+                });
+            }
+        }
+
+        function initWebNotifications() {
+            if (notificationsInitialized) return;
+            try {
+                // OneSignal Web SDK v16+
+                window.OneSignalDeferred = window.OneSignalDeferred || [];
+                window.OneSignalDeferred.push(async function (OneSignal) {
+                    try {
+                        await OneSignal.init({
+                            appId: ONESIGNAL_APP_ID,
+                            allowLocalhostAsSecureOrigin: true,
+                            notifyButton: { enable: false },
+                        });
+                        notificationsInitialized = true;
+                        setupAdminNotifications();
+                    } catch (err) {
+                        console.warn('Web notifications (v16) init failed:', err);
+                    }
+                });
+
+                // Legacy fallback (older SDKs)
+                if (!notificationsInitialized) {
+                    window.OneSignal = window.OneSignal || [];
+                    if (typeof OneSignal !== 'undefined' && typeof OneSignal.push === 'function') {
+                        OneSignal.push(function () {
+                            try {
+                                OneSignal.init({
+                                    appId: ONESIGNAL_APP_ID,
+                                    allowLocalhostAsSecureOrigin: true,
+                                    notifyButton: { enable: false },
+                                });
+                                notificationsInitialized = true;
+                                setupAdminNotifications();
+                            } catch (err) {
+                                console.warn('Web notifications (legacy) init failed:', err);
+                            }
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn('Web notifications bootstrap failed:', err);
+            }
+        }
+
+        function initNativeNotifications() {
+            if (notificationsInitialized) return true;
+
+            const nativeOneSignal = getNativeOneSignal();
+            if (!nativeOneSignal) return false;
+
+            try {
+                if (typeof nativeOneSignal.initialize === 'function') {
+                    nativeOneSignal.initialize(ONESIGNAL_APP_ID);
+                } else if (typeof nativeOneSignal.startInit === 'function' && typeof nativeOneSignal.endInit === 'function') {
+                    // Backward-compatible flow for older Cordova APIs
+                    nativeOneSignal.startInit(ONESIGNAL_APP_ID);
+                    nativeOneSignal.endInit();
+                } else {
+                    return false;
+                }
+
+                notificationsInitialized = true;
+
+                if (nativeOneSignal.Notifications && typeof nativeOneSignal.Notifications.requestPermission === 'function') {
+                    nativeOneSignal.Notifications.requestPermission(false)
+                        .then(function (accepted) {
+                            console.log("User accepted notifications: " + accepted);
+                        })
+                        .catch(function (err) {
+                            console.warn('Native notification permission failed:', err);
+                        });
+                }
+
+                setupAdminNotifications();
+                return true;
+            } catch (err) {
+                console.warn('Native notifications init failed:', err);
+                return false;
+            }
+        }
+
+        function initNotifications() {
+            if (!isNativeApp()) {
+                initWebNotifications();
+                return;
+            }
+
+            if (initNativeNotifications()) return;
+
+            if (!waitingForNativeNotifications) {
+                waitingForNativeNotifications = true;
+                document.addEventListener('deviceready', initNativeNotifications, { once: true });
+                setTimeout(initNativeNotifications, 1500);
+            }
+        }
+
+        // Função para ativar as notificações quando você logar como Admin
+        function setupAdminNotifications() {
+            if (isAdmin && !isUserView) {
+                addNotificationTag("user_type", "admin");
+            } else {
+                // Remove a tag se estiver no modo cliente para não receber avisos de si mesma
+                removeNotificationTag("user_type");
+            }
+        }
+
         // ─── ADMIN STATS ────────────────────────────────────────────
         function updateAdminStats() {
-            if (!isAdmin) return;
+            if (!isAdmin || isUserView) return;
             const target = currentDay || new Date().toISOString().split('T')[0];
             const recs = db.filter(r => String(r.data).substring(0, 10) === target);
 
@@ -2325,8 +2534,19 @@
             spawnPetals();
             calcExperience();
             initSigWa();
+            // Core app flow should never depend on notifications.
             syncData();
             renderDays();
+            try {
+                initNotifications();
+            } catch (err) {
+                console.warn('Notifications init skipped due to runtime error:', err);
+            }
+            // Tenta ativar modo admin imediatamente se houver senha salva
+            if (adminPass) {
+                isAdmin = true;
+                updateAppMode();
+            }
             setInterval(() => { if (currentDay) renderGrid(currentDay); }, 60000);
         };
     </script>
