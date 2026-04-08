@@ -2228,6 +2228,12 @@
             }
         }
 
+        async function clearLogHistory() {
+            if (!confirm('Limpar todos os registros da agenda?')) return;
+            const ok = await postUpdates([{ action: 'clear_logs', password: adminPass }]);
+            if (ok) openLogSheet();
+        }
+
         // ─── SHEET HELPERS ─────────────────────────────────────
         function openSheet(title, sub) {
             document.getElementById('sheetTitle').textContent = title;
@@ -2673,6 +2679,7 @@
                 <div style="display:flex; gap:8px; margin-bottom:16px;">
                     <button class="dur-opt ${logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=true;openLogSheet()">⬇ Recentes Primeiro</button>
                     <button class="dur-opt ${!logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=false;openLogSheet()">⬆ Antigas Primeiro</button>
+                    <button class="dur-opt" style="flex:1; font-size:0.6rem; border-color:var(--rose); color:var(--rose-dark);" onclick="clearLogHistory()">Limpar</button>
                 </div>
                 ${logHtml}
             `;
