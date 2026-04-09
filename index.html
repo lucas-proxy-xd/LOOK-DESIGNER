@@ -849,13 +849,15 @@
             }catch{return iso;}
         }
 
-        function openLogSheet(){
-            const hideDate=localStorage.getItem('log_hide_before')||'';
-            // Busca todos registros não-livres e não-bloqueados para o log
-            const allLogs=[...db.filter(r=>r.status!=='Livre'&&r.status!=='Bloqueado'&&(!hideDate||String(r.data).substring(0,10)>=hideDate))]
+        async function openLogSheet(){
+            // Força sync antes de montar o log para garantir dados frescos
+            await syncData();
+
+            const allLogs=[...db.filter(r=>r.status!=='Livre'&&r.status!=='Bloqueado')]
                 .sort((a,b)=>{
-                    const tA=a.bookingTime||(a.data+'T'+a.horario);
-                    const tB=b.bookingTime||(b.data+'T'+b.horario);
+                    // Ordena pela data real do agendamento + horário
+                    const tA=(a.data+'T'+(a.horario||'00:00')).substring(0,16);
+                    const tB=(b.data+'T'+(b.horario||'00:00')).substring(0,16);
                     return logSortRev?tB.localeCompare(tA):tA.localeCompare(tB);
                 }).slice(0,60);
 
@@ -934,7 +936,7 @@
         function initNotifications(){if(!isNativeApp()){initWebNotifications();return;}if(initNativeNotifications())return;if(!waitingForNativeNotifications){waitingForNativeNotifications=true;document.addEventListener('deviceready',initNativeNotifications,{once:true});setTimeout(initNativeNotifications,1500);}}
         function setupAdminNotifications(){if(isAdmin&&!isUserView)addNotificationTag("user_type","admin");else removeNotificationTag("user_type");}
 
-        // ─── PETALS ───────────────────────────────────────────  
+        // ─── PETALS ───────────────────────────────────────────
         function spawnPetals(){
             const c=document.getElementById('introPetals');if(!c)return;
             const colors=['#C4848A','#C9A86C','#E8D5B0','#F2D9D9'];
