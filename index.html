@@ -1679,6 +1679,7 @@
             const now = new Date();
             const todayIso = formatLocalIsoDate(now);
             const curMins = now.getHours() * 60 + now.getMinutes();
+            const lastBooking = JSON.parse(localStorage.getItem('last_booking_v3') || 'null');
 
             const [sH, sM] = srvCfg.start.split(':').map(Number);
             const [eH, eM] = srvCfg.end.split(':').map(Number);
@@ -1717,6 +1718,15 @@
 
                 // Non-admin: expired => show as Livre
                 if (st === 'Aguardando Pagamento' && isExpired && !isAdmin) st = 'Livre';
+
+                // Identifica se este slot pertence à reserva atual do cliente (via localStorage)
+                const isMyBooking = lastBooking && lastBooking.iso === iso && lastBooking.clock === clock;
+
+                // Para o cliente, mostramos apenas vagas LIVRES ou a reserva DELE
+                if (!isAdmin && st !== 'Livre' && !isMyBooking) {
+                    cur += Math.max(15, durMin || 30);
+                    continue;
+                }
 
                 // Auto-fit duration against next occupied slot
                 if (st === 'Livre') {
@@ -1766,7 +1776,9 @@
                 const stLabel = stLabels[st] || st;
 
                 let clientName = 'Horário disponível ✨';
-                if (st === 'Ocupado' || st === 'Aguardando Pagamento') clientName = reg.cliente || '—';
+                if (st === 'Ocupado' || st === 'Aguardando Pagamento') {
+                    clientName = (isMyBooking && !isAdmin) ? 'Sua reserva ✨' : (reg.cliente || '—');
+                }
                 if (st === 'Bloqueado') clientName = 'Indisponível';
                 if (isExpired && !isAdmin) clientName = 'Horário disponível ✨';
 
@@ -1846,7 +1858,17 @@
                     showAdminSlotSheet(iso, clock, st, reg);
                 }
             } else {
-                if (st !== 'Livre') return;
+                if (st !== 'Livre') {
+                    // Se o cliente clicar na própria reserva pendente, mostramos o PIX novamente
+                    const lastBooking = JSON.parse(localStorage.getItem('last_booking_v3') || 'null');
+                    const isMyBooking = lastBooking && lastBooking.iso === iso && lastBooking.clock === clock;
+                    if (isMyBooking && st === 'Aguardando Pagamento') {
+                        const d = parseIsoDateLocal(iso);
+                        const df = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+                        showPixSheet(reg.cliente, reg.telefone, iso, clock, df, reg.codigo, reg.reservedUntil);
+                    }
+                    return;
+                }
                 showBookingSheet(iso, clock);
             }
         }
@@ -1926,6 +1948,17 @@
             if (!name || !phone) { alert('Preencha todos os campos.'); return; }
             const normalizedPhone = normalizePhone(phone);
 
+            // Bloqueio de 12 horas para novas solicitações (Cliente)
+            const lastBookingTime = localStorage.getItem('last_booking_timestamp');
+            if (lastBookingTime && !isAdmin) {
+                const diff = Date.now() - parseInt(lastBookingTime);
+                const hoursLimit = 12 * 60 * 60 * 1000;
+                if (diff < hoursLimit) {
+                    alert('Você já realizou uma solicitação recentemente. Para um novo agendamento, por favor aguarde 12 horas, entre em contato com a gerente ou compareça ao local no horário reservado.');
+                    return;
+                }
+            }
+
             // Sincroniza antes de validar para evitar múltiplas reservas em aparelhos diferentes
             await syncData();
 
@@ -1954,6 +1987,7 @@
             const bTime = new Date().toISOString();
 
             localStorage.setItem('last_booking_v3', JSON.stringify({ token, iso, clock, phone: normalizedPhone }));
+            localStorage.setItem('last_booking_timestamp', Date.now().toString());
 
             // Mostra o PIX IMEDIATAMENTE (Interface Otimista)
             showPixSheet(name, phone, iso, clock, df, token, exp);
