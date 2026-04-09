@@ -1681,6 +1681,10 @@
             const curMins = now.getHours() * 60 + now.getMinutes();
             const lastBooking = JSON.parse(localStorage.getItem('last_booking_v3') || 'null');
 
+            // Verifica se o cliente está no período de bloqueio de 12 horas
+            const lastBookingTime = localStorage.getItem('last_booking_timestamp');
+            const isRestricted = lastBookingTime && !isAdmin && (Date.now() - parseInt(lastBookingTime) < 12 * 60 * 60 * 1000);
+
             const [sH, sM] = srvCfg.start.split(':').map(Number);
             const [eH, eM] = srvCfg.end.split(':').map(Number);
             let cur = sH * 60 + sM, end = eH * 60 + eM;
