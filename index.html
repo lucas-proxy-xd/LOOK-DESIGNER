@@ -1728,11 +1728,13 @@
                 // Identifica se este slot pertence à reserva atual do cliente (via localStorage)
                 const isMyBooking = lastBooking && lastBooking.iso === iso && lastBooking.clock === clock;
 
-                // Regra de Visualização: Somente a própria vaga ou vagas livres
+                // FOCO TOTAL: Se o cliente já tem uma reserva ativa, ele vê APENAS o seu horário.
+                // Caso contrário, ele vê apenas os horários que estão LIVRES.
                 if (!isAdmin) {
                     if (hasActiveBooking) {
                         if (!isMyBooking) { cur += Math.max(15, durMin || 30); continue; }
                     } else {
+                        // Se o horário estiver ocupado por outra pessoa, o cliente nem o vê na lista.
                         if (st !== 'Livre') { cur += Math.max(15, durMin || 30); continue; }
                     }
                 }
@@ -1955,23 +1957,20 @@
             const name = document.getElementById('bName').value.trim();
             const phone = document.getElementById('bPhone').value.trim();
             if (!name || !phone) { alert('Preencha todos os campos.'); return; }
-            const normalizedPhone = normalizePhone(phone);
 
-            // Sincroniza antes de validar para evitar múltiplas reservas em aparelhos diferentes
-            await syncData();
-
-            // Garante que o cliente só tenha uma vaga ativa por vez
-            const alreadyBooked = db.find(r => (r.status === 'Ocupado' || r.status === 'Aguardando Pagamento') && normalizePhone(r.telefone) === normalizedPhone);
-            if (alreadyBooked && !isAdmin) { alert('Você já possui uma vaga ativa no sistema.'); return; }
-
-            const pendingByPhone = db.find(r =>
-                r.status === 'Aguardando Pagamento' &&
-                normalizePhone(r.telefone) === normalizedPhone
-            );
-            if (pendingByPhone) {
-                showPendingBookingBlock();
-                return;
+            // REGRA DE SEGURANÇA: Bloqueio de 12 horas para novos agendamentos
+            const lastTs = localStorage.getItem('last_booking_timestamp');
+            if (lastTs && !isAdmin) {
+                const diff = Date.now() - parseInt(lastTs);
+                if (diff < 12 * 60 * 60 * 1000) {
+                    const horasRestantes = Math.ceil((12 * 60 * 60 * 1000 - diff) / 3600000);
+                    alert(`Você já possui um agendamento recente. Para garantir a organização da agenda, aguarde ${horasRestantes}h para um novo agendamento ou fale com a Camila.`);
+                    return;
+                }
             }
+
+            const normalizedPhone = normalizePhone(phone);
+            await syncData();
 
             const token = Math.random().toString(36).substring(2, 7).toUpperCase();
             const exp = new Date(Date.now() + CFG.RESERVE_MIN * 60000).toISOString();
@@ -1983,9 +1982,9 @@
             // Mostra o PIX IMEDIATAMENTE (Interface Otimista)
             showPixSheet(name, phone, iso, clock, df, token, exp);
 
-            // Grava no banco e valida se ficou realmente pendente
+            // MELHORIA: A vaga agora fica OCUPADA automaticamente no momento da escolha.
             const ok = await postUpdates([{
-                data: iso, horario: clock, status: 'Aguardando Pagamento',
+                data: iso, horario: clock, status: 'Ocupado',
                 cliente: name, telefone: phone, codigo: token,
                 bookingTime: bTime, reservedUntil: exp,
                 duration: srvCfg.duration, password: adminPass
@@ -2660,6 +2659,10 @@
         };
 
         openLogSheet = function () {
+            const now = new Date();
+            const curIso = formatLocalIsoDate(now);
+            const curMins = now.getHours() * 60 + now.getMinutes();
+
             // Mural simplificado e focado em agendamentos
             const allLogs = db.filter(r => r.status === 'Ocupado' || r.status === 'Aguardando Pagamento')
                 .sort((a, b) => {
@@ -2672,13 +2675,25 @@
             const logHtml = allLogs.length === 0
                 ? '<div class="info-box">Nenhum evento registrado. ✨</div>'
                 : allLogs.map(r => {
+                    const [h, m] = r.horario.split(':').map(Number);
+                    const isPast = (r.data < curIso) || (r.data === curIso && (h * 60 + m) < curMins);
                     const isConfirmed = r.status === 'Ocupado';
-                    const stColor = isConfirmed ? 'var(--st-ocupado)' : 'var(--st-aguard)';
+
+                    let stColor = isConfirmed ? 'var(--st-ocupado)' : 'var(--st-aguard)';
+                    let stText = isConfirmed ? 'Agendamento Confirmado' : 'Aguardando PIX';
+                    let stIcon = isConfirmed ? '✅' : '⏳';
+
+                    if (isPast) {
+                        stColor = 'var(--st-block)';
+                        stIcon = '⌛';
+                        stText = 'Cliente atendido ou horário passado';
+                    }
+
                     const agendDate = r.data ? r.data.split('-').reverse().join('/') : '—';
 
                     return `
                 <div class="log-entry" style="border-left-color:${stColor}">
-                    <strong>${isConfirmed ? '✅ Agendamento Confirmado' : '⏳ Aguardando PIX'}</strong>
+                    <strong>${stIcon} ${stText}</strong>
                     <p style="margin:4px 0">👤 ${r.cliente} — 📅 ${agendDate} às ${r.horario}</p>
                     <div class="log-meta">📞 ${r.telefone || '—'} · 🎫 Token: ${r.codigo || '—'}</div>
                 </div>
