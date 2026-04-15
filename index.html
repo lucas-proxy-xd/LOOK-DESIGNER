@@ -3000,6 +3000,236 @@
             document.getElementById('sheetActions').innerHTML = `<button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>`;
         };
 
+        function getDayBookingsSummary(iso) {
+            const dayRecords = db.filter(r => String(r.data).substring(0, 10) === iso);
+            const occupied = dayRecords.filter(r => r.status === 'Ocupado').length;
+            const blocked = dayRecords.filter(r => r.status === 'Bloqueado').length;
+            const awaiting = dayRecords.filter(r => r.status === 'Aguardando Pagamento').length;
+
+            const [sH, sM] = srvCfg.start.split(':').map(Number);
+            const [eH, eM] = srvCfg.end.split(':').map(Number);
+            const totalSlots = Math.max(0, Math.ceil(((eH * 60 + eM) - (sH * 60 + sM)) / 30));
+            const free = Math.max(0, totalSlots - occupied - blocked - awaiting);
+
+            return { totalSlots, free, occupied, blocked, awaiting };
+        }
+
+        function getFutureConfirmedBookings() {
+            const todayIso = getManausIsoDate(new Date());
+            const currentMinutes = getManausMinutes(new Date());
+            return db
+                .filter(r => r.status === 'Ocupado')
+                .map(r => {
+                    const [h, m] = String(r.horario || '00:00').split(':').map(Number);
+                    return { ...r, mins: h * 60 + m };
+                })
+                .filter(r => r.data > todayIso || (r.data === todayIso && r.mins >= currentMinutes))
+                .sort((a, b) => a.data === b.data ? a.mins - b.mins : a.data.localeCompare(b.data));
+        }
+
+        function getHistoricBookings() {
+            const todayIso = getManausIsoDate(new Date());
+            const currentMinutes = getManausMinutes(new Date());
+            return db
+                .filter(r => r.status === 'Ocupado')
+                .map(r => {
+                    const [h, m] = String(r.horario || '00:00').split(':').map(Number);
+                    return { ...r, mins: h * 60 + m };
+                })
+                .filter(r => r.data < todayIso || (r.data === todayIso && r.mins < currentMinutes))
+                .sort((a, b) => a.data === b.data ? b.mins - a.mins : b.data.localeCompare(a.data));
+        }
+
+        configureAdminPanel = function () {
+            const statOcupado = document.getElementById('statOcupado');
+            const statAguard = document.getElementById('statAguard');
+            const statNext = document.getElementById('statNext');
+            const cards = document.querySelectorAll('#adminPanel .admin-card');
+
+            if (statOcupado) {
+                const wrap = statOcupado.closest('.stat-item');
+                const label = wrap ? wrap.querySelector('.stat-lbl') : null;
+                if (wrap) {
+                    wrap.style.cursor = 'pointer';
+                    wrap.onclick = openScheduledSheet;
+                }
+                if (label) label.textContent = 'Agendados';
+            }
+
+            if (statAguard) {
+                const wrap = statAguard.closest('.stat-item');
+                const label = wrap ? wrap.querySelector('.stat-lbl') : null;
+                if (wrap) {
+                    wrap.style.cursor = 'pointer';
+                    wrap.onclick = openLogSheet;
+                }
+                if (label) label.textContent = 'Histórico';
+            }
+
+            if (statNext) {
+                const wrap = statNext.closest('.stat-item');
+                const label = wrap ? wrap.querySelector('.stat-lbl') : null;
+                if (wrap) {
+                    wrap.style.cursor = 'pointer';
+                    wrap.onclick = openNextBookingSheet;
+                }
+                if (label) label.textContent = 'Próximo atendimento';
+            }
+
+            if (cards && cards[3]) {
+                const label = cards[3].querySelector('.ac-label');
+                const desc = cards[3].querySelector('.ac-desc');
+                cards[3].onclick = openLogSheet;
+                if (label) label.textContent = 'Histórico';
+                if (desc) desc.textContent = 'Atendimentos passados e auditoria importante';
+            }
+        };
+
+        updateAdminStats = function () {
+            if (!isAdmin || isUserView) return;
+            const target = currentDay || getManausIsoDate(new Date());
+            const summary = getDayBookingsSummary(target);
+            const historyCount = getHistoricBookings().length;
+            const next = getNextOccupiedBooking();
+            const el = (id, value) => {
+                const node = document.getElementById(id);
+                if (node) node.textContent = value;
+            };
+
+            el('statLivre', summary.free);
+            el('statOcupado', summary.occupied);
+            el('statAguard', historyCount);
+            el('statPix', 'R$ ' + (srvCfg.pix_value || '0.00'));
+            el('statNext', next ? next.horario : '—');
+        };
+
+        openScheduledSheet = function () {
+            const bookings = getFutureConfirmedBookings().slice(0, 100);
+            const logHtml = bookings.length === 0
+                ? '<div class="info-box">Nenhum cliente agendado para hoje ou próximos dias.</div>'
+                : bookings.map(r => `
+                    <div class="log-entry" style="border-left-color:var(--st-ocupado)">
+                        <strong>${r.cliente || 'Cliente não informado'}</strong>
+                        <p style="margin:4px 0">📅 ${formatManausLabel(r.data, { day: '2-digit', month: '2-digit', year: 'numeric' })} às <strong>${r.horario || '—'}</strong></p>
+                        <div class="log-meta">📞 ${r.telefone || '—'}${r.codigo ? ' · 🎫 ' + r.codigo : ''}</div>
+                    </div>
+                `).join('');
+
+            openSheet('Agendados', `${bookings.length} cliente(s) de hoje em diante.`);
+            document.getElementById('sheetBody').innerHTML = logHtml;
+            document.getElementById('sheetActions').innerHTML = `<button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>`;
+        };
+
+        openLogSheet = function () {
+            const historicBookings = getHistoricBookings().slice(0, 80);
+            const auditLogs = [...systemLogs]
+                .filter(r => ['AGENDAMENTO', 'BLOQUEIO', 'LIBERACAO', 'CONFIG', 'PUSH_ADMIN', 'ERRO'].includes(r.type))
+                .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')))
+                .slice(0, 30);
+
+            const bookingsHtml = historicBookings.length === 0
+                ? '<div class="info-box">Nenhum atendimento anterior registrado.</div>'
+                : historicBookings.map(r => `
+                    <div class="log-entry" style="border-left-color:var(--st-block)">
+                        <strong>${r.cliente || 'Cliente não informado'}</strong>
+                        <p style="margin:4px 0">📅 ${formatManausLabel(r.data, { day: '2-digit', month: '2-digit', year: 'numeric' })} às <strong>${r.horario || '—'}</strong></p>
+                        <div class="log-meta">📞 ${r.telefone || '—'}${r.codigo ? ' · 🎫 ' + r.codigo : ''}</div>
+                    </div>
+                `).join('');
+
+            const auditHtml = auditLogs.length === 0
+                ? '<div class="info-box">Nenhum evento relevante na auditoria.</div>'
+                : auditLogs.map(r => `
+                    <div class="log-entry" style="border-left-color:var(--gold)">
+                        <strong>${r.type || 'SISTEMA'}</strong>
+                        <p style="margin:4px 0">${r.msg || 'Sem detalhes.'}</p>
+                        <div class="log-meta">${r.displayTime || '—'}${r.dataAgend ? ' · ' + r.dataAgend : ''}${r.horario ? ' às ' + r.horario : ''}</div>
+                    </div>
+                `).join('');
+
+            openSheet('Histórico', 'Atendimentos passados e registros importantes.');
+            document.getElementById('sheetBody').innerHTML = `
+                <div class="info-box" style="margin-bottom:12px;">
+                    <strong>Atendimentos anteriores</strong>
+                </div>
+                ${bookingsHtml}
+                <div class="info-box" style="margin:16px 0 12px;">
+                    <strong>Auditoria do sistema</strong>
+                </div>
+                ${auditHtml}
+            `;
+            document.getElementById('sheetActions').innerHTML = `<button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>`;
+        };
+
+        async function requestNativeNotificationPermission() {
+            const nativeOneSignal = getNativeOneSignal();
+            if (!nativeOneSignal) return false;
+            try {
+                if (nativeOneSignal.Notifications && typeof nativeOneSignal.Notifications.requestPermission === 'function') {
+                    const accepted = await nativeOneSignal.Notifications.requestPermission(true);
+                    return !!accepted;
+                }
+                if (typeof nativeOneSignal.promptForPushNotificationsWithUserResponse === 'function') {
+                    return await new Promise(resolve => {
+                        nativeOneSignal.promptForPushNotificationsWithUserResponse(resolve);
+                    });
+                }
+            } catch (err) {
+                console.warn('Native notification permission request failed:', err);
+            }
+            return false;
+        }
+
+        initNativeNotifications = async function () {
+            if (notificationsInitialized) return true;
+
+            const nativeOneSignal = getNativeOneSignal();
+            if (!nativeOneSignal) return false;
+
+            try {
+                if (typeof nativeOneSignal.initialize === 'function') {
+                    nativeOneSignal.initialize(ONESIGNAL_APP_ID);
+                } else if (typeof nativeOneSignal.startInit === 'function' && typeof nativeOneSignal.endInit === 'function') {
+                    nativeOneSignal.startInit(ONESIGNAL_APP_ID);
+                    nativeOneSignal.endInit();
+                } else {
+                    return false;
+                }
+
+                notificationsInitialized = true;
+
+                try {
+                    if (nativeOneSignal.User && nativeOneSignal.User.pushSubscription && typeof nativeOneSignal.User.pushSubscription.optIn === 'function') {
+                        nativeOneSignal.User.pushSubscription.optIn();
+                    } else if (nativeOneSignal.User && nativeOneSignal.User.pushSubscription && typeof nativeOneSignal.User.pushSubscription.optedIn !== 'undefined') {
+                        nativeOneSignal.User.pushSubscription.optedIn = true;
+                    } else if (typeof nativeOneSignal.optIn === 'function') {
+                        nativeOneSignal.optIn();
+                    }
+                } catch (err) {
+                    console.warn('Push subscription opt-in failed:', err);
+                }
+
+                await requestNativeNotificationPermission();
+                setupAdminNotifications();
+                return true;
+            } catch (err) {
+                console.warn('Native notifications init failed:', err);
+                return false;
+            }
+        };
+
+        setupAdminNotifications = async function () {
+            if (isAdmin && !isUserView) {
+                if (isNativeApp()) {
+                    await requestNativeNotificationPermission();
+                }
+                addNotificationTag('user_type', 'admin');
+            } else {
+                removeNotificationTag('user_type');
+            }
+        };
+
         window.addEventListener('load', configureAdminPanel);
 
         window.onload = () => {
