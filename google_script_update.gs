@@ -28,11 +28,11 @@ const CONFIG_SHEET   = "CONFIG";           // Nome da aba de configurações
 const LOG_SHEET      = "LOG_SISTEMA";      // Nome da aba de log do sistema
 const TIME_ZONE      = "America/Manaus";   // Fuso horário (GMT-4)
 const IMPORTANT_LOG_TYPES = {
-  "RESERVA": true,
-  "CONFIRMACAO": true,
+  "AGENDAMENTO": true,
   "BLOQUEIO": true,
   "LIBERACAO": true,
-  "AUTO-RELEASE": true,
+  "CONFIG": true,
+  "PUSH_ADMIN": true,
   "ERRO": true
 };
 
@@ -188,6 +188,38 @@ function normalizeToken(token) {
   return (token || "").toString().trim();
 }
 
+function normalizePhoneValue(phone) {
+  let clean = (phone || "").toString().replace(/\D/g, "");
+  if (clean.indexOf("55") === 0 && clean.length > 11) clean = clean.substring(2);
+  return clean;
+}
+
+function findRecentBookingByPhone(rows, tz, phone, now) {
+  const normalizedPhone = normalizePhoneValue(phone);
+  if (!normalizedPhone) return null;
+
+  for (let i = rows.length - 1; i >= 1; i--) {
+    const row = rows[i];
+    if (normalizePhoneValue(row[4]) !== normalizedPhone) continue;
+    if ((row[2] || "").toString().trim() !== "Ocupado") continue;
+
+    const bookingTime = (row[6] || "").toString().trim();
+    const bookingDate = new Date(bookingTime);
+    if (isNaN(bookingDate.getTime())) continue;
+
+    if ((now.getTime() - bookingDate.getTime()) < 12 * 60 * 60 * 1000) {
+      return {
+        data: fmtDate(row[0], tz),
+        horario: fmtTime(row[1], tz),
+        cliente: (row[3] || "").toString().trim(),
+        bookingTime: bookingTime
+      };
+    }
+  }
+
+  return null;
+}
+
 function toComparableTime(value) {
   const s = (value || "").toString().trim();
   const m = s.match(/(\d{1,2}):(\d{2})/);
@@ -240,7 +272,7 @@ function sendMobilePushNotification(booking) {
 
   if (!cfg.appId || !cfg.apiKey) {
     appendLog(ss, {
-      type:"PUSH",
+      type:"PUSH_ADMIN",
       cliente: booking.cliente,
       telefone: booking.telefone,
       token: booking.codigo,
@@ -258,9 +290,9 @@ function sendMobilePushNotification(booking) {
       { field: "tag", key: "user_type", relation: "=", value: "admin" }
     ],
     headings: {
-      en: "Nova reserva aguardando pagamento",
-      pt: "Nova reserva aguardando pagamento",
-      "pt-BR": "Nova reserva aguardando pagamento"
+      en: "New appointment booked",
+      pt: "Novo agendamento realizado",
+      "pt-BR": "Novo agendamento realizado"
     },
     contents: {
       en: `${booking.cliente} • ${booking.data} as ${booking.horario}`,
@@ -268,7 +300,7 @@ function sendMobilePushNotification(booking) {
       "pt-BR": `${booking.cliente} • ${booking.data} as ${booking.horario}`
     },
     data: {
-      event: "booking_pending_payment",
+      event: "booking_confirmed",
       cliente: booking.cliente || "",
       telefone: booking.telefone || "",
       data: booking.data || "",
@@ -290,13 +322,13 @@ function sendMobilePushNotification(booking) {
     const code = response.getResponseCode();
     const body = response.getContentText().slice(0, 300);
     appendLog(ss, {
-      type:"PUSH",
+      type:"PUSH_ADMIN",
       cliente: booking.cliente,
       telefone: booking.telefone,
       token: booking.codigo,
       dataAgend: booking.data,
       horario: booking.horario,
-      msg:`OneSignal push retornou ${code}: ${body}`
+      msg:`Push admin enviado. HTTP ${code}.`
     });
     return { ok: code >= 200 && code < 300, code: code, body: body };
   } catch (e) {
@@ -544,6 +576,22 @@ function doPost(e) {
       const updTime = toComparableTime(upd.horario);
       if (!updDate || !updTime) return;
 
+      if (!adminOk && upd.status === "Ocupado") {
+        const recentBooking = findRecentBookingByPhone(data, tz, upd.telefone, new Date());
+        if (recentBooking) {
+          appendLog(ss, {
+            type: "ERRO",
+            dataAgend: updDate,
+            horario: updTime,
+            cliente: upd.cliente || "",
+            telefone: upd.telefone || "",
+            token: upd.codigo || "",
+            msg: `Agendamento recusado por regra de 12h. Ultimo horario: ${recentBooking.data} ${recentBooking.horario}.`
+          });
+          throw new Error("Cliente ja possui agendamento realizado nas ultimas 12 horas.");
+        }
+      }
+
       const rowIdx = data.findIndex(r => fmtDate(r[0], tz) === updDate && toComparableTime(fmtTime(r[1], tz)) === updTime);
       if (rowIdx > -1) {
         const curStatus = data[rowIdx][2];
@@ -559,11 +607,11 @@ function doPost(e) {
           rowsModified++;
           
           // Se for uma NOVA reserva pendente, prepara notificação do sistema
-          if (upd.status === "Aguardando Pagamento" && curStatus === "Livre") {
+          if (upd.status === "Ocupado" && curStatus === "Livre") {
             newBookingNotify = upd;
             logAgendaChange("RESERVA", upd, `Reserva iniciada para ${upd.cliente || "cliente não informado"}.`);
           } else if (upd.status === "Ocupado") {
-            logAgendaChange("CONFIRMACAO", upd, `Agendamento confirmado. Status anterior: ${curStatus || "desconhecido"}.`);
+            logAgendaChange("AGENDAMENTO", upd, `Agendamento atualizado. Status anterior: ${curStatus || "desconhecido"}.`);
           } else if (upd.status === "Bloqueado") {
             logAgendaChange("BLOQUEIO", upd, "Horário bloqueado manualmente no painel admin.");
           } else if (upd.status === "Livre" && curStatus !== "Livre") {
@@ -576,8 +624,7 @@ function doPost(e) {
             }, `Horário liberado. Status anterior: ${curStatus}.`);
           }
         }
-      } else if (adminOk || upd.status === "Aguardando Pagamento") {
-        // Se o slot nao existir na planilha, cria a linha para nao perder reserva pendente.
+      } else if (adminOk || upd.status === "Ocupado") {
         sh.appendRow([
           updDate,
           updTime,
@@ -592,20 +639,19 @@ function doPost(e) {
         ]);
         rowsModified++;
 
-        if (upd.status === "Aguardando Pagamento") {
+        if (upd.status === "Ocupado") {
           newBookingNotify = upd;
           logAgendaChange("RESERVA", upd, `Reserva criada para ${upd.cliente || "cliente não informado"}.`);
         } else if (upd.status === "Bloqueado") {
           logAgendaChange("BLOQUEIO", upd, "Horário bloqueado manualmente no painel admin.");
         } else if (upd.status === "Ocupado") {
-          logAgendaChange("CONFIRMACAO", upd, "Agendamento confirmado e criado na agenda.");
+          logAgendaChange("AGENDAMENTO", upd, "Agendamento criado na agenda.");
         }
       }
     });
 
     // Dispara a Notificação Silenciosa para a Gerente (Se houver nova reserva)
     if (newBookingNotify && rowsModified > 0) {
-      sendInternalNotification(newBookingNotify);
       sendMobilePushNotification(newBookingNotify);
     }
 
