@@ -8,7 +8,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;700&display=swap"
         rel="stylesheet">
-    <link rel="icon" type="image/png" href="icon.png">
+    <!-- OneSignal SDK for Notifications -->
     <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
     <style>
         :root {
@@ -21,6 +21,8 @@
             --ink-soft: #5C4F4F;
             --cream: #FAF6F1;
             --cream-dark: #F0E8E0;
+            --glass: rgba(255, 255, 255, 0.55);
+            --glass-border: rgba(201, 168, 108, 0.25);
             --shadow: 0 8px 40px rgba(42, 32, 32, 0.08);
             --shadow-deep: 0 20px 60px rgba(42, 32, 32, 0.15);
             --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -34,7 +36,7 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
             margin: 0;
-            padding: 0
+            padding: 0;
         }
 
         body {
@@ -43,20 +45,26 @@
             color: var(--ink);
             min-height: 100vh;
             overflow-x: hidden;
-            transition: background .5s ease
+            transition: background 0.5s ease;
         }
 
         body.admin-on {
-            background: #ffe4e6
+            background: #ffe4e6;
+            /* Rose-100: Rosa mais presente, mas ainda legível */
         }
 
         body::before {
             content: '';
             position: fixed;
-            inset: 0;
-            background: radial-gradient(ellipse 80% 50% at 10% 0%, rgba(242, 217, 217, .6) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 90% 100%, rgba(201, 168, 108, .15) 0%, transparent 60%);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 10% 0%, rgba(242, 217, 217, 0.6) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 90% 100%, rgba(201, 168, 108, 0.15) 0%, transparent 60%);
             pointer-events: none;
-            z-index: 0
+            z-index: 0;
         }
 
         /* INTRO */
@@ -71,18 +79,19 @@
             justify-content: center;
             gap: 16px;
             transition: opacity 1.4s var(--ease), visibility 1.4s;
-            overflow: hidden
+            overflow: hidden;
         }
 
         #intro.out {
             opacity: 0;
-            visibility: hidden
+            visibility: hidden;
         }
 
+        /* Petal particles */
         .intro-petals {
             position: absolute;
             inset: 0;
-            pointer-events: none
+            pointer-events: none;
         }
 
         .petal {
@@ -92,33 +101,34 @@
             border-radius: 50% 50% 50% 0;
             background: var(--rose);
             opacity: 0;
-            animation: petalFall linear infinite
+            animation: petalFall linear infinite;
         }
 
         @keyframes petalFall {
             0% {
                 opacity: 0;
-                transform: translateY(-20px) rotate(0deg) scale(.5)
+                transform: translateY(-20px) rotate(0deg) scale(0.5);
             }
 
             10% {
-                opacity: .6
+                opacity: 0.6;
             }
 
             90% {
-                opacity: .3
+                opacity: 0.3;
             }
 
             100% {
                 opacity: 0;
-                transform: translateY(100vh) rotate(720deg) scale(1.2)
+                transform: translateY(100vh) rotate(720deg) scale(1.2);
             }
         }
 
+        /* Intro mark */
         .intro-icon {
             position: relative;
             opacity: 0;
-            animation: fadeUp 1.2s .3s var(--ease) forwards
+            animation: fadeUp 1.2s 0.3s var(--ease) forwards;
         }
 
         .intro-icon::before {
@@ -129,47 +139,47 @@
             width: 124px;
             height: 124px;
             transform: translate(-50%, -50%);
-            background: radial-gradient(circle, rgba(201, 168, 108, .26) 0%, rgba(201, 168, 108, .08) 36%, rgba(201, 168, 108, 0) 72%);
+            background: radial-gradient(circle, rgba(201, 168, 108, 0.26) 0%, rgba(201, 168, 108, 0.08) 36%, rgba(201, 168, 108, 0) 72%);
             filter: blur(5px);
-            pointer-events: none
+            pointer-events: none;
         }
 
         .intro-mark {
             width: 92px;
             height: 92px;
-            display: block
+            display: block;
         }
 
         .intro-star {
             transform-origin: 46px 46px;
             animation: starSpin 10s linear infinite;
-            filter: drop-shadow(0 0 12px rgba(201, 168, 108, .28))
+            filter: drop-shadow(0 0 12px rgba(201, 168, 108, 0.28));
         }
 
         .intro-star-core {
             transform-origin: 46px 46px;
-            animation: starPulse 2.4s ease-in-out infinite
+            animation: starPulse 2.4s ease-in-out infinite;
         }
 
         .intro-orbit {
             transform-origin: 46px 46px;
-            animation: orbitFloat 4.8s ease-in-out infinite
+            animation: orbitFloat 4.8s ease-in-out infinite;
         }
 
         .intro-spark {
-            animation: sparkBlink 2.2s ease-in-out infinite
+            animation: sparkBlink 2.2s ease-in-out infinite;
         }
 
         .intro-spark.s2 {
-            animation-delay: .45s
+            animation-delay: 0.45s;
         }
 
         .intro-spark.s3 {
-            animation-delay: .95s
+            animation-delay: 0.95s;
         }
 
         .intro-spark.s4 {
-            animation-delay: 1.5s
+            animation-delay: 1.5s;
         }
 
         .intro-title {
@@ -180,25 +190,25 @@
             color: var(--gold);
             text-transform: uppercase;
             opacity: 0;
-            animation: fadeUp 1.2s .7s var(--ease) forwards
+            animation: fadeUp 1.2s 0.7s var(--ease) forwards;
         }
 
         .intro-sub {
-            font-size: .6rem;
+            font-size: 0.6rem;
             letter-spacing: 6px;
-            color: rgba(255, 255, 255, .35);
+            color: rgba(255, 255, 255, 0.35);
             text-transform: uppercase;
             opacity: 0;
-            animation: fadeUp 1.2s 1s var(--ease) forwards
+            animation: fadeUp 1.2s 1s var(--ease) forwards;
         }
 
         @keyframes starSpin {
             from {
-                transform: rotate(0)
+                transform: rotate(0deg);
             }
 
             to {
-                transform: rotate(360deg)
+                transform: rotate(360deg);
             }
         }
 
@@ -206,13 +216,13 @@
 
             0%,
             100% {
-                transform: scale(.92);
-                opacity: .88
+                transform: scale(0.92);
+                opacity: 0.88;
             }
 
             50% {
                 transform: scale(1.08);
-                opacity: 1
+                opacity: 1;
             }
         }
 
@@ -220,11 +230,11 @@
 
             0%,
             100% {
-                transform: scale(1) rotate(0)
+                transform: scale(1) rotate(0deg);
             }
 
             50% {
-                transform: scale(1.03) rotate(8deg)
+                transform: scale(1.03) rotate(8deg);
             }
         }
 
@@ -232,34 +242,34 @@
 
             0%,
             100% {
-                opacity: .22;
-                transform: scale(.82)
+                opacity: 0.22;
+                transform: scale(0.82);
             }
 
             42% {
                 opacity: 1;
-                transform: scale(1.18)
+                transform: scale(1.18);
             }
 
             72% {
-                opacity: .4;
-                transform: scale(.94)
+                opacity: 0.4;
+                transform: scale(0.94);
             }
         }
 
         @keyframes fadeUp {
             from {
                 opacity: 0;
-                transform: translateY(12px)
+                transform: translateY(12px);
             }
 
             to {
                 opacity: 1;
-                transform: translateY(0)
+                transform: translateY(0);
             }
         }
 
-        /* SIGNATURE */
+        /* SIGNATURE SECTION */
         .signature-section {
             margin: 40px 0 20px;
             text-align: center;
@@ -268,7 +278,7 @@
             border-radius: 24px;
             box-shadow: var(--shadow);
             position: relative;
-            overflow: hidden
+            overflow: hidden;
         }
 
         .signature-section::before {
@@ -278,7 +288,7 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, var(--rose), var(--gold), var(--rose))
+            background: linear-gradient(90deg, var(--rose), var(--gold), var(--rose));
         }
 
         .sig-lash-deco {
@@ -289,14 +299,14 @@
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, .96), rgba(255, 255, 255, .82) 38%, rgba(201, 168, 108, .12) 100%);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85), 0 14px 34px rgba(139, 79, 85, .11)
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.82) 38%, rgba(201, 168, 108, 0.12) 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 14px 34px rgba(139, 79, 85, 0.11);
         }
 
         .sig-mark {
             width: 34px;
             height: 34px;
-            display: block
+            display: block;
         }
 
         .sig-name {
@@ -305,16 +315,16 @@
             font-style: italic;
             font-weight: 400;
             color: var(--ink);
-            margin-bottom: 2px
+            margin-bottom: 2px;
         }
 
         .sig-title {
-            font-size: .5rem;
+            font-size: 0.5rem;
             letter-spacing: 4px;
             font-weight: 700;
             color: var(--gold);
             text-transform: uppercase;
-            margin-bottom: 12px
+            margin-bottom: 12px;
         }
 
         .sig-exp {
@@ -323,9 +333,9 @@
             color: white;
             padding: 6px 16px;
             border-radius: 20px;
-            font-size: .7rem;
+            font-size: 0.7rem;
             font-weight: 700;
-            margin-bottom: 16px
+            margin-bottom: 16px;
         }
 
         .sig-wa {
@@ -336,41 +346,41 @@
             padding: 14px 20px;
             border-radius: 14px;
             font-weight: 700;
-            font-size: .8rem;
+            font-size: 0.8rem;
             text-align: center;
-            box-shadow: 0 6px 20px rgba(37, 211, 102, .3);
-            transition: all .3s
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.3);
+            transition: all 0.3s;
         }
 
         .sig-wa:active {
-            transform: scale(.98)
+            transform: scale(0.98);
         }
 
-        /* ADMIN PANEL */
+        /* ADMIN PANEL SECTION */
         #adminPanel {
             display: none;
-            margin: 24px 0
+            margin: 24px 0;
         }
 
         body.admin-on #adminPanel {
-            display: block
+            display: block;
         }
 
         .admin-panel-title {
-            font-size: .5rem;
+            font-size: 0.5rem;
             letter-spacing: 5px;
             font-weight: 700;
             color: var(--rose);
             text-transform: uppercase;
             margin-bottom: 16px;
-            text-align: center
+            text-align: center;
         }
 
         .admin-cards {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-bottom: 16px
+            margin-bottom: 16px;
         }
 
         .admin-card {
@@ -381,34 +391,34 @@
             cursor: pointer;
             box-shadow: var(--shadow);
             border: 1.5px solid transparent;
-            transition: all .3s var(--ease)
+            transition: all 0.3s var(--ease);
         }
 
         .admin-card:hover {
             border-color: var(--rose);
             transform: translateY(-3px);
-            box-shadow: var(--shadow-deep)
+            box-shadow: var(--shadow-deep);
         }
 
         .admin-card .ac-icon {
             font-size: 1.6rem;
             margin-bottom: 8px;
-            display: block
+            display: block;
         }
 
         .admin-card .ac-label {
-            font-size: .6rem;
+            font-size: 0.6rem;
             font-weight: 700;
             letter-spacing: 2px;
             text-transform: uppercase;
             color: var(--rose);
-            margin-bottom: 4px
+            margin-bottom: 4px;
         }
 
         .admin-card .ac-desc {
-            font-size: .72rem;
+            font-size: 0.72rem;
             color: var(--ink-soft);
-            line-height: 1.4
+            line-height: 1.4;
         }
 
         .admin-stats {
@@ -418,11 +428,11 @@
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 8px;
-            margin-bottom: 12px
+            margin-bottom: 12px;
         }
 
         .stat-item {
-            text-align: center
+            text-align: center;
         }
 
         .stat-num {
@@ -430,18 +440,19 @@
             font-size: 1.8rem;
             color: var(--gold);
             display: block;
-            line-height: 1
+            line-height: 1;
         }
 
         .stat-lbl {
-            font-size: .5rem;
+            font-size: 0.5rem;
             letter-spacing: 2px;
-            color: rgba(255, 255, 255, .4);
+            color: rgba(255, 255, 255, 0.4);
             text-transform: uppercase;
             margin-top: 4px;
-            display: block
+            display: block;
         }
 
+        /* ADMIN BADGE */
         body.admin-on::after {
             content: "PAINEL ADMINISTRATIVO ATIVO";
             position: fixed;
@@ -453,19 +464,19 @@
             animation: shimmer 3s linear infinite;
             color: white;
             text-align: center;
-            font-size: .5rem;
+            font-size: 0.5rem;
             letter-spacing: 4px;
             padding: 5px;
-            z-index: 8000
+            z-index: 8000;
         }
 
         @keyframes shimmer {
             0% {
-                background-position: -200% 0
+                background-position: -200% 0;
             }
 
             100% {
-                background-position: 200% 0
+                background-position: 200% 0;
             }
         }
 
@@ -475,25 +486,26 @@
             margin: 0 auto;
             padding: 0 20px 160px;
             position: relative;
-            z-index: 1
+            z-index: 1;
         }
 
+        /* HEADER */
         header {
             padding: 48px 0 32px;
             text-align: center;
-            position: relative
+            position: relative;
         }
 
         .logo-lash {
             font-family: 'Cormorant Garamond', serif;
-            font-size: .55rem;
+            font-size: 0.55rem;
             letter-spacing: 8px;
             color: var(--rose);
             text-transform: uppercase;
             margin-bottom: 8px;
             display: block;
             opacity: 0;
-            animation: fadeUp 1s 3.5s var(--ease) forwards
+            animation: fadeUp 1s 3.5s var(--ease) forwards;
         }
 
         .logo-main {
@@ -504,12 +516,12 @@
             color: var(--ink);
             line-height: 1;
             opacity: 0;
-            animation: fadeUp 1s 3.7s var(--ease) forwards
+            animation: fadeUp 1s 3.7s var(--ease) forwards;
         }
 
         .logo-main strong {
             font-weight: 600;
-            color: var(--rose)
+            color: var(--rose);
         }
 
         .logo-dot {
@@ -519,18 +531,20 @@
             border-radius: 50%;
             display: inline-block;
             margin: 0 4px;
-            vertical-align: middle
+            vertical-align: middle;
         }
 
         #adminKey {
-            display: none
+            display: none;
+            /* hidden - login via nav button below */
         }
 
+        /* Admin login button in nav - always visible */
         .nav-admin-login {
             background: none;
-            border: 1.5px solid rgba(196, 132, 138, .3);
+            border: 1.5px solid rgba(196, 132, 138, 0.3);
             font-family: "DM Sans", sans-serif;
-            font-size: .55rem;
+            font-size: 0.55rem;
             font-weight: 700;
             letter-spacing: 2px;
             text-transform: uppercase;
@@ -538,16 +552,17 @@
             cursor: pointer;
             padding: 8px 16px;
             border-radius: 40px;
-            transition: all .3s
+            transition: all 0.3s;
         }
 
         .nav-admin-login:hover {
-            background: rgba(196, 132, 138, .08);
-            border-color: var(--rose)
+            background: rgba(196, 132, 138, 0.08);
+            border-color: var(--rose);
         }
 
+        /* SECTION LABEL */
         .section-label {
-            font-size: .5rem;
+            font-size: 0.5rem;
             letter-spacing: 5px;
             font-weight: 700;
             color: var(--gold);
@@ -555,7 +570,7 @@
             text-align: center;
             margin-bottom: 20px;
             opacity: 0;
-            animation: fadeUp 1s 4s var(--ease) forwards
+            animation: fadeUp 1s 4s var(--ease) forwards;
         }
 
         /* DAY PICKER */
@@ -563,7 +578,7 @@
             position: relative;
             margin: 0 -20px;
             display: flex;
-            align-items: center
+            align-items: center;
         }
 
         .scroll-arrow {
@@ -573,7 +588,7 @@
             width: 32px;
             height: 32px;
             background: white;
-            border: 1px solid rgba(196, 132, 138, .2);
+            border: 1px solid rgba(196, 132, 138, 0.2);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -581,24 +596,25 @@
             color: var(--rose);
             cursor: pointer;
             z-index: 10;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
-            transition: all .3s;
-            font-size: .8rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            font-size: 0.8rem;
             font-weight: 700;
-            opacity: .15
+            opacity: 0.15;
+            /* Subitamente transparente conforme pedido */
         }
 
         .scroll-arrow:active {
-            transform: translateY(-50%) scale(.9);
-            opacity: .5
+            transform: translateY(-50%) scale(0.9);
+            opacity: 0.5;
         }
 
         .scroll-arrow.left {
-            left: 2px
+            left: 2px;
         }
 
         .scroll-arrow.right {
-            right: 2px
+            right: 2px;
         }
 
         .day-scroller {
@@ -606,6 +622,7 @@
             gap: 12px;
             overflow-x: auto;
             padding: 8px 80px 24px;
+            /* Aumentado para 80px para garantir que as datas não fiquem sob as setas */
             scrollbar-width: none;
             opacity: 0;
             animation: fadeUp 1s 4.2s var(--ease) forwards;
@@ -613,31 +630,34 @@
             -webkit-overflow-scrolling: touch;
             width: 100%;
             mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
-            -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent)
+            -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
         }
 
         .day-scroller::-webkit-scrollbar {
-            display: none
+            display: none;
         }
 
         .day-pill {
             min-width: 68px;
+            /* Slightly wider */
             height: 94px;
+            /* Slightly taller */
             border-radius: 20px;
             background: white;
-            border: 1.5px solid rgba(196, 132, 138, .15);
+            border: 1.5px solid rgba(196, 132, 138, 0.15);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 2px;
             cursor: pointer;
-            transition: all .5s var(--ease);
-            box-shadow: 0 4px 20px rgba(42, 32, 32, .05);
+            transition: all 0.5s var(--ease);
+            box-shadow: 0 4px 20px rgba(42, 32, 32, 0.05);
             position: relative;
             overflow: hidden;
             scroll-snap-align: start;
-            flex-shrink: 0
+            /* Snap point */
+            flex-shrink: 0;
         }
 
         .day-pill::before {
@@ -646,34 +666,34 @@
             inset: 0;
             background: linear-gradient(135deg, var(--rose), var(--deep-rose));
             opacity: 0;
-            transition: opacity .5s var(--ease)
+            transition: opacity 0.5s var(--ease);
         }
 
         .day-pill.active {
             transform: translateY(-8px) scale(1.08);
             border-color: var(--rose);
-            box-shadow: 0 16px 40px rgba(196, 132, 138, .3)
+            box-shadow: 0 16px 40px rgba(196, 132, 138, 0.3);
         }
 
         .day-pill.active::before {
-            opacity: 1
+            opacity: 1;
         }
 
         .day-pill .dw,
         .day-pill .dm {
-            font-size: .5rem;
+            font-size: 0.5rem;
             font-weight: 700;
             letter-spacing: 2px;
             text-transform: uppercase;
             color: var(--ink-soft);
             position: relative;
             z-index: 1;
-            transition: color .3s
+            transition: color 0.3s;
         }
 
         .day-pill.active .dw,
         .day-pill.active .dm {
-            color: rgba(255, 255, 255, .75)
+            color: rgba(255, 255, 255, 0.75);
         }
 
         .day-pill .dn {
@@ -683,47 +703,48 @@
             color: var(--ink);
             position: relative;
             z-index: 1;
-            transition: color .3s;
-            line-height: 1
+            transition: color 0.3s;
+            line-height: 1;
         }
 
         .day-pill.active .dn {
-            color: white
+            color: white;
         }
 
         /* GRID */
         #gridSection {
-            display: none
+            display: none;
         }
 
         #gridSection.vis {
-            display: block
+            display: block;
         }
 
         .grid-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 4px 24px
+            padding: 0 4px 24px;
         }
 
         .grid-date {
             font-family: 'Cormorant Garamond', serif;
             font-size: 1.5rem;
-            font-style: italic
+            font-style: italic;
         }
 
         .back-btn {
-            font-size: .55rem;
+            font-size: 0.55rem;
             letter-spacing: 3px;
             font-weight: 700;
             color: var(--rose);
             text-transform: uppercase;
             cursor: pointer;
             background: none;
-            border: none
+            border: none;
         }
 
+        /* ADMIN: Multi-select bar */
         #multiSelectBar {
             display: none;
             align-items: center;
@@ -733,17 +754,17 @@
             border-radius: 20px;
             padding: 10px 15px;
             margin-bottom: 20px;
-            font-size: .65rem;
+            font-size: 0.65rem;
             font-weight: 500;
             position: sticky;
             top: 10px;
             z-index: 100;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, .2);
-            border: 1px solid rgba(255, 255, 255, .1)
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         #multiSelectBar.vis {
-            display: flex
+            display: flex;
         }
 
         #multiSelectBar button {
@@ -752,23 +773,23 @@
             border: none;
             border-radius: 10px;
             padding: 8px 16px;
-            font-size: .65rem;
+            font-size: 0.65rem;
             font-weight: 700;
             letter-spacing: 1px;
-            cursor: pointer
+            cursor: pointer;
         }
 
         #multiSelectBar .cancel-sel {
             background: transparent;
-            color: rgba(255, 255, 255, .5);
-            padding: 8px
+            color: rgba(255, 255, 255, 0.5);
+            padding: 8px;
         }
 
         /* SLOT CARDS */
         .slots {
             display: flex;
             flex-direction: column;
-            gap: 12px
+            gap: 12px;
         }
 
         .slot-card {
@@ -779,45 +800,39 @@
             align-items: center;
             gap: 18px;
             cursor: pointer;
-            transition: all .4s var(--ease);
+            transition: all 0.4s var(--ease);
             border: 1.5px solid transparent;
             box-shadow: var(--shadow);
             position: relative;
             overflow: hidden;
-            animation: cardIn .5s var(--ease) backwards
+            animation: cardIn 0.5s var(--ease) backwards;
         }
 
         @keyframes cardIn {
             from {
                 opacity: 0;
-                transform: translateY(16px)
+                transform: translateY(16px);
             }
 
             to {
                 opacity: 1;
-                transform: translateY(0)
+                transform: translateY(0);
             }
         }
 
         .slot-card:hover {
             transform: translateY(-3px);
-            box-shadow: var(--shadow-deep)
+            box-shadow: var(--shadow-deep);
         }
 
         .slot-card.past {
-            opacity: .3;
-            pointer-events: none
+            opacity: 0.3;
+            pointer-events: none;
         }
 
         .slot-card.selected {
             border-color: var(--rose);
-            background: rgba(196, 132, 138, .05)
-        }
-
-        .slot-card.my-booking {
-            border-color: var(--gold);
-            background: linear-gradient(135deg, rgba(201, 168, 108, .07), rgba(242, 217, 217, .07));
-            box-shadow: 0 8px 30px rgba(201, 168, 108, .18)
+            background: rgba(196, 132, 138, 0.05);
         }
 
         .slot-check {
@@ -829,19 +844,19 @@
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: .7rem;
+            font-size: 0.7rem;
             flex-shrink: 0;
-            transition: all .3s
+            transition: all 0.3s;
         }
 
         body.admin-on .slot-check {
             display: flex;
-            opacity: .4
+            opacity: 0.4;
         }
 
         .slot-card.selected .slot-check {
             background: var(--rose);
-            opacity: 1
+            opacity: 1;
         }
 
         .slot-pip {
@@ -849,7 +864,7 @@
             align-self: stretch;
             border-radius: 4px;
             flex-shrink: 0;
-            transition: background .3s
+            transition: background 0.3s;
         }
 
         .slot-time {
@@ -858,65 +873,84 @@
             font-weight: 400;
             color: var(--ink);
             min-width: 58px;
-            flex-shrink: 0
+            flex-shrink: 0;
         }
 
         .slot-info {
             flex: 1;
-            min-width: 0
+            min-width: 0;
         }
 
         .slot-status {
-            font-size: .5rem;
+            font-size: 0.5rem;
             font-weight: 700;
             letter-spacing: 3px;
             text-transform: uppercase;
-            margin-bottom: 2px
+            margin-bottom: 2px;
         }
 
         .slot-client {
-            font-size: .95rem;
+            font-size: 0.95rem;
             font-weight: 500;
             color: var(--ink);
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis
+            text-overflow: ellipsis;
         }
 
         .slot-dur {
-            font-size: .65rem;
+            font-size: 0.65rem;
             color: var(--ink-soft);
-            margin-top: 2px
+            margin-top: 2px;
         }
 
-        .only-my-slot-banner {
-            background: linear-gradient(135deg, rgba(201, 168, 108, .12), rgba(242, 217, 217, .12));
-            border: 1.5px solid rgba(201, 168, 108, .3);
-            border-radius: 16px;
-            padding: 14px 18px;
-            margin-bottom: 16px;
-            text-align: center;
-            font-size: .75rem;
-            color: var(--ink-soft);
-            line-height: 1.5
+        .slot-badge {
+            font-size: 0.55rem;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        .only-my-slot-banner strong {
-            color: var(--ink);
-            display: block;
-            margin-bottom: 2px
+        /* COUNTDOWN */
+        .countdown-pill {
+            display: inline-block;
+            background: linear-gradient(90deg, var(--gold), var(--rose));
+            color: white;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.55rem;
+            font-weight: 700;
+            margin-top: 6px;
+            animation: pulse 2s ease-in-out infinite;
         }
 
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.8;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.02);
+            }
+        }
+
+        /* ADMIN LOG BADGE */
         .log-expired {
             display: inline-block;
-            background: rgba(139, 75, 85, .1);
+            background: rgba(139, 75, 85, 0.1);
             color: var(--deep-rose);
             padding: 4px 10px;
             border-radius: 10px;
-            font-size: .5rem;
+            font-size: 0.5rem;
             font-weight: 700;
             margin-top: 4px;
-            letter-spacing: 1px
+            letter-spacing: 1px;
         }
 
         /* NAV */
@@ -930,18 +964,18 @@
             padding: 14px 28px;
             display: flex;
             gap: 4px;
-            box-shadow: 0 8px 40px rgba(42, 32, 32, .15);
+            box-shadow: 0 8px 40px rgba(42, 32, 32, 0.15);
             z-index: 6000;
-            border: 1px solid rgba(196, 132, 138, .15);
+            border: 1px solid rgba(196, 132, 138, 0.15);
             opacity: 0;
-            animation: fadeUp 1s 4.5s var(--ease) forwards
+            animation: fadeUp 1s 4.5s var(--ease) forwards;
         }
 
         .nav-btn {
             background: none;
             border: none;
             font-family: 'DM Sans', sans-serif;
-            font-size: .6rem;
+            font-size: 0.6rem;
             font-weight: 700;
             letter-spacing: 2px;
             text-transform: uppercase;
@@ -949,47 +983,48 @@
             cursor: pointer;
             padding: 8px 16px;
             border-radius: 40px;
-            transition: all .3s
+            transition: all 0.3s;
         }
 
         .nav-btn:hover {
-            background: var(--cream-dark)
+            background: var(--cream-dark);
         }
 
         .nav-btn.primary {
             background: linear-gradient(135deg, var(--rose), var(--deep-rose));
-            color: white
+            color: white;
         }
 
         #adminNav {
-            display: none
+            display: none;
         }
 
         body.admin-on #adminNav {
             display: flex;
-            gap: 4px
+            gap: 4px;
         }
 
         body.admin-on #userNav {
-            display: none
+            display: none;
         }
 
+        /* LOG PANEL (ADMIN) */
         #logPanel {
             margin-top: 24px;
-            display: none
+            display: none;
         }
 
         body.admin-on #logPanel {
-            display: block
+            display: block;
         }
 
         .log-title {
-            font-size: .5rem;
+            font-size: 0.5rem;
             letter-spacing: 4px;
             font-weight: 700;
             color: var(--gold);
             text-transform: uppercase;
-            margin-bottom: 12px
+            margin-bottom: 12px;
         }
 
         .log-entry {
@@ -998,37 +1033,37 @@
             padding: 14px 18px;
             margin-bottom: 8px;
             border-left: 3px solid var(--rose);
-            font-size: .75rem;
+            font-size: 0.75rem;
             line-height: 1.5;
-            color: var(--ink-soft)
+            color: var(--ink-soft);
         }
 
         .log-entry strong {
             color: var(--ink);
             display: block;
-            margin-bottom: 2px
+            margin-bottom: 2px;
         }
 
         .log-entry .log-meta {
-            font-size: .6rem;
+            font-size: 0.6rem;
             color: var(--rose);
-            margin-top: 4px
+            margin-top: 4px;
         }
 
         /* SHEET */
         .overlay {
             position: fixed;
             inset: 0;
-            background: rgba(42, 32, 32, .4);
+            background: rgba(42, 32, 32, 0.4);
             backdrop-filter: blur(12px);
             z-index: 8000;
             display: none;
             align-items: flex-end;
-            justify-content: center
+            justify-content: center;
         }
 
         .overlay.vis {
-            display: flex
+            display: flex;
         }
 
         .sheet {
@@ -1037,18 +1072,18 @@
             max-width: 480px;
             border-radius: 32px 32px 0 0;
             padding: 36px 32px 48px;
-            animation: sheetUp .6s var(--ease);
+            animation: sheetUp 0.6s var(--ease);
             max-height: 90vh;
-            overflow-y: auto
+            overflow-y: auto;
         }
 
         @keyframes sheetUp {
             from {
-                transform: translateY(100%)
+                transform: translateY(100%);
             }
 
             to {
-                transform: translateY(0)
+                transform: translateY(0);
             }
         }
 
@@ -1057,31 +1092,31 @@
             height: 4px;
             background: var(--cream-dark);
             border-radius: 4px;
-            margin: 0 auto 28px
+            margin: 0 auto 28px;
         }
 
         .sheet-title {
             font-family: 'Cormorant Garamond', serif;
             font-size: 2rem;
             font-weight: 300;
-            margin-bottom: 4px
+            margin-bottom: 4px;
         }
 
         .sheet-sub {
-            font-size: .8rem;
+            font-size: 0.8rem;
             color: var(--ink-soft);
             margin-bottom: 28px;
-            line-height: 1.6
+            line-height: 1.6;
         }
 
         .field-label {
-            font-size: .55rem;
+            font-size: 0.55rem;
             letter-spacing: 2px;
             font-weight: 700;
             color: var(--gold);
             text-transform: uppercase;
             margin-bottom: 8px;
-            display: block
+            display: block;
         }
 
         .inp {
@@ -1091,23 +1126,23 @@
             border: 1.5px solid var(--cream-dark);
             background: var(--cream);
             font-family: 'DM Sans', sans-serif;
-            font-size: .9rem;
+            font-size: 0.9rem;
             margin-bottom: 16px;
             outline: none;
-            transition: all .3s;
-            color: var(--ink)
+            transition: all 0.3s;
+            color: var(--ink);
         }
 
         .inp:focus {
             border-color: var(--rose);
-            background: white
+            background: white;
         }
 
         .dur-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
-            margin-bottom: 20px
+            margin-bottom: 20px;
         }
 
         .dur-opt {
@@ -1116,17 +1151,17 @@
             border: 1.5px solid var(--cream-dark);
             text-align: center;
             cursor: pointer;
-            font-size: .75rem;
+            font-size: 0.75rem;
             font-weight: 500;
-            transition: all .3s;
-            background: var(--cream)
+            transition: all 0.3s;
+            background: var(--cream);
         }
 
         .dur-opt.sel {
             border-color: var(--rose);
-            background: rgba(196, 132, 138, .08);
+            background: rgba(196, 132, 138, 0.08);
             color: var(--rose);
-            font-weight: 700
+            font-weight: 700;
         }
 
         .btn {
@@ -1135,59 +1170,60 @@
             border-radius: 14px;
             border: none;
             font-family: 'DM Sans', sans-serif;
-            font-size: .85rem;
+            font-size: 0.85rem;
             font-weight: 700;
             letter-spacing: 1px;
             cursor: pointer;
-            transition: all .3s
+            transition: all 0.3s;
         }
 
         .btn-primary {
             background: linear-gradient(135deg, var(--rose) 0%, var(--deep-rose) 100%);
             color: white;
-            box-shadow: 0 8px 24px rgba(139, 79, 85, .3);
-            margin-bottom: 12px
+            box-shadow: 0 8px 24px rgba(139, 79, 85, 0.3);
+            margin-bottom: 12px;
         }
 
         .btn-primary:active {
-            transform: scale(.98)
+            transform: scale(0.98);
         }
 
         .btn-secondary {
             background: var(--cream-dark);
-            color: var(--ink)
+            color: var(--ink);
         }
 
         .btn-danger {
             background: linear-gradient(135deg, #C94848, #8B2020);
             color: white;
-            box-shadow: 0 8px 24px rgba(139, 32, 32, .3);
-            margin-bottom: 12px
+            box-shadow: 0 8px 24px rgba(139, 32, 32, 0.3);
+            margin-bottom: 12px;
         }
 
         .btn-gold {
             background: linear-gradient(135deg, var(--gold), #A07840);
             color: white;
-            box-shadow: 0 8px 24px rgba(160, 120, 64, .3);
-            margin-bottom: 12px
+            box-shadow: 0 8px 24px rgba(160, 120, 64, 0.3);
+            margin-bottom: 12px;
         }
 
+        /* PIX BOX */
         .pix-box {
             background: var(--cream);
             border-radius: 20px;
             padding: 24px;
             text-align: center;
             margin-bottom: 20px;
-            border: 1.5px dashed var(--gold)
+            border: 1.5px dashed var(--gold);
         }
 
         .pix-label {
-            font-size: .5rem;
+            font-size: 0.5rem;
             letter-spacing: 4px;
             font-weight: 700;
             color: var(--gold);
             text-transform: uppercase;
-            margin-bottom: 10px
+            margin-bottom: 10px;
         }
 
         .pix-key {
@@ -1195,12 +1231,12 @@
             font-size: 1.8rem;
             font-weight: 400;
             color: var(--ink);
-            margin-bottom: 6px
+            margin-bottom: 6px;
         }
 
         .pix-holder {
-            font-size: .8rem;
-            color: var(--ink-soft)
+            font-size: 0.8rem;
+            color: var(--ink-soft);
         }
 
         .wa-link {
@@ -1211,43 +1247,44 @@
             padding: 18px;
             border-radius: 14px;
             font-weight: 700;
-            font-size: .85rem;
+            font-size: 0.85rem;
             text-align: center;
             margin-top: 16px;
-            box-shadow: 0 8px 24px rgba(37, 211, 102, .3);
-            transition: all .3s
+            box-shadow: 0 8px 24px rgba(37, 211, 102, 0.3);
+            transition: all 0.3s;
         }
 
         .wa-link:active {
-            transform: scale(.98)
+            transform: scale(0.98);
         }
 
         .info-box {
-            background: rgba(201, 168, 108, .1);
+            background: rgba(201, 168, 108, 0.1);
             border-radius: 14px;
             padding: 16px 18px;
             margin-bottom: 20px;
             border-left: 3px solid var(--gold);
-            font-size: .78rem;
+            font-size: 0.78rem;
             line-height: 1.6;
-            color: var(--ink-soft)
+            color: var(--ink-soft);
         }
 
+        /* BOOKING SUMMARY */
         .booking-sum {
             background: var(--cream);
             border-radius: 14px;
             padding: 16px 20px;
-            margin-bottom: 20px
+            margin-bottom: 20px;
         }
 
         .booking-sum p {
-            font-size: .8rem;
+            font-size: 0.8rem;
             color: var(--ink-soft);
-            margin-bottom: 4px
+            margin-bottom: 4px;
         }
 
         .booking-sum p strong {
-            color: var(--ink)
+            color: var(--ink);
         }
 
         .booking-sum .token {
@@ -1256,21 +1293,30 @@
             color: var(--gold);
             padding: 4px 10px;
             border-radius: 8px;
-            font-size: .6rem;
+            font-size: 0.6rem;
             font-weight: 700;
             letter-spacing: 3px;
-            margin-top: 6px
+            margin-top: 6px;
         }
 
+        /* ADMIN ACTIONS */
         .admin-action-grid {
             display: grid;
             gap: 10px;
-            margin-bottom: 16px
+            margin-bottom: 16px;
+        }
+
+        /* CONFIG */
+        .config-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
     </style>
 </head>
 
 <body>
+
     <div id="intro">
         <div class="intro-petals" id="introPetals"></div>
         <div class="intro-icon">
@@ -1330,6 +1376,7 @@
             <button class="scroll-arrow right" onclick="scrollDays(1)">›</button>
         </div>
 
+        <!-- PAINEL ADMIN - visível só quando logado -->
         <section id="adminPanel">
             <div class="admin-panel-title">✦ Painel Administrativo ✦</div>
             <div class="admin-stats">
@@ -1339,36 +1386,40 @@
                         class="stat-lbl">Ocupados</span></div>
                 <div class="stat-item"><span class="stat-num" id="statAguard">—</span><span
                         class="stat-lbl">Aguardando</span></div>
-                <div class="stat-item" style="border-left:1px solid rgba(255,255,255,.1);padding-left:10px;">
+                <div class="stat-item" style="border-left:1px solid rgba(255,255,255,0.1);padding-left:10px;">
                     <span class="stat-num" id="statPix" style="font-size:1.1rem;color:var(--gold);">—</span>
                     <span class="stat-lbl">Taxa PIX</span>
                 </div>
-                <div class="stat-item" style="border-left:1px solid rgba(255,255,255,.1);padding-left:10px;">
+                <div class="stat-item" style="border-left:1px solid rgba(255,255,255,0.1);padding-left:10px;">
                     <span class="stat-num" id="statNext" style="font-size:1.1rem;color:var(--rose);">—</span>
-                    <span class="stat-lbl">Próximo</span>
+                    <span class="stat-lbl">Próximo Online</span>
                 </div>
             </div>
             <div class="admin-cards">
-                <div class="admin-card" onclick="openConfig()"><span class="ac-icon">⚙️</span>
+                <div class="admin-card" onclick="openConfig()">
+                    <span class="ac-icon">⚙️</span>
                     <div class="ac-label">Configurações</div>
                     <div class="ac-desc">Expediente e Valor da Reserva (PIX)</div>
                 </div>
-                <div class="admin-card" onclick="openDurPanel()"><span class="ac-icon">⏱️</span>
+                <div class="admin-card" onclick="openDurPanel()">
+                    <span class="ac-icon">⏱️</span>
                     <div class="ac-label">Procedimentos</div>
                     <div class="ac-desc">Editar duração de horários agendados</div>
                 </div>
-                <div class="admin-card" onclick="openBlockPanel()"><span class="ac-icon">🔒</span>
+                <div class="admin-card" onclick="openBlockPanel()">
+                    <span class="ac-icon">🔒</span>
                     <div class="ac-label">Bloqueios em Lote</div>
                     <div class="ac-desc">Folgas e horários indisponíveis</div>
                 </div>
-                <div class="admin-card" onclick="openLogSheet()"><span class="ac-icon">📋</span>
+                <div class="admin-card" onclick="openLogSheet()">
+                    <span class="ac-icon">📋</span>
                     <div class="ac-label">Registros</div>
-                    <div class="ac-desc">Log de reservas e eventos do sistema</div>
+                    <div class="ac-desc">Log de reservas expiradas e eventos</div>
                 </div>
             </div>
             <div style="text-align:center;margin-top:4px;">
                 <button class="nav-btn" onclick="logoutAdmin()"
-                    style="color:var(--rose);font-size:.65rem;padding:10px 20px;">Sair do painel</button>
+                    style="color:var(--rose);font-size:0.65rem;padding:10px 20px;">Sair do painel</button>
             </div>
         </section>
 
@@ -1377,23 +1428,27 @@
                 <div class="grid-date" id="gridDate"></div>
                 <button class="back-btn" onclick="closeGrid()">← Voltar</button>
             </div>
+
             <div id="multiSelectBar">
                 <span id="selCount">0 selecionados</span>
                 <div style="display:flex;gap:8px">
                     <button class="cancel-sel" onclick="clearSelection()"
-                        style="background:#eee;color:#666;">Limpar</button>
-                    <button onclick="selectAll()" style="background:var(--gold);color:white;">✓ Tudo</button>
+                        style="background:#eee; color:#666;">Limpar</button>
+                    <button onclick="selectAll()" style="background:var(--gold); color:white;">✓ Tudo</button>
                     <button onclick="blockSelected()">🔒 Bloquear</button>
                     <button onclick="freeSelected()">🔓 Liberar</button>
                 </div>
             </div>
+
             <div class="slots" id="slotsContainer"></div>
+
             <div id="logPanel">
                 <div class="log-title">✦ Registros do Sistema</div>
                 <div id="logEntries"></div>
             </div>
         </section>
 
+        <!-- ASSINATURA E CONTATO -->
         <div class="signature-section">
             <span class="sig-lash-deco">
                 <svg class="sig-mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
@@ -1414,24 +1469,27 @@
             <div class="sig-exp" id="expBadge">✦ 15 anos de experiência ✦</div>
             <a id="sigWa" href="#" class="sig-wa" target="_blank">💬 Falar com a Camila — Dúvidas? Chame aqui!</a>
         </div>
+
     </div>
 
+    <!-- NAV -->
     <div class="nav-float">
         <div id="userNav" style="display:flex;gap:4px;align-items:center;">
             <button class="nav-btn" onclick="scrollToTop()">Início</button>
             <button class="nav-admin-login" onclick="promptAdmin()">🔐 Admin</button>
             <button id="backToAdminBtn" class="nav-btn" onclick="toggleUserView()"
-                style="display:none;color:var(--rose);font-weight:bold;">🛠 Voltar Admin</button>
+                style="display:none; color:var(--rose); font-weight:bold;">🛠 Voltar Admin</button>
         </div>
         <div id="adminNav" style="display:none;gap:4px;align-items:center;">
             <button id="syncBtn" class="nav-btn primary" onclick="syncData()">↻ Atualizar</button>
             <button class="nav-btn" onclick="toggleUserView()"
-                style="border:1px solid var(--gold);color:var(--gold);">👁 Ver Cliente</button>
+                style="border: 1px solid var(--gold); color: var(--gold);">👁 Ver Cliente</button>
             <button class="nav-btn" onclick="logoutAdmin()"
                 style="color:var(--rose);border-color:var(--rose);">Sair</button>
         </div>
     </div>
 
+    <!-- SHEET OVERLAY -->
     <div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
         <div class="sheet" id="sheet">
             <div class="sheet-handle"></div>
@@ -1445,19 +1503,113 @@
     <script>
         const CFG = {
             API_URL: "https://script.google.com/macros/s/AKfycbxewOegi1-rnQwTEieU5hJAHVDuk5kh38rjRU4CJOqMAWOv2fxicwux96U1XR9HsvU6/exec",
-            PIX_KEY: "62993362375", PIX_HOLDER: "Camila Alves de Lima", PIX_BANK: "NUBANK",
-            WA: "559296150540", RESERVE_MIN: 20
+            PIX_KEY: "62993362375",
+            PIX_HOLDER: "Camila Alves de Lima",
+            PIX_BANK: "NUBANK",
+            WA: "559296150540",
+            RESERVE_MIN: 20
         };
 
         let db = [], srvCfg = { start: '08:00', end: '20:00', duration: 60 };
+        let systemLogs = [];
         let adminPass = localStorage.getItem('look_admin_pass') || "";
-        let isAdmin = false, isUserView = false, currentDay = "", selectedSlots = new Set();
+        let isAdmin = false;
+        let isUserView = false;
+        let currentDay = "";
+        let selectedSlots = new Set(); // multi-select
 
+        function pad2(n) { return String(n).padStart(2, '0'); }
+        const APP_TIME_ZONE = 'America/Manaus';
+
+        function formatLocalIsoDate(date) {
+            return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+        }
+
+        function parseIsoDateLocal(iso) {
+            const [year, month, day] = String(iso).split('-').map(Number);
+            return new Date(year, (month || 1) - 1, day || 1, 12, 0, 0, 0);
+        }
+
+        function getManausParts(date = new Date()) {
+            return new Intl.DateTimeFormat('en-CA', {
+                timeZone: APP_TIME_ZONE,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hourCycle: 'h23'
+            }).formatToParts(date).reduce((acc, part) => {
+                if (part.type !== 'literal') acc[part.type] = part.value;
+                return acc;
+            }, {});
+        }
+
+        function getManausIsoDate(date = new Date()) {
+            const parts = getManausParts(date);
+            return `${parts.year}-${parts.month}-${parts.day}`;
+        }
+
+        function getManausMinutes(date = new Date()) {
+            const parts = getManausParts(date);
+            return Number(parts.hour || 0) * 60 + Number(parts.minute || 0);
+        }
+
+        function formatManausLabel(iso, options) {
+            return new Intl.DateTimeFormat('pt-BR', { timeZone: APP_TIME_ZONE, ...options }).format(parseIsoDateLocal(iso));
+        }
+
+        function getNextOccupiedBooking() {
+            const curIso = getManausIsoDate(new Date());
+            const curMins = getManausMinutes(new Date());
+            return db
+                .filter(r => r.status === 'Ocupado')
+                .map(r => {
+                    const [h, m] = String(r.horario || '00:00').split(':').map(Number);
+                    return { ...r, mins: h * 60 + m };
+                })
+                .filter(r => r.data > curIso || (r.data === curIso && r.mins >= curMins))
+                .sort((a, b) => a.data === b.data ? a.mins - b.mins : a.data.localeCompare(b.data))[0] || null;
+        }
+
+        function isClientBlocked() {
+            const ts = Number(localStorage.getItem('last_booking_timestamp') || '0');
+            return ts > 0 && (Date.now() - ts) < 12 * 60 * 60 * 1000;
+        }
+
+        function clearClientBlock() {
+            localStorage.removeItem('last_booking_timestamp');
+            localStorage.removeItem('last_booking_v3');
+        }
+
+        function showBlockedScreen() {
+            const ts = Number(localStorage.getItem('last_booking_timestamp') || '0');
+            const remainingMs = Math.max(0, (ts + 12 * 60 * 60 * 1000) - Date.now());
+            const remainingHours = Math.floor(remainingMs / 3600000);
+            const remainingMinutes = Math.floor((remainingMs % 3600000) / 60000);
+            openSheet('Novo agendamento temporariamente indisponível', 'Cada cliente pode agendar apenas uma vez a cada 12 horas.');
+            document.getElementById('sheetBody').innerHTML = `
+                <div class="info-box" style="border-color:var(--rose);background:rgba(196,132,138,.05);">
+                    Você já realizou um agendamento recentemente neste aparelho.<br><br>
+                    Aguarde <strong>${remainingHours}h ${remainingMinutes}min</strong> para marcar um novo horário.
+                </div>
+                <a href="https://wa.me/${CFG.WA}?text=${encodeURIComponent('Olá, Camila! Fiz um agendamento recentemente e preciso de ajuda para ajustar meu horário.')}" target="_blank" class="wa-link">💬 Falar com a Camila</a>
+            `;
+            document.getElementById('sheetActions').innerHTML = `<button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>`;
+        }
+
+        // ─── INTRO ───────────────────────────────────────────
         setTimeout(() => document.getElementById('intro').classList.add('out'), 3500);
 
-        function scrollDays(dir) { document.getElementById('dayScroller').scrollBy({ left: dir * 250, behavior: 'smooth' }) }
+        // ─── INIT ─────────────────────────────────────────────
+        // Day Selector scroll logic
+        function scrollDays(dir) {
+            const scroller = document.getElementById('dayScroller');
+            const scrollAmount = 250; // Scroll roughly 3-4 pills
+            scroller.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
+        }
 
-        // ─── SYNC ─────────────────────────────────────────────
         async function syncData() {
             const btn = document.getElementById('syncBtn');
             if (btn) { btn.textContent = '⏱ Sincronizando...'; btn.style.opacity = '0.7'; }
@@ -1467,36 +1619,44 @@
                     const s = document.createElement('script');
                     window[cb] = r => { delete window[cb]; s.remove(); if (r.status === 'OK') res(r); else rej(); };
                     s.src = `${CFG.API_URL}?pass=${encodeURIComponent(adminPass)}&_t=${Date.now()}&callback=${cb}`;
-                    s.onerror = rej; document.body.appendChild(s); setTimeout(rej, 10000);
+                    s.onerror = rej;
+                    document.body.appendChild(s);
+                    setTimeout(rej, 10000);
                 }).then(r => {
-                    db = r.agenda || []; srvCfg = r.config || srvCfg; isAdmin = !!r.isAdmin;
+                    db = r.agenda || [];
+                    systemLogs = r.logs || [];
+                    srvCfg = r.config || srvCfg;
+                    isAdmin = !!r.isAdmin;
 
-                    // Zera bloqueio 12h se admin liberou a vaga (status voltou a Livre)
                     if (!isAdmin) {
                         const saved = localStorage.getItem('last_booking_v3');
                         if (saved) {
-                            const b = JSON.parse(saved);
-                            const stillOccupied = db.find(rec => rec.codigo === b.token && rec.status === 'Ocupado');
+                            const booking = JSON.parse(saved);
+                            const stillOccupied = db.find(rec => rec.codigo === booking.token && rec.status === 'Ocupado');
                             if (!stillOccupied) clearClientBlock();
                         }
                     }
 
-                    updateAppMode(); renderDays();
+                    configureAdminPanel();
+                    updateAppMode();
+                    renderDays();
                     if (currentDay) renderGrid(currentDay);
                     updateAdminStats();
                 });
-            } catch (e) {
-                console.error("Erro na sincronização:", e);
-                alert("Não foi possível atualizar os dados. Verifique sua conexão.");
-            } finally {
+            } catch (e) { } finally {
                 if (btn) { btn.textContent = '↻ Atualizar'; btn.style.opacity = '1'; }
             }
         }
 
+        // Gerencia o que aparece na tela baseado no modo (Admin ou Cliente)
         function updateAppMode() {
-            const body = document.body, adminNav = document.getElementById('adminNav'), userNav = document.getElementById('userNav');
+            const body = document.body;
+            const adminNav = document.getElementById('adminNav');
+            const userNav = document.getElementById('userNav');
+
             if (isAdmin && !isUserView) {
-                body.classList.add('admin-on'); setupAdminNotifications();
+                body.classList.add('admin-on');
+                setupAdminNotifications();
                 document.getElementById('backToAdminBtn').style.display = 'none';
                 document.querySelector('.nav-admin-login').style.display = 'none';
                 if (adminNav) adminNav.style.display = 'flex';
@@ -1510,49 +1670,89 @@
             }
         }
 
-        // ─── PHONE ────────────────────────────────────────────
-        function handlePhoneInput(el) {
-            let v = el.value.replace(/\D/g, '');
-            if (v.length > 11) v = v.slice(0, 11);
-            let f = '';
-            if (v.length > 0) { f = '(' + v.substring(0, 2); if (v.length > 2) { f += ') ' + v.substring(2, 3); if (v.length > 3) { f += ' ' + v.substring(3, 7); if (v.length > 7) f += '-' + v.substring(7, 11); } } }
-            el.value = f;
-        }
-        function normalizePhone(p) { let c = (p || '').replace(/\D/g, ''); if (c.startsWith('55') && c.length > 11) c = c.slice(2); return c; }
+        function configureAdminPanel() {
+            const statOcupado = document.getElementById('statOcupado');
+            const statNext = document.getElementById('statNext');
+            const cards = document.querySelectorAll('#adminPanel .admin-card');
 
-        // ─── BLOQUEIO 12H ─────────────────────────────────────
-        function isClientBlocked() {
-            const ts = localStorage.getItem('last_booking_timestamp');
-            if (!ts) return false;
-            return (Date.now() - parseInt(ts)) < 12 * 60 * 60 * 1000;
-        }
-        function clearClientBlock() {
-            localStorage.removeItem('last_booking_timestamp');
-            localStorage.removeItem('last_booking_v3');
-        }
-        function showBlockedScreen() {
-            const ts = parseInt(localStorage.getItem('last_booking_timestamp') || '0');
-            const rem = (ts + 12 * 60 * 60 * 1000) - Date.now();
-            const rH = Math.floor(rem / 3600000), rM = Math.floor((rem % 3600000) / 60000);
-            const waText = encodeURIComponent('Olá, Camila! 💗 Fiz uma reserva recentemente pelo site da Look Designer e gostaria de fazer um novo agendamento. Poderia me ajudar?');
-            openSheet('Agendamento Temporariamente Bloqueado ⏳', '');
-            document.getElementById('sheetBody').innerHTML = `
-                <div class="info-box" style="border-color:var(--rose);background:rgba(196,132,138,.05);">
-                    <strong style="color:var(--ink);display:block;margin-bottom:8px;">⏱ Limite de um agendamento por vez</strong>
-                    Você já realizou uma reserva recentemente. Aguarde <strong>${rH}h ${rM}min</strong> para fazer um novo agendamento.<br><br>
-                    Se precisar de ajuda, fale diretamente com a Camila.
-                </div>
-                <a href="https://wa.me/${CFG.WA}?text=${waText}" target="_blank" class="wa-link">💬 Falar com a Camila agora</a>`;
-            document.getElementById('sheetActions').innerHTML = `<button class="btn btn-secondary" onclick="closeSheet()" style="margin-top:12px;">Fechar</button>`;
+            if (statOcupado) {
+                const wrap = statOcupado.closest('.stat-item');
+                const label = wrap ? wrap.querySelector('.stat-lbl') : null;
+                if (wrap) {
+                    wrap.style.cursor = 'pointer';
+                    wrap.onclick = openScheduledSheet;
+                }
+                if (label) label.textContent = 'Agendados';
+            }
+
+            if (statNext) {
+                const wrap = statNext.closest('.stat-item');
+                const label = wrap ? wrap.querySelector('.stat-lbl') : null;
+                if (wrap) {
+                    wrap.style.cursor = 'pointer';
+                    wrap.onclick = openNextBookingSheet;
+                }
+                if (label) label.textContent = 'Próximo atendimento';
+            }
+
+            if (cards && cards[3]) {
+                const label = cards[3].querySelector('.ac-label');
+                const desc = cards[3].querySelector('.ac-desc');
+                cards[3].onclick = openScheduledSheet;
+                if (label) label.textContent = 'Agendados';
+                if (desc) desc.textContent = 'Cliente, data e hora do atendimento';
+            }
         }
 
         // ─── DAYS ─────────────────────────────────────────────
+        function handlePhoneInput(el) {
+            let v = el.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.slice(0, 11);
+
+            let f = '';
+            if (v.length > 0) {
+                f = '(' + v.substring(0, 2);
+                if (v.length > 2) {
+                    f += ') ' + v.substring(2, 3);
+                    if (v.length > 3) {
+                        f += ' ' + v.substring(3, 7);
+                        if (v.length > 7) {
+                            f += '-' + v.substring(7, 11);
+                        }
+                    }
+                }
+            }
+            el.value = f;
+        }
+
+        function normalizePhone(phone) {
+            let clean = (phone || '').replace(/\D/g, '');
+            if (clean.startsWith('55') && clean.length > 11) clean = clean.slice(2);
+            return clean;
+        }
+
+        function showPendingBookingBlock() {
+            openSheet('Reserva Pendente ⏳', 'Você já possui uma reserva aguardando pagamento no sistema.');
+            document.getElementById('sheetBody').innerHTML = `
+                <div class="info-box" style="border-color:var(--rose);">
+                    Sua reserva anterior ainda está ativa. Durante os ${CFG.RESERVE_MIN} minutos de espera, não é possível reservar outro horário.
+                    Finalize o pagamento ou fale com a nossa gerente caso precise de ajuda.
+                </div>
+                <a href="https://wa.me/${CFG.WA}?text=${encodeURIComponent('Olá Camila, gostaria de tirar uma dúvida sobre minha reserva que está em aguardo.')}" 
+                   target="_blank" class="wa-link">💬 Falar com a Gerente agora</a>
+            `;
+            document.getElementById('sheetActions').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeSheet()">Fechar e voltar</button>
+            `;
+        }
+
         function renderDays() {
-            const c = document.getElementById('dayScroller'); c.innerHTML = '';
+            const c = document.getElementById('dayScroller');
+            c.innerHTML = '';
             const now = new Date();
             for (let i = 0; i < 14; i++) {
                 const d = new Date(); d.setDate(now.getDate() + i);
-                const iso = d.toISOString().split('T')[0];
+                const iso = formatLocalIsoDate(d);
                 const el = document.createElement('div');
                 el.className = 'day-pill' + (iso === currentDay ? ' active' : '');
                 el.onclick = () => selectDay(iso);
@@ -1562,25 +1762,41 @@
                 c.appendChild(el);
             }
         }
+
         function selectDay(iso) {
-            currentDay = iso; clearSelection(); renderDays();
-            const d = new Date(iso + 'T12:00:00');
-            document.getElementById('gridDate').textContent = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).replace(/^\w/, c => c.toUpperCase());
+            currentDay = iso;
+            clearSelection();
+            renderDays();
+            const d = parseIsoDateLocal(iso);
+            document.getElementById('gridDate').textContent =
+                d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+                    .replace(/^\w/, c => c.toUpperCase());
             document.getElementById('gridSection').classList.add('vis');
             renderGrid(iso);
         }
-        function closeGrid() { currentDay = ''; clearSelection(); document.getElementById('gridSection').classList.remove('vis'); renderDays(); }
+
+        function closeGrid() {
+            currentDay = '';
+            clearSelection();
+            document.getElementById('gridSection').classList.remove('vis');
+            renderDays();
+        }
+
         function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
-        // ─── GRID ─────────────────────────────────────────────
+        // ─── GRID ──────────────────────────────────────────────
         function renderGrid(iso) {
-            const container = document.getElementById('slotsContainer'); container.innerHTML = '';
-            const logContainer = document.getElementById('logEntries'); logContainer.innerHTML = '';
-            const now = new Date(), todayIso = now.toISOString().split('T')[0];
+            const container = document.getElementById('slotsContainer');
+            container.innerHTML = '';
+            const logContainer = document.getElementById('logEntries');
+            logContainer.innerHTML = '';
+
+            const now = new Date();
+            const todayIso = formatLocalIsoDate(now);
             const curMins = now.getHours() * 60 + now.getMinutes();
             const lastBooking = JSON.parse(localStorage.getItem('last_booking_v3') || 'null');
 
-            // FOCO TOTAL: Cliente com reserva ativa vê apenas o SEU horário
+            // Cliente com reserva ativa vê só a própria vaga
             const hasActiveBooking = !isAdmin && lastBooking && (() => {
                 const rec = db.find(r => r.codigo === lastBooking.token && (r.status === 'Ocupado' || r.status === 'Aguardando Pagamento'));
                 return !!rec;
@@ -1588,110 +1804,194 @@
 
             const [sH, sM] = srvCfg.start.split(':').map(Number);
             const [eH, eM] = srvCfg.end.split(':').map(Number);
-            let cur = sH * 60 + sM, end = eH * 60 + eM, idx = 0;
+            let cur = sH * 60 + sM, end = eH * 60 + eM;
+            let idx = 0;
 
-            if (hasActiveBooking && lastBooking.iso === iso) {
-                const banner = document.createElement('div');
-                banner.className = 'only-my-slot-banner';
-                banner.innerHTML = '<strong>✨ Sua vaga está confirmada!</strong>Abaixo está o seu horário reservado. Lembre-se de enviar o comprovante do PIX para a Camila pelo WhatsApp.';
-                container.appendChild(banner);
-            }
+            const logs = [];
 
             while (cur < end) {
                 const hh = String(Math.floor(cur / 60)).padStart(2, '0');
                 const mm = String(cur % 60).padStart(2, '0');
                 const clock = `${hh}:${mm}`;
                 const isPast = (iso < todayIso) || (iso === todayIso && cur < curMins);
-                const reg = db.find(r => String(r.data).substring(0, 10) === iso && String(r.horario).substring(0, 5) === clock);
+
+                const reg = db.find(r =>
+                    String(r.data).substring(0, 10) === iso &&
+                    String(r.horario).substring(0, 5) === clock
+                );
+
                 let st = reg ? reg.status : 'Livre';
                 let durMin = reg ? parseInt(reg.duration || srvCfg.duration) : srvCfg.duration;
 
-                if (isPast && !isAdmin) { cur += Math.max(15, durMin || 30); continue; }
+                // Ocultar horários que já passaram para o cliente (mantém a visão limpa)
+                if (isPast && !isAdmin) {
+                    cur += Math.max(15, durMin || 30);
+                    continue;
+                }
+                const reservedUntil = reg ? reg.reservedUntil : null;
+                const logMsg = reg ? reg.log : null;
+
+                // Expired check
+                let isExpired = false;
+                if (st === 'Aguardando Pagamento' && reservedUntil) {
+                    if (new Date() > new Date(reservedUntil)) { isExpired = true; }
+                }
+
+                // Non-admin: expired => show as Livre
+                if (st === 'Aguardando Pagamento' && isExpired && !isAdmin) st = 'Livre';
+
+                // Identifica se este slot pertence à reserva atual do cliente (via localStorage)
                 const isMyBooking = lastBooking && lastBooking.iso === iso && lastBooking.clock === clock;
 
-                // Lógica de visualização do cliente:
+                // FOCO TOTAL: Se o cliente já tem uma reserva ativa, ele vê APENAS o seu horário.
+                // Caso contrário, ele vê apenas os horários que estão LIVRES.
                 if (!isAdmin) {
                     if (hasActiveBooking) {
                         if (!isMyBooking) { cur += Math.max(15, durMin || 30); continue; }
                     } else {
+                        // Se o horário estiver ocupado por outra pessoa, o cliente nem o vê na lista.
                         if (st !== 'Livre') { cur += Math.max(15, durMin || 30); continue; }
                     }
                 }
 
+                // Auto-fit duration against next occupied slot
                 if (st === 'Livre') {
-                    const nextOcc = db.filter(r => String(r.data).substring(0, 10) === iso && r.status !== 'Livre')
+                    const nextOcc = db
+                        .filter(r => String(r.data).substring(0, 10) === iso && r.status !== 'Livre')
                         .map(r => { const [h, m] = r.horario.split(':').map(Number); return h * 60 + m; })
                         .filter(m => m > cur).sort((a, b) => a - b)[0];
-                    if (nextOcc) { const gap = nextOcc - cur; if (gap < durMin) durMin = gap; }
+                    if (nextOcc) {
+                        const gap = nextOcc - cur;
+                        if (gap < durMin) durMin = gap;
+                    }
                 }
 
-                const pipColor = { 'Livre': 'var(--st-livre)', 'Aguardando Pagamento': 'var(--st-aguard)', 'Ocupado': 'var(--st-ocupado)', 'Bloqueado': 'var(--st-block)' }[st] || 'var(--st-block)';
-                const durLabel = durMin >= 60 ? `${Math.floor(durMin / 60)}h${durMin % 60 > 0 ? ' ' + durMin % 60 + 'min' : ''}` : `${durMin} min`;
+                // Color pip
+                const pipColor = {
+                    'Livre': 'var(--st-livre)',
+                    'Aguardando Pagamento': 'var(--st-aguard)',
+                    'Ocupado': 'var(--st-ocupado)',
+                    'Bloqueado': 'var(--st-block)'
+                }[st] || 'var(--st-block)';
+
+                // Countdown
+                let countdownHtml = '';
+                if (st === 'Aguardando Pagamento' && reservedUntil && !isExpired) {
+                    const leftMs = new Date(reservedUntil) - new Date();
+                    const leftMin = Math.ceil(leftMs / 60000);
+                    countdownHtml = `<div class="countdown-pill">⏳ Reservado por mais ${leftMin} min</div>`;
+                }
+
+                // Admin: show expired log
+                let expiredHtml = '';
+                if (isAdmin && isExpired && logMsg) {
+                    expiredHtml = `<div class="log-expired">⚠ Expirado — veja log</div>`;
+                    logs.push({ time: clock, msg: logMsg, client: reg.cliente, phone: reg.telefone, token: reg.codigo });
+                }
+
+                const durLabel = durMin >= 60
+                    ? `${Math.floor(durMin / 60)}h${durMin % 60 > 0 ? ' ' + durMin % 60 + 'min' : ''}`
+                    : `${durMin} min`;
 
                 const stLabels = {
                     'Livre': 'DISPONÍVEL',
-                    'Aguardando Pagamento': isAdmin ? 'AGUARDANDO PIX' : 'RESERVADO',
-                    'Ocupado': isMyBooking && !isAdmin ? 'SUA VAGA' : 'OCUPADO',
+                    'Aguardando Pagamento': isExpired ? (isAdmin ? 'EXPIRADO' : 'DISPONÍVEL') : 'AGUARDANDO',
+                    'Ocupado': 'OCUPADO',
                     'Bloqueado': 'BLOQUEADO'
                 };
+                const stLabel = stLabels[st] || st;
 
                 let clientName = 'Horário disponível ✨';
                 if (st === 'Ocupado' || st === 'Aguardando Pagamento') {
-                    clientName = isMyBooking && !isAdmin ? 'Sua vaga está confirmada ✨' : (isAdmin ? (reg.cliente || '—') : '—');
+                    clientName = (isMyBooking && !isAdmin) ? 'Sua reserva ✨' : (reg.cliente || '—');
                 }
                 if (st === 'Bloqueado') clientName = 'Indisponível';
+                if (isExpired && !isAdmin) clientName = 'Horário disponível ✨';
 
+                // Admin: show phone too with WA link
                 let extra = '';
                 if (isAdmin && reg && reg.telefone) {
                     const clean = reg.telefone.replace(/\D/g, '');
-                    const softMsg = encodeURIComponent(`Olá, ${reg.cliente}! ✨ Sou a Camila do Studio Look Designer. Vi seu interesse no horário das ${clock} do dia ${iso.split('-').reverse().join('/')}. Posso te ajudar? 💗`);
-                    extra = `<div class="slot-dur" style="margin-top:8px;"><a href="https://wa.me/${clean.startsWith('55') ? clean : '55' + clean}?text=${softMsg}" target="_blank" style="text-decoration:none;color:var(--rose);font-weight:700;background:rgba(196,132,138,.1);padding:5px 12px;border-radius:10px;display:inline-block;font-size:.65rem;">💬 Contato Rápido</a></div>`;
+                    const softMsg = encodeURIComponent(`Olá, ${reg.cliente}! ✨ Sou a Camila do Studio Look Designer. Vi seu interesse no horário das ${clock} do dia ${iso.split('-').reverse().join('/')}. Posso te ajudar com a confirmação? 💗`);
+                    extra = `<div class="slot-dur" style="margin-top:8px;">
+                        <a href="https://wa.me/${clean.startsWith('55') ? clean : '55' + clean}?text=${softMsg}" target="_blank" 
+                           style="text-decoration:none; color:var(--rose); font-weight:700; background:rgba(196,132,138,0.1); padding:5px 12px; border-radius:10px; display:inline-block; font-size:0.65rem;">
+                           💬 Contato Rápido
+                        </a>
+                    </div>`;
                 }
 
                 const card = document.createElement('div');
-                card.dataset.time = clock; card.dataset.status = st;
+                card.dataset.time = clock;
+                card.dataset.status = st;
                 card.style.animationDelay = `${idx * 0.04}s`;
-                let cardClass = 'slot-card' + (isPast && !isAdmin ? ' past' : '');
-                if (isMyBooking && !isAdmin) cardClass += ' my-booking';
-                card.className = cardClass;
-                card.onclick = e => handleSlotClick(e, card, iso, clock, st, reg);
+                card.className = 'slot-card' + (isPast && !isAdmin ? ' past' : '');
+                card.onclick = (e) => handleSlotClick(e, card, iso, clock, st, reservedUntil, reg);
+
                 card.innerHTML = `
-                    <div class="slot-check" data-chk="true">✓</div>
-                    <div class="slot-pip" style="background:${isMyBooking && !isAdmin ? 'var(--gold)' : pipColor}"></div>
-                    <div class="slot-time">${clock}</div>
-                    <div class="slot-info">
-                        <div class="slot-status" style="color:${isMyBooking && !isAdmin ? 'var(--gold)' : pipColor}">${stLabels[st] || st}</div>
-                        <div class="slot-client">${clientName}</div>
-                        <div class="slot-dur" style="margin-top:2px;font-size:.6rem;opacity:.6;">
-                            ${st !== 'Livre' && reg && reg.telefone && isAdmin ? '📞 ' + reg.telefone : ''}
-                            ${st !== 'Livre' && reg && reg.codigo && isAdmin ? ' · 🎫 ' + reg.codigo : ''}
-                            ${isMyBooking && !isAdmin && reg && reg.codigo ? '🎫 Código: ' + reg.codigo : ''}
-                        </div>
-                        <div class="slot-dur">${durLabel}</div>
-                        ${extra}
-                    </div>`;
+            <div class="slot-check" data-chk="true">✓</div>
+            <div class="slot-pip" style="background:${pipColor}"></div>
+            <div class="slot-time">${clock}</div>
+            <div class="slot-info">
+                <div class="slot-status" style="color:${pipColor}">${stLabel}</div>
+                <div class="slot-client">${clientName}</div>
+                <div class="slot-dur" style="margin-top:2px; font-size:0.6rem; opacity:0.6;">
+                    ${st !== 'Livre' && reg && reg.telefone ? '📞 ' + reg.telefone : ''} 
+                    ${st !== 'Livre' && reg && reg.codigo ? ' · 🎫 ' + reg.codigo : ''}
+                </div>
+                <div class="slot-dur">${durLabel}</div>
+                ${extra}
+                ${countdownHtml}
+                ${expiredHtml}
+            </div>
+        `;
+
                 container.appendChild(card);
-                cur += Math.max(30, durMin); idx++;
+                cur += Math.max(30, durMin);
+                idx++;
+            }
+
+            // Render logs
+            if (isAdmin && logs.length > 0) {
+                logs.forEach(l => {
+                    const e = document.createElement('div');
+                    e.className = 'log-entry';
+                    e.innerHTML = `<strong>⏱ ${l.time} — Reserva Não Confirmada</strong>${l.msg}<div class="log-meta">Token: ${l.token} · ${l.phone}</div>`;
+                    logContainer.appendChild(e);
+                });
             }
         }
 
-        // ─── SLOT CLICK ───────────────────────────────────────
-        function handleSlotClick(e, card, iso, clock, st, reg) {
+        // ─── SLOT CLICK ────────────────────────────────────────
+        function handleSlotClick(event, card, iso, clock, st, rUntil, reg) {
             if (isAdmin) {
-                const isCheck = e.target.getAttribute('data-chk') === 'true' || e.target.closest('[data-chk="true"]');
+                // Check if user clicked the CHECK element
+                const isCheck = event.target.getAttribute('data-chk') === 'true' ||
+                    event.target.closest('[data-chk="true"]');
+
                 if (isCheck) {
                     const key = `${iso}|${clock}`;
-                    if (selectedSlots.has(key)) { selectedSlots.delete(key); card.classList.remove('selected'); }
-                    else { selectedSlots.add(key); card.classList.add('selected'); }
+                    if (selectedSlots.has(key)) {
+                        selectedSlots.delete(key);
+                        card.classList.remove('selected');
+                    } else {
+                        selectedSlots.add(key);
+                        card.classList.add('selected');
+                    }
                     updateMultiBar();
-                } else { showAdminSlotSheet(iso, clock, st, reg); }
+                } else {
+                    // Clicou no CARD (fora do check) - abrir modal IMEDIATAMENTE
+                    showAdminSlotSheet(iso, clock, st, reg);
+                }
             } else {
                 if (st !== 'Livre') {
-                    const lb = JSON.parse(localStorage.getItem('last_booking_v3') || 'null');
-                    if (lb && lb.iso === iso && lb.clock === clock && st === 'Ocupado') {
-                        const d = new Date(iso + 'T12:00:00');
+                    // Se o cliente clicar na própria reserva pendente, mostramos o PIX novamente
+                    const lastBooking = JSON.parse(localStorage.getItem('last_booking_v3') || 'null');
+                    const isMyBooking = lastBooking && lastBooking.iso === iso && lastBooking.clock === clock;
+                    if (isMyBooking && st === 'Aguardando Pagamento') {
+                        const d = parseIsoDateLocal(iso);
                         const df = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
-                        showPixConfirmSheet(lb.name || reg.cliente, reg.telefone, iso, clock, df, reg.codigo);
+                        showPixSheet(reg.cliente, reg.telefone, iso, clock, df, reg.codigo, reg.reservedUntil);
                     }
                     return;
                 }
@@ -1699,43 +1999,73 @@
             }
         }
 
-        // ─── MULTI-SELECT ─────────────────────────────────────
         function updateMultiBar() {
-            const bar = document.getElementById('multiSelectBar'), n = selectedSlots.size;
-            if (n > 0 || isAdmin) { bar.classList.add('vis'); document.getElementById('selCount').textContent = n > 0 ? `${n} horário(s) selecionado(s)` : 'Seleção Ativa'; }
-            else bar.classList.remove('vis');
+            const bar = document.getElementById('multiSelectBar');
+            const n = selectedSlots.size;
+            if (n > 0 || isAdmin) {
+                bar.classList.add('vis');
+                document.getElementById('selCount').textContent = n > 0 ? `${n} horário(s) selecionado(s)` : `Seleção Ativa`;
+            } else {
+                bar.classList.remove('vis');
+            }
         }
-        function selectAll() { document.querySelectorAll('.slot-card:not(.past)').forEach(c => { const key = `${currentDay}|${c.dataset.time}`; selectedSlots.add(key); c.classList.add('selected'); }); updateMultiBar(); }
-        function clearSelection() { selectedSlots.clear(); document.querySelectorAll('.slot-card.selected').forEach(c => c.classList.remove('selected')); updateMultiBar(); }
+
+        function selectAll() {
+            const cards = document.querySelectorAll('.slot-card:not(.past)');
+            cards.forEach(c => {
+                const key = `${currentDay}|${c.dataset.time}`;
+                selectedSlots.add(key);
+                c.classList.add('selected');
+            });
+            updateMultiBar();
+        }
+
+        function clearSelection() {
+            selectedSlots.clear();
+            document.querySelectorAll('.slot-card.selected').forEach(c => c.classList.remove('selected'));
+            updateMultiBar();
+        }
+
         async function blockSelected() {
             if (!selectedSlots.size) return;
             if (!confirm(`Bloquear ${selectedSlots.size} horário(s)?`)) return;
-            const u = [...selectedSlots].map(k => { const [d, t] = k.split('|'); return { data: d, horario: t, status: 'Bloqueado', cliente: 'INDISPONÍVEL', password: adminPass }; });
-            clearSelection(); await postUpdates(u);
+            const updates = [...selectedSlots].map(k => {
+                const [d, t] = k.split('|');
+                return { data: d, horario: t, status: 'Bloqueado', cliente: 'INDISPONÍVEL', password: adminPass };
+            });
+            clearSelection();
+            await postUpdates(updates);
         }
+
         async function freeSelected() {
             if (!selectedSlots.size) return;
             if (!confirm(`Liberar ${selectedSlots.size} horário(s)?`)) return;
-            const u = [...selectedSlots].map(k => { const [d, t] = k.split('|'); return { data: d, horario: t, status: 'Livre', cliente: '', password: adminPass }; });
-            clearSelection(); await postUpdates(u);
+            const updates = [...selectedSlots].map(k => {
+                const [d, t] = k.split('|');
+                return { data: d, horario: t, status: 'Livre', cliente: '', password: adminPass };
+            });
+            clearSelection();
+            await postUpdates(updates);
         }
 
-        // ─── BOOKING SHEET ────────────────────────────────────
+        // ─── BOOKING SHEET (CLIENTE) ───────────────────────────
         function showBookingSheet(iso, clock) {
-            const d = new Date(iso + 'T12:00:00');
-            const df = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+            const d = parseIsoDateLocal(iso);
+            const df = formatManausLabel(iso, { weekday: 'long', day: '2-digit', month: 'long' });
             openSheet('Agendar seu olhar ✨', `Preencha seus dados para reservar o horário das ${clock}.`);
             document.getElementById('sheetBody').innerHTML = `
-                <div class="info-box">
-                    Ao confirmar, <strong>sua vaga será ocupada imediatamente</strong>. Você terá <strong>${CFG.RESERVE_MIN} minutos</strong> para enviar o comprovante do PIX pelo WhatsApp.
-                </div>
-                <label class="field-label">Seu nome</label>
-                <input id="bName" class="inp" placeholder="Nome completo">
-                <label class="field-label">WhatsApp</label>
-                <input id="bPhone" class="inp" placeholder="(92) 9 0000-0000" type="tel" oninput="handlePhoneInput(this)">`;
+        <div class="info-box">
+            Você terá <strong>${CFG.RESERVE_MIN} minutos</strong> para enviar o comprovante do PIX e garantir sua vaga.
+        </div>
+        <label class="field-label">Seu nome</label>
+        <input id="bName" class="inp" placeholder="Nome completo">
+        <label class="field-label">WhatsApp</label>
+        <input id="bPhone" class="inp" placeholder="(92) 9 0000-0000" type="tel" oninput="handlePhoneInput(this)">
+    `;
             document.getElementById('sheetActions').innerHTML = `
-                <button class="btn btn-primary" onclick="confirmBooking('${iso}','${clock}','${df}')">Reservar meu horário →</button>
-                <button class="btn btn-secondary" onclick="closeSheet()">Voltar</button>`;
+        <button class="btn btn-primary" onclick="confirmBooking('${iso}','${clock}','${df}')">Reservar meu horário →</button>
+        <button class="btn btn-secondary" onclick="closeSheet()">Voltar</button>
+    `;
         }
 
         async function confirmBooking(iso, clock, df) {
@@ -1743,106 +2073,150 @@
             const phone = document.getElementById('bPhone').value.trim();
             if (!name || !phone) { alert('Preencha todos os campos.'); return; }
 
-            // Bloqueio rigoroso de 12 horas por aparelho
-            if (isClientBlocked() && !isAdmin) { showBlockedScreen(); return; }
+            // REGRA DE SEGURANÇA: Bloqueio de 12 horas para novos agendamentos
+            const lastTs = localStorage.getItem('last_booking_timestamp');
+            if (lastTs && !isAdmin) {
+                const diff = Date.now() - parseInt(lastTs);
+                if (diff < 12 * 60 * 60 * 1000) {
+                    const horasRestantes = Math.ceil((12 * 60 * 60 * 1000 - diff) / 3600000);
+                    alert(`Você já possui um agendamento recente. Para garantir a organização da agenda, aguarde ${horasRestantes}h para um novo agendamento ou fale com a Camila.`);
+                    return;
+                }
+            }
 
             const normalizedPhone = normalizePhone(phone);
             await syncData();
 
             const token = Math.random().toString(36).substring(2, 7).toUpperCase();
+            const exp = new Date(Date.now() + CFG.RESERVE_MIN * 60000).toISOString();
             const bTime = new Date().toISOString();
 
-            // AGENDAMENTO AUTOMÁTICO: A vaga é confirmada na hora.
+            localStorage.setItem('last_booking_v3', JSON.stringify({ token, iso, clock, phone: normalizedPhone }));
+            localStorage.setItem('last_booking_timestamp', Date.now().toString());
+
+            // Mostra o PIX IMEDIATAMENTE (Interface Otimista)
+            showPixSheet(name, phone, iso, clock, df, token, exp);
+
+            // MELHORIA: A vaga agora fica OCUPADA automaticamente no momento da escolha.
             const ok = await postUpdates([{
                 data: iso, horario: clock, status: 'Ocupado',
                 cliente: name, telefone: phone, codigo: token,
-                bookingTime: bTime, duration: srvCfg.duration, password: adminPass
+                bookingTime: bTime, reservedUntil: exp,
+                duration: srvCfg.duration, password: adminPass
             }]);
 
-            if (!ok) { alert('Não foi possível registrar sua reserva. Verifique sua internet e tente novamente.'); return; }
+            if (!ok) {
+                alert('Não foi possível registrar sua reserva agora. Verifique sua internet e tente novamente.');
+                return;
+            }
 
-            // Salva localmente após confirmação no servidor
-            localStorage.setItem('last_booking_v3', JSON.stringify({ token, iso, clock, phone: normalizedPhone, name }));
-            localStorage.setItem('last_booking_timestamp', Date.now().toString());
-
-            showPixConfirmSheet(name, phone, iso, clock, df, token);
+            const persisted = db.find(r =>
+                String(r.data).substring(0, 10) === iso &&
+                String(r.horario).substring(0, 5) === clock &&
+                r.status === 'Aguardando Pagamento'
+            );
+            if (!persisted) {
+                alert('Sua reserva ainda não foi confirmada no sistema. Toque em Atualizar e tente novamente.');
+            }
         }
 
-        // Tela de PIX após vaga ocupada
-        function showPixConfirmSheet(name, phone, iso, clock, df, token) {
-            const pixMsg = srvCfg.pix_value && parseFloat(srvCfg.pix_value) > 0 ? `💰 *Valor da Reserva:* R$ ${srvCfg.pix_value}\n` : '';
+        function showPixSheet(name, phone, iso, clock, df, token, exp) {
+            const leftMin = CFG.RESERVE_MIN;
+            const pixMsg = srvCfg.pix_value && parseFloat(srvCfg.pix_value) > 0
+                ? `💰 *Valor da Reserva:* R$ ${srvCfg.pix_value}\n`
+                : '';
             const waText = encodeURIComponent(
                 `Olá, Camila! 💗\n\nAcabei de reservar meu horário pelo site da Look Designer.\n\n` +
-                `📌 *Dados do agendamento:*\n• Nome: ${name}\n• Data: ${df}\n• Horário: ${clock}\n• Código: *${token}*\n\n` +
+                `📌 *Dados do agendamento:*\n` +
+                `• Nome: ${name}\n` +
+                `• Data: ${df}\n` +
+                `• Horário: ${clock}\n` +
+                `• Código da reserva: *${token}*\n\n` +
                 pixMsg +
-                `💰 *PIX enviado para:*\n• Titular: ${CFG.PIX_HOLDER}\n• Chave PIX: ${CFG.PIX_KEY} (${CFG.PIX_BANK})\n\n` +
-                `Segue em anexo o comprovante! 🧾\nAguardando sua confirmação. ✨`
+                `💰 *PIX enviado para:*\n` +
+                `• Titular: ${CFG.PIX_HOLDER}\n` +
+                `• Chave PIX: ${CFG.PIX_KEY} (${CFG.PIX_BANK})\n\n` +
+                `Segue em anexo o comprovante! 🧾\n` +
+                `Estou aguardando a confirmação dentro dos ${leftMin} minutos. ✨`
             );
-            openSheet('Vaga Reservada! 🎉', 'Sua vaga foi ocupada com sucesso. Agora envie o PIX e mande o comprovante pelo WhatsApp.');
+
+            openSheet('Quase lá! 💕', 'Sua vaga está reservada. Agora envie o PIX e mande o comprovante no WhatsApp para confirmar.');
             document.getElementById('sheetBody').innerHTML = `
-                <div class="info-box" style="border-color:#25D366;background:rgba(37,211,102,.05);">
-                    ✅ <strong>Vaga ocupada!</strong> Seu horário está bloqueado no sistema. Agora basta enviar o comprovante do PIX para a Camila.
-                </div>
-                <div class="pix-box">
-                    <div class="pix-label">Chave PIX (celular)</div>
-                    <div class="pix-key">${CFG.PIX_KEY}</div>
-                    <div class="pix-holder">${CFG.PIX_BANK} · ${CFG.PIX_HOLDER}</div>
-                    <div style="margin-top:12px;padding:10px;background:rgba(201,168,108,.1);border-radius:10px;">
-                        <div style="font-size:.6rem;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Valor para Reserva</div>
-                        <div style="font-weight:700;color:var(--ink);font-size:1.4rem;">R$ ${srvCfg.pix_value || '0.00'}</div>
-                    </div>
-                    <button class="btn btn-secondary" style="margin-top:16px;padding:12px;" onclick="navigator.clipboard.writeText('${CFG.PIX_KEY}').then(()=>alert('Chave copiada!'))">📋 Copiar Chave</button>
-                </div>
-                <div class="booking-sum">
-                    <p><strong>${name}</strong> · ${df} às ${clock}</p>
-                    <p>WhatsApp: ${phone}</p>
-                    <div class="token">${token}</div>
-                </div>
-                <div class="info-box">
-                    ⏳ Você tem <strong>${CFG.RESERVE_MIN} minutos</strong> para enviar o comprovante. Caso contrário, a gerente poderá liberar a vaga manualmente.
-                </div>
-                <a href="https://wa.me/${CFG.WA}?text=${waText}" target="_blank" class="wa-link">💬 Enviar Comprovante no WhatsApp</a>`;
-            document.getElementById('sheetActions').innerHTML = `<button class="btn btn-secondary" onclick="closeSheet()" style="margin-top:16px;">Fechar</button>`;
+        <div class="pix-box">
+            <div class="pix-label">Chave PIX (celular)</div>
+            <div class="pix-key">${CFG.PIX_KEY}</div>
+            <div class="pix-holder">${CFG.PIX_BANK} · ${CFG.PIX_HOLDER}</div>
+            <div style="margin-top:12px; padding:10px; background:rgba(201,168,108,0.1); border-radius:10px;">
+                <div style="font-size:0.6rem; color:var(--gold); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Valor para Reserva</div>
+                <div style="font-weight:700; color:var(--ink); font-size:1.4rem;">R$ ${srvCfg.pix_value || '0.00'}</div>
+            </div>
+            <button class="btn btn-secondary" style="margin-top:16px;padding:12px;" onclick="navigator.clipboard.writeText('${CFG.PIX_KEY}').then(()=>alert('Chave copiada!'))">📋 Copiar Chave</button>
+        </div>
+        <div class="info-box" style="border-color:var(--rose); background:rgba(196,132,138,0.05);">
+            ⭐ <strong>Horário Exclusivo:</strong> Esta reserva garante que o seu horário seja bloqueado apenas para você, evitando esperas ou choque de horários.
+        </div>
+        <div class="booking-sum">
+            <p><strong>${name}</strong> · ${df} às ${clock}</p>
+            <p>WhatsApp: ${phone}</p>
+            <div class="token">${token}</div>
+        </div>
+        <div class="info-box">
+            ⏳ Você tem <strong>${leftMin} minutos</strong> para enviar o comprovante. Após esse prazo, a vaga é liberada automaticamente.
+        </div>
+        <a href="https://wa.me/${CFG.WA}?text=${waText}" target="_blank" class="wa-link">💬 Enviar Comprovante no WhatsApp</a>
+    `;
+            document.getElementById('sheetActions').innerHTML = `
+        <button class="btn btn-secondary" onclick="closeSheet()" style="margin-top:16px;">Fechar</button>
+    `;
         }
 
-        // ─── ADMIN SLOT SHEET ─────────────────────────────────
+        // ─── ADMIN SLOT SHEET ──────────────────────────────────
         function showAdminSlotSheet(iso, clock, st, reg) {
-            const durOpts = [30, 45, 60, 75, 90, 120].map(d => `<div class="dur-opt${(reg && parseInt(reg.duration || srvCfg.duration) === d) || (!reg && srvCfg.duration === d) ? ' sel' : ''}" onclick="selectDur(this,${d})">${d >= 60 ? Math.floor(d / 60) + 'h' + (d % 60 > 0 ? d % 60 : '') : d + 'min'}</div>`).join('');
+            const durOpts = [30, 45, 60, 75, 90, 120].map(d =>
+                `<div class="dur-opt${(reg && parseInt(reg.duration || srvCfg.duration) === d) || (!reg && srvCfg.duration === d) ? ' sel' : ''}" onclick="selectDur(this,${d})">${d >= 60 ? Math.floor(d / 60) + 'h' + (d % 60 > 0 ? d % 60 : '') : '' + d + 'min'}</div>`
+            ).join('');
+
             openSheet(`Gestão · ${clock}`, `Status atual: ${st}`);
             document.getElementById('sheetBody').innerHTML = `
-                <div class="admin-action-grid">
-                    ${st === 'Ocupado' || st === 'Aguardando Pagamento' ? `
-                        <button class="btn btn-gold" onclick="adminAction('${iso}','${clock}','free')">🔓 Liberar horário</button>
-                        <div style="height:1px;background:var(--cream-dark);margin-bottom:8px;"></div>`: ''}
-                    ${st !== 'Bloqueado' && st !== 'Ocupado' && st !== 'Aguardando Pagamento' ? `<button class="btn btn-danger" onclick="adminAction('${iso}','${clock}','block')">🔒 Bloquear este horário</button>` : ''}
-                    ${st === 'Bloqueado' ? `<button class="btn btn-gold" onclick="adminAction('${iso}','${clock}','free')">🔓 Liberar horário</button>` : ''}
-                </div>
-                <label class="field-label">${st === 'Ocupado' ? 'Dados do Cliente' : 'Agendar manualmente'}</label>
-                <input id="aName" class="inp" placeholder="Nome do cliente" value="${reg ? reg.cliente : ''}">
-                <input id="aPhone" class="inp" placeholder="(92) 9 0000-0000" type="tel" value="${reg && reg.telefone ? reg.telefone : ''}" oninput="handlePhoneInput(this)">
-                <label class="field-label">Duração do procedimento</label>
-                <div class="dur-grid" id="durGrid">${durOpts}</div>`;
+        <div class="admin-action-grid">
+            ${st === 'Aguardando Pagamento' ? `
+                <button class="btn" style="background:#25D366; color:white; margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="adminConfirm('${iso}','${clock}')">✅ Confirmar Agendamento</button>
+                <button class="btn btn-secondary" style="margin-bottom:16px;" onclick="adminAction('${iso}','${clock}','free')">❌ Revogar / Liberar Vaga</button>
+                <div style="height:1px; background:var(--cream-dark); margin-bottom:16px;"></div>
+            ` : ''}
+            ${st !== 'Bloqueado' && st !== 'Aguardando Pagamento' ? `<button class="btn btn-danger" onclick="adminAction('${iso}','${clock}','block')">🔒 Bloquear este horário</button>` : ''}
+            ${st === 'Bloqueado' || st === 'Ocupado' ? `<button class="btn btn-gold" onclick="adminAction('${iso}','${clock}','free')">🔓 Liberar horário</button>` : ''}
+        </div>
+        <label class="field-label">${st === 'Aguardando Pagamento' || st === 'Ocupado' ? 'Dados do Cliente' : 'Agendar manualmente'}</label>
+        <input id="aName" class="inp" placeholder="Nome do cliente" value="${reg ? reg.cliente : ''}">
+        <input id="aPhone" class="inp" placeholder="(92) 9 0000-0000" type="tel" value="${reg && reg.telefone ? reg.telefone : ''}" oninput="handlePhoneInput(this)">
+        <label class="field-label">Duração do procedimento</label>
+        <div class="dur-grid" id="durGrid">${durOpts}</div>
+    `;
             document.getElementById('sheetActions').innerHTML = `
-                <button class="btn btn-primary" onclick="adminManual('${iso}','${clock}')">✓ Salvar agendamento</button>
-                <button class="btn btn-secondary" onclick="closeSheet()">Voltar</button>`;
+        <button class="btn btn-primary" onclick="adminManual('${iso}','${clock}')">✓ Salvar agendamento</button>
+        <button class="btn btn-secondary" onclick="closeSheet()">Voltar</button>
+    `;
         }
 
         let selectedDur = 0;
-        function selectDur(el, val) { document.querySelectorAll('.dur-opt').forEach(e => e.classList.remove('sel')); el.classList.add('sel'); selectedDur = val; }
-
-        async function adminAction(iso, clock, action) {
-            closeSheet();
-            if (action === 'block') { await postUpdates([{ data: iso, horario: clock, status: 'Bloqueado', cliente: 'INDISPONÍVEL', password: adminPass }]); }
-            else { await postUpdates([{ data: iso, horario: clock, status: 'Livre', cliente: '', codigo: '', password: adminPass }]); }
+        function selectDur(el, val) {
+            document.querySelectorAll('.dur-opt').forEach(e => e.classList.remove('sel'));
+            el.classList.add('sel');
+            selectedDur = val;
         }
 
-        async function adminManual(iso, clock) {
+        async function adminConfirm(iso, clock) {
             const name = document.getElementById('aName').value.trim();
             const phone = document.getElementById('aPhone').value.trim();
-            if (!name || !phone) { alert('Preencha nome e WhatsApp.'); return; }
-            const dur = selectedDur || srvCfg.duration; closeSheet();
-            const token = Math.random().toString(36).substring(2, 7).toUpperCase();
-            await postUpdates([{ data: iso, horario: clock, status: 'Ocupado', cliente: name, telefone: phone, duration: dur, codigo: token, password: adminPass }]);
+            const dur = selectedDur || srvCfg.duration;
+            closeSheet();
+            await postUpdates([{
+                data: iso, horario: clock, status: 'Ocupado',
+                cliente: name, telefone: phone, duration: dur, password: adminPass
+            }]);
+
+            // Abre modal de sucesso com botão de WhatsApp
             setTimeout(() => showAdminSuccess(name, phone, iso, clock), 500);
         }
 
@@ -1850,69 +2224,156 @@
             const clean = phone.replace(/\D/g, '');
             const df = iso.split('-').reverse().join('/');
             const msg = encodeURIComponent(`Olá, ${name}! ✨ Aqui é a Camila da Look Designer. Acabei de confirmar seu agendamento para o dia ${df} às ${clock}. Já estou te aguardando! 💗`);
+
             openSheet('Vaga Confirmada! ✅', 'O agendamento foi salvo com sucesso no sistema.');
             document.getElementById('sheetBody').innerHTML = `
-                <div class="info-box" style="border-color:var(--gold);background:rgba(201,168,108,.05);text-align:center;">
-                    <p style="font-size:1.1rem;margin-bottom:8px;">Agendamento de <strong>${name}</strong></p>
+                <div class="info-box" style="border-color:var(--gold); background:rgba(201,168,108,0.05); text-align:center;">
+                    <p style="font-size:1.1rem; margin-bottom:8px;">Agendamento de <strong>${name}</strong></p>
                     <p>${df} às ${clock}</p>
                 </div>
                 <div style="margin-top:20px;">
-                    <a href="https://wa.me/${clean.startsWith('55') ? clean : '55' + clean}?text=${msg}" target="_blank" class="wa-link" style="background:#25D366;color:white;">💬 Enviar Mensagem de Boas-vindas</a>
-                </div>`;
-            document.getElementById('sheetActions').innerHTML = `<button class="btn btn-secondary" onclick="closeSheet()">Fechar Janela</button>`;
+                    <a href="https://wa.me/${clean.startsWith('55') ? clean : '55' + clean}?text=${msg}" target="_blank" 
+                       class="wa-link" style="background:#25D366; color:white;">
+                       💬 Enviar Mensagem de Boas-vindas
+                    </a>
+                </div>
+            `;
+            document.getElementById('sheetActions').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeSheet()">Fechar Janela</button>
+            `;
         }
 
-        // ─── CONFIG ───────────────────────────────────────────
+        async function adminAction(iso, clock, action) {
+            closeSheet();
+            if (action === 'block') {
+                await postUpdates([{ data: iso, horario: clock, status: 'Bloqueado', cliente: 'INDISPONÍVEL', password: adminPass }]);
+            } else {
+                await postUpdates([{ data: iso, horario: clock, status: 'Livre', cliente: '', password: adminPass }]);
+            }
+        }
+
+        async function adminManual(iso, clock) {
+            const name = document.getElementById('aName').value.trim();
+            const phone = document.getElementById('aPhone').value.trim();
+            if (!name || !phone) { alert('Preencha nome e WhatsApp.'); return; }
+            const dur = selectedDur || srvCfg.duration;
+            closeSheet();
+            await postUpdates([{
+                data: iso, horario: clock, status: 'Ocupado',
+                cliente: name, telefone: phone, duration: dur, password: adminPass
+            }]);
+        }
+
+        // ─── CONFIG SHEET ──────────────────────────────────────
         function openConfig() {
             openSheet('Configurações', 'Expediente e Valor da Reserva (PIX)');
             document.getElementById('sheetBody').innerHTML = `
-                <label class="field-label">Horário de início</label><input id="cfgS" class="inp" value="${srvCfg.start}" placeholder="08:00">
-                <label class="field-label">Horário de término</label><input id="cfgE" class="inp" value="${srvCfg.end}" placeholder="20:00">
-                <label class="field-label">Duração padrão (minutos)</label><input id="cfgD" class="inp" type="number" value="${srvCfg.duration}" min="30" step="15">
-                <label class="field-label">Valor da Reserva (PIX)</label><input id="cfgP" class="inp" value="${(srvCfg.pix_value || '0.00').toString().replace('.', ',')}" placeholder="25,50">`;
+        <label class="field-label">Horário de início</label>
+        <input id="cfgS" class="inp" value="${srvCfg.start}" placeholder="08:00">
+        <label class="field-label">Horário de término</label>
+        <input id="cfgE" class="inp" value="${srvCfg.end}" placeholder="20:00">
+        <label class="field-label">Duração padrão (minutos)</label>
+        <input id="cfgD" class="inp" type="number" value="${srvCfg.duration}" min="30" step="15">
+        <label class="field-label">Valor da Reserva (PIX)</label>
+        <input id="cfgP" class="inp" value="${(srvCfg.pix_value || '0.00').toString().replace('.', ',')}" placeholder="25,50">
+    `;
             document.getElementById('sheetActions').innerHTML = `
-                <button id="btnSaveCfg" class="btn btn-primary" onclick="saveConfig()">Salvar configurações</button>
-                <button class="btn btn-secondary" onclick="closeSheet()">Cancelar</button>`;
+        <button id="btnSaveCfg" class="btn btn-primary" onclick="saveConfig()">Salvar configurações</button>
+        <button class="btn btn-secondary" onclick="closeSheet()">Cancelar</button>
+    `;
         }
+
         async function saveConfig() {
             const btn = document.getElementById('btnSaveCfg');
-            const s = document.getElementById('cfgS').value, e = document.getElementById('cfgE').value;
+            const s = document.getElementById('cfgS').value;
+            const e = document.getElementById('cfgE').value;
             const d = parseInt(document.getElementById('cfgD').value);
             const p = document.getElementById('cfgP').value.replace(',', '.').trim();
+
             if (btn) { btn.textContent = '⏱ Salvando...'; btn.disabled = true; }
+
             const cbName = 'onCfg_' + Date.now();
             window[cbName] = (res) => {
-                if (res.status === 'OK') { srvCfg.pix_value = p; updateAdminStats(); syncData(); setTimeout(() => { alert('Configurações salvas! ✨'); closeSheet(); }, 500); }
-                else { alert('Erro ao salvar: ' + (res.message || 'Falha')); if (btn) { btn.textContent = 'Salvar configurações'; btn.disabled = false; } }
-                const sEl = document.getElementById('scr_cfg_final'); if (sEl) sEl.remove(); delete window[cbName];
+                if (res.status === 'OK') {
+                    srvCfg.pix_value = p;
+                    updateAdminStats();
+                    syncData();
+                    setTimeout(() => {
+                        alert('Configurações salvas com sucesso! ✨');
+                        closeSheet();
+                    }, 500);
+                } else {
+                    alert('Erro ao salvar: ' + (res.message || 'Falha de conexão'));
+                    if (btn) { btn.textContent = 'Salvar configurações'; btn.disabled = false; }
+                }
+                const sEl = document.getElementById('scr_cfg_final');
+                if (sEl) sEl.remove();
+                delete window[cbName];
             };
-            const scr = document.createElement('script'); scr.id = 'scr_cfg_final';
-            scr.src = `${CFG.API_URL}?action=update_config&pass=${encodeURIComponent(adminPass)}&start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}&duration=${d}&pix_value=${encodeURIComponent(p)}&callback=${cbName}`;
+
+            const url = `${CFG.API_URL}?action=update_config&pass=${encodeURIComponent(adminPass)}&start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}&duration=${d}&pix_value=${encodeURIComponent(p)}&callback=${cbName}`;
+            const scr = document.createElement('script');
+            scr.id = 'scr_cfg_final';
+            scr.src = url;
             document.body.appendChild(scr);
         }
 
-        // ─── AUTH ─────────────────────────────────────────────
+        // ─── ADMIN AUTH ────────────────────────────────────────
         function promptAdmin() {
             const p = prompt('Senha do painel administrativo:');
-            if (p) { adminPass = p; localStorage.setItem('look_admin_pass', p); syncData(); }
+            if (p) {
+                adminPass = p;
+                localStorage.setItem('look_admin_pass', p);
+                syncData();
+            }
         }
+
         function logoutAdmin() {
             if (!confirm("Deseja realmente sair e remover a senha salva?")) return;
-            adminPass = ''; isAdmin = false; localStorage.removeItem('look_admin_pass');
-            clearSelection(); updateAppMode(); if (currentDay) renderGrid(currentDay);
+            adminPass = '';
+            isAdmin = false;
+            localStorage.removeItem('look_admin_pass');
+            clearSelection();
+            updateAppMode();
+            if (currentDay) renderGrid(currentDay);
         }
-        function toggleUserView() { isUserView = !isUserView; updateAppMode(); if (currentDay) renderGrid(currentDay); }
 
-        // ─── POST ─────────────────────────────────────────────
+        // Alterna entre ver como Admin ou ver como Cliente
+        function toggleUserView() {
+            isUserView = !isUserView;
+            updateAppMode();
+            if (currentDay) renderGrid(currentDay);
+
+            const msg = isUserView ? "Modo Cliente: Admin oculto" : "Modo Admin: Ativado";
+            console.log(msg);
+        }
+
+        // ─── POST ──────────────────────────────────────────────
         async function postUpdates(updates) {
             try {
-                await fetch(CFG.API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ updates }) });
+                const body = Array.isArray(updates) && updates[0].action
+                    ? JSON.stringify(updates[0])
+                    : JSON.stringify({ updates });
+                await fetch(CFG.API_URL, {
+                    method: 'POST', mode: 'no-cors',
+                    body: Array.isArray(updates) && updates[0].action ? body : JSON.stringify({ updates })
+                });
                 await new Promise(r => setTimeout(r, 800));
-                await syncData(); return true;
-            } catch (e) { console.warn('postUpdates failed:', e); return false; }
+                await syncData();
+                return true;
+            } catch (e) {
+                console.warn('postUpdates failed:', e);
+                return false;
+            }
         }
 
-        // ─── SHEET HELPERS ────────────────────────────────────
+        async function clearLogHistory() {
+            if (!confirm('Limpar todos os registros da agenda?')) return;
+            const ok = await postUpdates([{ action: 'clear_logs', password: adminPass }]);
+            if (ok) openLogSheet();
+        }
+
+        // ─── SHEET HELPERS ─────────────────────────────────────
         function openSheet(title, sub) {
             document.getElementById('sheetTitle').textContent = title;
             document.getElementById('sheetSub').textContent = sub;
@@ -1920,75 +2381,671 @@
             document.getElementById('sheetActions').innerHTML = '';
             document.getElementById('overlay').classList.add('vis');
         }
+
         function closeSheet() { document.getElementById('overlay').classList.remove('vis'); }
-        function handleOverlayClick(e) { if (e.target === document.getElementById('overlay')) closeSheet(); }
 
-        // ─── EXPERIÊNCIA ──────────────────────────────────────
+        function handleOverlayClick(e) {
+            if (e.target === document.getElementById('overlay')) closeSheet();
+        }
+
+        // ─── EXPERIÊNCIA AUTO-CALCULADA ────────────────────────────
         function calcExperience() {
-            const start = new Date(2010, 0, 1), now = new Date();
-            const y = now.getFullYear() - start.getFullYear() - (now < new Date(now.getFullYear(), 0, 1) ? 1 : 0);
-            const b = document.getElementById('expBadge'); if (b) b.textContent = `✦ ${y} anos de experiência ✦`;
-        }
-        function initSigWa() {
-            const t = encodeURIComponent('Olá, Camila! 💗 Vim pelo site da Look Designer e tenho uma dúvida sobre agendamento.');
-            const el = document.getElementById('sigWa'); if (el) el.href = `https://wa.me/${CFG.WA}?text=${t}`;
+            const start = new Date(2010, 0, 1); // 1 jan 2010
+            const now = new Date();
+            const years = now.getFullYear() - start.getFullYear()
+                - (now < new Date(now.getFullYear(), 0, 1) ? 1 : 0);
+            const badge = document.getElementById('expBadge');
+            if (badge) badge.textContent = `✦ ${years} anos de experiência ✦`;
         }
 
-        // ─── ADMIN STATS ──────────────────────────────────────
+        // ─── WHATSAPP ASSINATURA ──────────────────────────────
+        function initSigWa() {
+            const waText = encodeURIComponent(
+                `Olá, Camila! 💗 Vim pelo site da Look Designer e tenho uma dúvida sobre agendamento.`
+            );
+            const el = document.getElementById('sigWa');
+            if (el) el.href = `https://wa.me/${CFG.WA}?text=${waText}`;
+        }
+
+        // ─── PUSH NOTIFICATIONS (OneSignal) ──────────────────
+        const ONESIGNAL_APP_ID = "1246a184-5550-4e12-b1f4-24efd53c6f02";
+        let notificationsInitialized = false;
+        let waitingForNativeNotifications = false;
+
+        function isNativeApp() {
+            try {
+                if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function') {
+                    return window.Capacitor.isNativePlatform();
+                }
+            } catch (err) {
+                console.warn('Capacitor detection failed:', err);
+            }
+            return !!window.cordova;
+        }
+
+        function getNativeOneSignal() {
+            return window.plugins && window.plugins.OneSignal ? window.plugins.OneSignal : null;
+        }
+
+        function addNotificationTag(key, value) {
+            const nativeOneSignal = getNativeOneSignal();
+            if (nativeOneSignal && nativeOneSignal.User && typeof nativeOneSignal.User.addTag === 'function') {
+                nativeOneSignal.User.addTag(key, value);
+                return;
+            }
+            if (nativeOneSignal && typeof nativeOneSignal.sendTag === 'function') {
+                nativeOneSignal.sendTag(key, value);
+                return;
+            }
+
+            if (window.OneSignal && window.OneSignal.User && typeof window.OneSignal.User.addTag === 'function') {
+                window.OneSignal.User.addTag(key, value);
+                return;
+            }
+
+            if (window.OneSignal && window.OneSignal.push) {
+                window.OneSignal.push(function () {
+                    if (typeof OneSignal.sendTag === 'function') {
+                        OneSignal.sendTag(key, value);
+                    }
+                });
+            }
+
+            if (window.OneSignalDeferred && Array.isArray(window.OneSignalDeferred)) {
+                window.OneSignalDeferred.push(function (OneSignal) {
+                    try {
+                        if (OneSignal && OneSignal.User && typeof OneSignal.User.addTag === 'function') {
+                            OneSignal.User.addTag(key, value);
+                        }
+                    } catch (err) {
+                        console.warn('Deferred addTag failed:', err);
+                    }
+                });
+            }
+        }
+
+        function removeNotificationTag(key) {
+            const nativeOneSignal = getNativeOneSignal();
+            if (nativeOneSignal && nativeOneSignal.User && typeof nativeOneSignal.User.removeTag === 'function') {
+                nativeOneSignal.User.removeTag(key);
+                return;
+            }
+            if (nativeOneSignal && typeof nativeOneSignal.deleteTag === 'function') {
+                nativeOneSignal.deleteTag(key);
+                return;
+            }
+
+            if (window.OneSignal && window.OneSignal.User && typeof window.OneSignal.User.removeTag === 'function') {
+                window.OneSignal.User.removeTag(key);
+                return;
+            }
+
+            if (window.OneSignal && window.OneSignal.push) {
+                window.OneSignal.push(function () {
+                    if (typeof OneSignal.deleteTag === 'function') {
+                        OneSignal.deleteTag(key);
+                    }
+                });
+            }
+
+            if (window.OneSignalDeferred && Array.isArray(window.OneSignalDeferred)) {
+                window.OneSignalDeferred.push(function (OneSignal) {
+                    try {
+                        if (OneSignal && OneSignal.User && typeof OneSignal.User.removeTag === 'function') {
+                            OneSignal.User.removeTag(key);
+                        }
+                    } catch (err) {
+                        console.warn('Deferred removeTag failed:', err);
+                    }
+                });
+            }
+        }
+
+        function initWebNotifications() {
+            if (notificationsInitialized) return;
+            try {
+                // OneSignal Web SDK v16+
+                window.OneSignalDeferred = window.OneSignalDeferred || [];
+                window.OneSignalDeferred.push(async function (OneSignal) {
+                    try {
+                        await OneSignal.init({
+                            appId: ONESIGNAL_APP_ID,
+                            allowLocalhostAsSecureOrigin: true,
+                            notifyButton: { enable: false },
+                        });
+                        notificationsInitialized = true;
+                        setupAdminNotifications();
+                    } catch (err) {
+                        console.warn('Web notifications (v16) init failed:', err);
+                    }
+                });
+
+                // Legacy fallback (older SDKs)
+                if (!notificationsInitialized) {
+                    window.OneSignal = window.OneSignal || [];
+                    if (typeof OneSignal !== 'undefined' && typeof OneSignal.push === 'function') {
+                        OneSignal.push(function () {
+                            try {
+                                OneSignal.init({
+                                    appId: ONESIGNAL_APP_ID,
+                                    allowLocalhostAsSecureOrigin: true,
+                                    notifyButton: { enable: false },
+                                });
+                                notificationsInitialized = true;
+                                setupAdminNotifications();
+                            } catch (err) {
+                                console.warn('Web notifications (legacy) init failed:', err);
+                            }
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn('Web notifications bootstrap failed:', err);
+            }
+        }
+
+        function initNativeNotifications() {
+            if (notificationsInitialized) return true;
+
+            const nativeOneSignal = getNativeOneSignal();
+            if (!nativeOneSignal) return false;
+
+            try {
+                if (typeof nativeOneSignal.initialize === 'function') {
+                    nativeOneSignal.initialize(ONESIGNAL_APP_ID);
+                } else if (typeof nativeOneSignal.startInit === 'function' && typeof nativeOneSignal.endInit === 'function') {
+                    // Backward-compatible flow for older Cordova APIs
+                    nativeOneSignal.startInit(ONESIGNAL_APP_ID);
+                    nativeOneSignal.endInit();
+                } else {
+                    return false;
+                }
+
+                notificationsInitialized = true;
+
+                if (nativeOneSignal.Notifications && typeof nativeOneSignal.Notifications.requestPermission === 'function') {
+                    nativeOneSignal.Notifications.requestPermission(false)
+                        .then(function (accepted) {
+                            console.log("User accepted notifications: " + accepted);
+                        })
+                        .catch(function (err) {
+                            console.warn('Native notification permission failed:', err);
+                        });
+                }
+
+                setupAdminNotifications();
+                return true;
+            } catch (err) {
+                console.warn('Native notifications init failed:', err);
+                return false;
+            }
+        }
+
+        function initNotifications() {
+            if (!isNativeApp()) {
+                initWebNotifications();
+                return;
+            }
+
+            if (initNativeNotifications()) return;
+
+            if (!waitingForNativeNotifications) {
+                waitingForNativeNotifications = true;
+                document.addEventListener('deviceready', initNativeNotifications, { once: true });
+                setTimeout(initNativeNotifications, 1500);
+            }
+        }
+
+        // Função para ativar as notificações quando você logar como Admin
+        function setupAdminNotifications() {
+            if (isAdmin && !isUserView) {
+                addNotificationTag("user_type", "admin");
+            } else {
+                // Remove a tag se estiver no modo cliente para não receber avisos de si mesma
+                removeNotificationTag("user_type");
+            }
+        }
+
+        // ─── ADMIN STATS ────────────────────────────────────────────
         function updateAdminStats() {
             if (!isAdmin || isUserView) return;
-            const target = currentDay || new Date().toISOString().split('T')[0];
+            const target = currentDay || formatLocalIsoDate(new Date());
             const recs = db.filter(r => String(r.data).substring(0, 10) === target);
+
+            const livre = recs.filter(r => r.status === 'Livre').length;
+            const ocupado = recs.filter(r => r.status === 'Ocupado').length;
+            const aguard = recs.filter(r => r.status === 'Aguardando Pagamento').length;
+
             const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-            el('statLivre', recs.filter(r => r.status === 'Livre').length);
-            el('statOcupado', recs.filter(r => r.status === 'Ocupado').length);
-            el('statAguard', recs.filter(r => r.status === 'Aguardando Pagamento').length);
+            el('statLivre', livre);
+            el('statOcupado', ocupado);
+            el('statAguard', aguard);
             el('statPix', 'R$ ' + (srvCfg.pix_value || '0.00'));
-            const now = new Date(), curIso = now.toISOString().split('T')[0], curMins = now.getHours() * 60 + now.getMinutes();
-            const next = db.filter(r => r.data >= curIso && (r.status === 'Ocupado' || r.status === 'Aguardando Pagamento'))
-                .map(r => { const [h, m] = r.horario.split(':').map(Number); return { ...r, mins: h * 60 + m }; })
-                .filter(r => r.data > curIso || (r.data === curIso && r.mins >= curMins))
-                .sort((a, b) => a.data === b.data ? a.mins - b.mins : a.data.localeCompare(b.data))[0];
-            el('statNext', next ? next.horario : '—');
-        }
 
-        // ─── LOG SHEET (ADMIN) ────────────────────────────────
-        let logSortRev = true;
-
-        function formatLogDate(iso) {
-            if (!iso) return '—';
-            try {
-                const d = new Date(iso);
-                return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            } catch { return iso; }
-        }
-
-        function openLogSheet() {
+            // Próximo agendamento (Online ou Presencial)
             const now = new Date();
             const curIso = formatLocalIsoDate(now);
             const curMins = now.getHours() * 60 + now.getMinutes();
 
-            // MURAL DA GERENTE: Simplificado para mostrar apenas agendamentos (Ocupados)
-            const allLogs = db.filter(r => r.status === 'Ocupado' || r.status === 'Aguardando Pagamento')
-                .sort((a, b) => {
-                    const tA = (a.data || '') + 'T' + (a.horario || '');
-                    const tB = (b.data || '') + 'T' + (b.horario || '');
-                    return logSortRev ? tB.localeCompare(tA) : tA.localeCompare(tB);
-                }).slice(0, 80);
+            const next = db
+                .filter(r => r.data >= curIso && (r.status === 'Ocupado' || r.status === 'Aguardando Pagamento'))
+                .map(r => {
+                    const [h, m] = r.horario.split(':').map(Number);
+                    return { ...r, mins: h * 60 + m };
+                })
+                .filter(r => r.data > curIso || (r.data === curIso && r.mins >= curMins))
+                .sort((a, b) => a.data === b.data ? a.mins - b.mins : a.data.localeCompare(b.data))[0];
 
-            const title = (isAdmin && !isUserView) ? 'Mural de Ocupados 📋' : 'Meu Agendamento 📋';
-            openSheet(title, `Lista de horários reservados e confirmados.`);
+            el('statNext', next ? next.horario : '—');
+        }
+
+        // ─── ADMIN: PAINEL DURAÇÃO DE PROCEDIMENTOS ────────────────────
+        function openDurPanel() {
+            openSheet('Duração dos Procedimentos', 'Selecione um dia e clique em qualquer horário agendado para editar sua duração. Isso reflete imediatamente na agenda dos clientes.');
+            document.getElementById('sheetBody').innerHTML = `
+        <div class="info-box">
+            ✨ Escolha uma data no calendário acima e toque em qualquer card <strong>Ocupado</strong> para alterar o tempo do procedimento. A grade se atualiza em tempo real para todos os clientes.
+        </div>
+        <div style="background:var(--cream);border-radius:14px;padding:16px 20px;margin-bottom:16px;">
+            <div style="font-size:0.55rem;letter-spacing:2px;font-weight:700;color:var(--gold);text-transform:uppercase;margin-bottom:8px;">Duração padrão atual</div>
+            <div style="font-size:1.4rem;font-family:'Cormorant Garamond',serif;">${srvCfg.duration} minutos</div>
+            <div style="font-size:0.7rem;color:var(--ink-soft);margin-top:4px;">Aplica-se a novos agendamentos sem duração definida</div>
+        </div>
+    `;
+            document.getElementById('sheetActions').innerHTML = `
+        <button class="btn btn-primary" onclick="closeSheet();if(!currentDay){alert('Escolha uma data primeiro.');}">Ver agenda e editar</button>
+        <button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>
+    `;
+        }
+
+        // ─── ADMIN: PAINEL BLOQUEIO EM LOTE ─────────────────────
+        function openBlockPanel() {
+            openSheet('Bloqueios em Lote', 'Selecione uma data, depois marque vários horários e use a barra de seleção para bloquear ou liberar em lote.');
+            document.getElementById('sheetBody').innerHTML = `
+        <div class="info-box">
+            🔒 <strong>Como usar:</strong><br>
+            1. Feche este painel<br>
+            2. Escolha a data desejada no calendário<br>
+            3. Toque nos horários que deseja bloquear (aparecerão marcados)<br>
+            4. Use a barra rosa no topo para Bloquear ou Liberar em lote
+        </div>
+        <div class="info-box" style="border-color:var(--rose);">
+            💡 Dica: Para folga do dia inteiro, selecione todos os horários e clique em Bloquear.
+        </div>
+    `;
+            document.getElementById('sheetActions').innerHTML = `
+        <button class="btn btn-primary" onclick="closeSheet()">Entendido — ir para agenda</button>
+    `;
+        }
+
+        // ─── ADMIN: LOG SHEET ──────────────────────────────────
+        let logSortRev = true; // true = Recentes primeiro (DESC), false = Antigas (ASC)
+
+        function openLogSheet() {
+            const allLogs = [...systemLogs]
+                .sort((a, b) => {
+                    const timeA = String(a.timestamp || '');
+                    const timeB = String(b.timestamp || '');
+                    return logSortRev ? timeB.localeCompare(timeA) : timeA.localeCompare(timeB);
+                })
+                .slice(0, 100);
 
             const logHtml = allLogs.length === 0
-                ? '<div class="info-box">Nenhum registro encontrado. ✨</div>'
+                ? '<div class="info-box">Nenhum evento registrado. ✨</div>'
+                : allLogs.map(r => {
+                    const stColor = ({
+                        'CONFIRMACAO': 'var(--st-ocupado)',
+                        'AUTO-RELEASE': 'var(--st-aguard)',
+                        'RESERVA': 'var(--st-aguard)',
+                        'BLOQUEIO': 'var(--st-block)',
+                        'LIBERACAO': 'var(--st-livre)',
+                        'ERRO': 'var(--rose)',
+                        'CONFIG': 'var(--gold)'
+                    }[r.type] || 'var(--gold)');
+                    const when = r.displayTime || 'Sem data';
+                    const slot = [r.dataAgend, r.horario].filter(Boolean).join(' às ');
+                    const person = r.cliente || 'Sistema';
+                    const meta = [
+                        r.type || 'SISTEMA',
+                        r.token ? `Token: ${r.token}` : '',
+                        r.telefone || ''
+                    ].filter(Boolean).join(' · ');
+                    return `
+                <div class="log-entry" style="border-left-color:${stColor}">
+                    <strong>${r.status === 'Ocupado' ? '✅ Vaga Confirmada' : (isEx ? '❌ Reserva Expirada' : '⏳ Aguardando Pagamento')}</strong>
+                    <p style="margin:4px 0">${r.cliente} — ${r.data.split('-').reverse().join('/')} às ${r.horario}</p>
+                    <div class="log-meta">Token: ${r.codigo || '—'} · ${r.telefone || '—'}</div>
+                </div>
+            `}).join('');
+
+            openSheet('Registros do Sistema', 'Histórico de agendamentos online.');
+            document.getElementById('sheetBody').innerHTML = `
+                <div style="display:flex; gap:8px; margin-bottom:16px;">
+                    <button class="dur-opt ${logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=true;openLogSheet()">⬇ Recentes Primeiro</button>
+                    <button class="dur-opt ${!logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=false;openLogSheet()">⬆ Antigas Primeiro</button>
+                </div>
+                ${logHtml}
+            `;
+            document.getElementById('sheetActions').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>
+            `;
+        }
+
+        // ─── INTRO PETALS ────────────────────────────────────────
+        function spawnPetals() {
+            const container = document.getElementById('introPetals');
+            if (!container) return;
+            const colors = ['#C4848A', '#C9A86C', '#E8D5B0', '#F2D9D9'];
+            for (let i = 0; i < 18; i++) {
+                const p = document.createElement('div');
+                p.className = 'petal';
+                p.style.cssText = `
+            left:${Math.random() * 100}%;
+            top:-10px;
+            background:${colors[Math.floor(Math.random() * colors.length)]};
+            width:${4 + Math.random() * 6}px;
+            height:${4 + Math.random() * 6}px;
+            animation-duration:${3 + Math.random() * 4}s;
+            animation-delay:${Math.random() * 3}s;
+        `;
+                container.appendChild(p);
+            }
+        }
+
+        // ─── BOOT ──────────────────────────────────────────────
+        showBookingSheet = function (iso, clock) {
+            const df = formatManausLabel(iso, { weekday: 'long', day: '2-digit', month: 'long' });
+            openSheet('Agendar seu horário', `Preencha seus dados para reservar o horário das ${clock}.`);
+            document.getElementById('sheetBody').innerHTML = `
+                <div class="info-box">
+                    Ao confirmar, o horário será agendado imediatamente no sistema.
+                </div>
+                <label class="field-label">Seu nome</label>
+                <input id="bName" class="inp" placeholder="Nome completo">
+                <label class="field-label">WhatsApp</label>
+                <input id="bPhone" class="inp" placeholder="(92) 9 0000-0000" type="tel" oninput="handlePhoneInput(this)">
+            `;
+            document.getElementById('sheetActions').innerHTML = `
+                <button class="btn btn-primary" onclick="confirmBooking('${iso}','${clock}','${df}')">Agendar horário</button>
+                <button class="btn btn-secondary" onclick="closeSheet()">Voltar</button>
+            `;
+        };
+
+        showPixSheet = function (name, phone, iso, clock, df, token) {
+            const pixMsg = srvCfg.pix_value && parseFloat(srvCfg.pix_value) > 0
+                ? `💰 *Valor da Reserva:* R$ ${srvCfg.pix_value}\n`
+                : '';
+            const waText = encodeURIComponent(
+                `Olá, Camila!\n\nAcabei de agendar meu horário pelo site.\n\n` +
+                `📌 *Dados do agendamento:*\n• Nome: ${name}\n• Data: ${df}\n• Horário: ${clock}\n• Código: *${token}*\n\n` +
+                pixMsg +
+                `💰 *PIX enviado para:*\n• Titular: ${CFG.PIX_HOLDER}\n• Chave PIX: ${CFG.PIX_KEY} (${CFG.PIX_BANK})\n\n` +
+                `Meu horário já ficou agendado no sistema.`
+            );
+            openSheet('Agendamento confirmado!', 'Seu horário já está agendado. Agora envie o comprovante pelo WhatsApp.');
+            document.getElementById('sheetBody').innerHTML = `
+                <div class="pix-box">
+                    <div class="pix-label">Chave PIX (celular)</div>
+                    <div class="pix-key">${CFG.PIX_KEY}</div>
+                    <div class="pix-holder">${CFG.PIX_BANK} · ${CFG.PIX_HOLDER}</div>
+                    <div style="margin-top:12px; padding:10px; background:rgba(201,168,108,0.1); border-radius:10px;">
+                        <div style="font-size:0.6rem; color:var(--gold); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Valor para Reserva</div>
+                        <div style="font-weight:700; color:var(--ink); font-size:1.4rem;">R$ ${srvCfg.pix_value || '0.00'}</div>
+                    </div>
+                    <button class="btn btn-secondary" style="margin-top:16px;padding:12px;" onclick="navigator.clipboard.writeText('${CFG.PIX_KEY}').then(()=>alert('Chave copiada!'))">Copiar chave PIX</button>
+                </div>
+                <div class="info-box" style="border-color:var(--rose); background:rgba(196,132,138,0.05);">
+                    <strong>Horário garantido:</strong> seu agendamento já foi lançado na agenda da gerente.
+                </div>
+                <div class="booking-sum">
+                    <p><strong>${name}</strong> · ${df} às ${clock}</p>
+                    <p>WhatsApp: ${phone}</p>
+                    <div class="token">${token}</div>
+                </div>
+                <a href="https://wa.me/${CFG.WA}?text=${waText}" target="_blank" class="wa-link">Enviar comprovante no WhatsApp</a>
+            `;
+            document.getElementById('sheetActions').innerHTML = `<button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>`;
+        };
+
+        confirmBooking = async function (iso, clock, df) {
+            const name = document.getElementById('bName').value.trim();
+            const phone = document.getElementById('bPhone').value.trim();
+            if (!name || !phone) { alert('Preencha todos os campos.'); return; }
+            if (!isAdmin && isClientBlocked()) { showBlockedScreen(); return; }
+
+            const normalizedPhone = normalizePhone(phone);
+            await syncData();
+
+            const token = Math.random().toString(36).substring(2, 7).toUpperCase();
+            const bTime = new Date().toISOString();
+            const ok = await postUpdates([{
+                data: iso, horario: clock, status: 'Ocupado',
+                cliente: name, telefone: phone, codigo: token,
+                bookingTime: bTime, duration: srvCfg.duration, password: adminPass
+            }]);
+
+            if (!ok) {
+                alert('Não foi possível registrar sua reserva agora. Verifique sua internet e tente novamente.');
+                return;
+            }
+
+            const persisted = db.find(r =>
+                String(r.data).substring(0, 10) === iso &&
+                String(r.horario).substring(0, 5) === clock &&
+                r.status === 'Ocupado' &&
+                String(r.codigo || '') === token
+            );
+
+            if (!persisted) {
+                clearClientBlock();
+                alert('Sua reserva ainda não foi confirmada no sistema. Toque em Atualizar e tente novamente.');
+                return;
+            }
+
+            localStorage.setItem('last_booking_v3', JSON.stringify({ token, iso, clock, phone: normalizedPhone, name }));
+            localStorage.setItem('last_booking_timestamp', Date.now().toString());
+            showPixSheet(name, phone, iso, clock, df, token);
+        };
+
+        handleSlotClick = function (event, card, iso, clock, st, rUntil, reg) {
+            if (isAdmin) {
+                const isCheck = event.target.getAttribute('data-chk') === 'true' || event.target.closest('[data-chk=\"true\"]');
+                if (isCheck) {
+                    const key = `${iso}|${clock}`;
+                    if (selectedSlots.has(key)) {
+                        selectedSlots.delete(key);
+                        card.classList.remove('selected');
+                    } else {
+                        selectedSlots.add(key);
+                        card.classList.add('selected');
+                    }
+                    updateMultiBar();
+                    return;
+                }
+                showAdminSlotSheet(iso, clock, st, reg);
+                return;
+            }
+
+            if (st !== 'Livre') {
+                const lastBooking = JSON.parse(localStorage.getItem('last_booking_v3') || 'null');
+                const isMyBooking = lastBooking && lastBooking.iso === iso && lastBooking.clock === clock && st === 'Ocupado';
+                if (isMyBooking) {
+                    const df = formatManausLabel(iso, { weekday: 'long', day: '2-digit', month: 'long' });
+                    showPixSheet(lastBooking.name || reg?.cliente || '', reg?.telefone || lastBooking.phone || '', iso, clock, df, reg?.codigo || lastBooking.token);
+                }
+                return;
+            }
+            showBookingSheet(iso, clock);
+        };
+
+        renderDays = function () {
+            const c = document.getElementById('dayScroller');
+            c.innerHTML = '';
+            const base = parseIsoDateLocal(getManausIsoDate(new Date()));
+            for (let i = 0; i < 14; i++) {
+                const d = new Date(base);
+                d.setDate(base.getDate() + i);
+                const iso = formatLocalIsoDate(d);
+                const el = document.createElement('div');
+                el.className = 'day-pill' + (iso === currentDay ? ' active' : '');
+                el.onclick = () => selectDay(iso);
+                const dw = new Intl.DateTimeFormat('pt-BR', { timeZone: APP_TIME_ZONE, weekday: 'short' }).format(d).replace('.', '').toUpperCase();
+                const dm = new Intl.DateTimeFormat('pt-BR', { timeZone: APP_TIME_ZONE, month: 'short' }).format(d).replace('.', '').toUpperCase();
+                el.innerHTML = `<div class="dw">${dw}</div><div class="dn">${d.getDate()}</div><div class="dm">${dm}</div>`;
+                c.appendChild(el);
+            }
+        };
+
+        selectDay = function (iso) {
+            currentDay = iso;
+            clearSelection();
+            renderDays();
+            document.getElementById('gridDate').textContent = formatManausLabel(iso, { weekday: 'long', day: '2-digit', month: 'long' }).replace(/^\w/, c => c.toUpperCase());
+            document.getElementById('gridSection').classList.add('vis');
+            renderGrid(iso);
+        };
+
+        updateAdminStats = function () {
+            if (!isAdmin || isUserView) return;
+            const target = currentDay || getManausIsoDate(new Date());
+            const recs = db.filter(r => String(r.data).substring(0, 10) === target);
+            const el = (id, v) => { const node = document.getElementById(id); if (node) node.textContent = v; };
+            el('statLivre', recs.filter(r => r.status === 'Livre').length);
+            el('statOcupado', recs.filter(r => r.status === 'Ocupado').length);
+            el('statAguard', recs.filter(r => r.status === 'Aguardando Pagamento').length);
+            el('statPix', 'R$ ' + (srvCfg.pix_value || '0.00'));
+            const next = getNextOccupiedBooking();
+            el('statNext', next ? next.horario : '—');
+        };
+
+        openScheduledSheet = function () {
+            const allLogs = db.filter(r => r.status === 'Ocupado')
+                .sort((a, b) => {
+                    const tA = `${a.data || ''}T${a.horario || ''}`;
+                    const tB = `${b.data || ''}T${b.horario || ''}`;
+                    return logSortRev ? tA.localeCompare(tB) : tB.localeCompare(tA);
+                })
+                .slice(0, 100);
+            const logHtml = allLogs.length === 0
+                ? '<div class="info-box">Nenhum cliente agendado no momento.</div>'
+                : allLogs.map(r => `
+                    <div class="log-entry" style="border-left-color:var(--st-ocupado)">
+                        <strong>${r.cliente || 'Cliente não informado'}</strong>
+                        <p style="margin:4px 0">📅 ${formatManausLabel(r.data, { day: '2-digit', month: '2-digit', year: 'numeric' })} às <strong>${r.horario || '—'}</strong></p>
+                        <div class="log-meta">📞 ${r.telefone || '—'}${r.codigo ? ' · 🎫 ' + r.codigo : ''}</div>
+                    </div>
+                `).join('');
+            openSheet('Agendados', `${allLogs.length} cliente(s) com horário confirmado.`);
+            document.getElementById('sheetBody').innerHTML = `
+                <div style="display:flex; gap:8px; margin-bottom:16px;">
+                    <button class="dur-opt ${logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=true;openScheduledSheet()">⬆ Mais próximos</button>
+                    <button class="dur-opt ${!logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=false;openScheduledSheet()">⬇ Mais distantes</button>
+                </div>
+                ${logHtml}
+            `;
+            document.getElementById('sheetActions').innerHTML = `<button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>`;
+        };
+
+        openNextBookingSheet = function () {
+            const next = getNextOccupiedBooking();
+            openSheet('Próximo atendimento', 'Detalhes do próximo cliente da agenda.');
+            document.getElementById('sheetBody').innerHTML = next ? `
+                <div class="info-box" style="border-color:var(--gold);background:rgba(201,168,108,.08);">
+                    <strong>${next.cliente || 'Cliente não informado'}</strong><br>
+                    📅 ${formatManausLabel(next.data, { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}<br>
+                    🕐 ${next.horario || '—'}<br>
+                    📞 ${next.telefone || '—'}
+                </div>
+            ` : '<div class="info-box">Nenhum atendimento futuro encontrado.</div>';
+            document.getElementById('sheetActions').innerHTML = `<button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>`;
+        };
+
+        openLogSheet = function () {
+            const allLogs = [...systemLogs]
+                .sort((a, b) => {
+                    const timeA = String(a.timestamp || '');
+                    const timeB = String(b.timestamp || '');
+                    return logSortRev ? timeB.localeCompare(timeA) : timeA.localeCompare(timeB);
+                })
+                .slice(0, 100);
+            const logHtml = allLogs.length === 0
+                ? '<div class="info-box">Nenhum evento importante registrado.</div>'
+                : allLogs.map(r => {
+                    const colors = {
+                        AGENDAMENTO: 'var(--st-ocupado)',
+                        BLOQUEIO: 'var(--st-block)',
+                        LIBERACAO: 'var(--st-livre)',
+                        CONFIG: 'var(--gold)',
+                        PUSH_ADMIN: 'var(--rose)',
+                        ERRO: 'var(--rose)'
+                    };
+                    const slot = [r.dataAgend, r.horario].filter(Boolean).join(' às ');
+                    return `
+                        <div class="log-entry" style="border-left-color:${colors[r.type] || 'var(--gold)'}">
+                            <strong>${r.type || 'SISTEMA'}</strong>
+                            <p style="margin:4px 0">${r.msg || 'Sem detalhes.'}</p>
+                            <div class="log-meta">${r.displayTime || '—'}${slot ? ' · ' + slot : ''}${r.cliente ? ' · ' + r.cliente : ''}</div>
+                        </div>
+                    `;
+                }).join('');
+            openSheet('Auditoria do sistema', 'Somente eventos importantes para conferência.');
+            document.getElementById('sheetBody').innerHTML = `
+                <div style="display:flex; gap:8px; margin-bottom:16px;">
+                    <button class="dur-opt ${logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=true;openLogSheet()">⬇ Recentes primeiro</button>
+                    <button class="dur-opt ${!logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=false;openLogSheet()">⬆ Antigas primeiro</button>
+                    <button class="dur-opt" style="flex:1; font-size:0.6rem; border-color:var(--rose); color:var(--rose-dark);" onclick="clearLogHistory()">Limpar</button>
+                </div>
+                ${logHtml}
+            `;
+            document.getElementById('sheetActions').innerHTML = `<button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>`;
+        };
+
+        window.addEventListener('load', configureAdminPanel);
+
+        window.onload = () => {
+            spawnPetals();
+            calcExperience();
+            initSigWa();
+            // Core app flow should never depend on notifications.
+            syncData();
+            renderDays();
+            try {
+                initNotifications();
+            } catch (err) {
+                console.warn('Notifications init skipped due to runtime error:', err);
+            }
+            // Tenta ativar modo admin imediatamente se houver senha salva
+            if (adminPass) {
+                isAdmin = true;
+                updateAppMode();
+            }
+            setInterval(() => { if (currentDay) renderGrid(currentDay); }, 60000);
+        };
+
+        openLogSheet = function () {
+            const now = new Date();
+            const curIso = formatLocalIsoDate(now);
+            const curMins = now.getHours() * 60 + now.getMinutes();
+
+            // Mural simplificado e focado em agendamentos
+            const allLogs = db.filter(r => r.status === 'Ocupado' || r.status === 'Aguardando Pagamento')
+                .sort((a, b) => {
+                    const tA = a.data + 'T' + a.horario;
+                    const tB = b.data + 'T' + b.horario;
+                    return logSortRev ? tB.localeCompare(tA) : tA.localeCompare(tB);
+                })
+                .slice(0, 100);
+
+            const logHtml = allLogs.length === 0
+                ? '<div class="info-box">Nenhum evento registrado. ✨</div>'
                 : allLogs.map(r => {
                     const [h, m] = r.horario.split(':').map(Number);
                     const isPast = (r.data < curIso) || (r.data === curIso && (h * 60 + m) < curMins);
-                    const isOcupado = r.status === 'Ocupado';
+                    const isConfirmed = r.status === 'Ocupado';
 
-                    let stColor = isOcupado ? 'var(--st-ocupado)' : 'var(--st-aguard)';
-                    let stIcon = isOcupado ? '✅' : '⏳';
-                    let stText = isOcupado ? 'Vaga Ocupada' : 'Aguardando Pagamento';
+                    let stColor = isConfirmed ? 'var(--st-ocupado)' : 'var(--st-aguard)';
+                    let stText = isConfirmed ? 'Agendamento Confirmado' : 'Aguardando PIX';
+                    let stIcon = isConfirmed ? '✅' : '⏳';
 
                     if (isPast) {
                         stColor = 'var(--st-block)';
@@ -1997,90 +3054,28 @@
                     }
 
                     const agendDate = r.data ? r.data.split('-').reverse().join('/') : '—';
-                    const bookMoment = formatLogDate(r.bookingTime);
-                    return `<div class="log-entry" style="border-left-color:${stColor}">
-                        <strong>${stIcon} ${stText}</strong>
-                        <p style="margin:6px 0 2px;font-size:.82rem;color:var(--ink);">👤 <strong>${r.cliente || '—'}</strong></p>
-                        <p style="margin:2px 0;font-size:.75rem;">📅 Agendamento: <strong>${agendDate} às ${r.horario || '—'}</strong></p>
-                        <p style="margin:2px 0;font-size:.75rem;">🕐 Reservado em: ${bookMoment}</p>
-                        <div class="log-meta">📞 ${r.telefone || '—'}${r.codigo ? ' · 🎫 ' + r.codigo : ''}</div>
-                    </div>`;
+
+                    return `
+                <div class="log-entry" style="border-left-color:${stColor}">
+                    <strong>${stIcon} ${stText}</strong>
+                    <p style="margin:4px 0">👤 ${r.cliente} — 📅 ${agendDate} às ${r.horario}</p>
+                    <div class="log-meta">📞 ${r.telefone || '—'} · 🎫 Token: ${r.codigo || '—'}</div>
+                </div>
+            `;
                 }).join('');
 
-            openSheet('Registros do Sistema 📋', `${allLogs.length} registro(s) de agendamentos.`);
+            openSheet('Registros do Sistema', 'Histórico real da agenda e do backend.');
             document.getElementById('sheetBody').innerHTML = `
-                <div style="display:flex;gap:8px;margin-bottom:12px;">
-                    <button class="dur-opt ${logSortRev ? 'sel' : ''}" style="flex:1;font-size:.6rem;" onclick="logSortRev=true;openLogSheet()">⬇ Mais Recentes</button>
-                    <button class="dur-opt ${!logSortRev ? 'sel' : ''}" style="flex:1;font-size:.6rem;" onclick="logSortRev=false;openLogSheet()">⬆ Mais Antigas</button>
+                <div style="display:flex; gap:8px; margin-bottom:16px;">
+                    <button class="dur-opt ${logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=true;openLogSheet()">⬇ Recentes Primeiro</button>
+                    <button class="dur-opt ${!logSortRev ? 'sel' : ''}" style="flex:1; font-size:0.6rem;" onclick="logSortRev=false;openLogSheet()">⬆ Antigas Primeiro</button>
+                    <button class="dur-opt" style="flex:1; font-size:0.6rem; border-color:var(--rose); color:var(--rose-dark);" onclick="clearLogHistory()">Limpar</button>
                 </div>
-                <div style="display:flex;gap:12px;margin-bottom:16px;font-size:.65rem;flex-wrap:wrap;">
-                    <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--st-ocupado);display:inline-block;"></span>Ocupada</span>
-                    <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--st-aguard);display:inline-block;"></span>Aguardando</span>
-                </div>
-                ${logHtml}`;
+                ${logHtml}
+            `;
             document.getElementById('sheetActions').innerHTML = `
-                <button class="btn btn-secondary" onclick="confirmClearLog()" style="margin-bottom:8px;border:1px solid var(--rose);color:var(--rose);">🗑 Ocultar registros antigos</button>
-                <button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>`;
-        }
-
-        function confirmClearLog() {
-            if (!confirm('Tem certeza que deseja ocultar os registros antigos?\n\nIsso vai esconder do log todos os agendamentos com data anterior a hoje.')) return;
-            const hoje = new Date().toISOString().split('T')[0];
-            localStorage.setItem('log_hide_before', hoje);
-            openLogSheet();
-        }
-
-        // ─── ADMIN PANELS ─────────────────────────────────────
-        function openDurPanel() {
-            openSheet('Duração dos Procedimentos', 'Selecione um dia e clique em qualquer horário para editar sua duração.');
-            document.getElementById('sheetBody').innerHTML = `
-                <div class="info-box">✨ Escolha uma data no calendário e toque em qualquer card <strong>Ocupado</strong> para alterar o tempo do procedimento.</div>
-                <div style="background:var(--cream);border-radius:14px;padding:16px 20px;margin-bottom:16px;">
-                    <div style="font-size:.55rem;letter-spacing:2px;font-weight:700;color:var(--gold);text-transform:uppercase;margin-bottom:8px;">Duração padrão atual</div>
-                    <div style="font-size:1.4rem;font-family:'Cormorant Garamond',serif;">${srvCfg.duration} minutos</div>
-                </div>`;
-            document.getElementById('sheetActions').innerHTML = `
-                <button class="btn btn-primary" onclick="closeSheet()">Ver agenda e editar</button>
-                <button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>`;
-        }
-        function openBlockPanel() {
-            openSheet('Bloqueios em Lote', 'Marque vários horários e use a barra de seleção para bloquear ou liberar.');
-            document.getElementById('sheetBody').innerHTML = `
-                <div class="info-box">🔒 <strong>Como usar:</strong><br>1. Feche este painel<br>2. Escolha a data desejada<br>3. Toque nos horários que deseja bloquear<br>4. Use a barra no topo para Bloquear ou Liberar</div>
-                <div class="info-box" style="border-color:var(--rose);">💡 Para folga do dia inteiro, selecione todos e clique em Bloquear.</div>`;
-            document.getElementById('sheetActions').innerHTML = `<button class="btn btn-primary" onclick="closeSheet()">Entendido — ir para agenda</button>`;
-        }
-
-        // ─── NOTIFICATIONS ────────────────────────────────────
-        const ONESIGNAL_APP_ID = "1246a184-5550-4e12-b1f4-24efd53c6f02";
-        let notificationsInitialized = false, waitingForNativeNotifications = false;
-        function isNativeApp() { try { if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function') return window.Capacitor.isNativePlatform(); } catch (e) { } return !!window.cordova; }
-        function getNativeOneSignal() { return window.plugins && window.plugins.OneSignal ? window.plugins.OneSignal : null; }
-        function addNotificationTag(k, v) { const n = getNativeOneSignal(); if (n && n.User && typeof n.User.addTag === 'function') { n.User.addTag(k, v); return; } if (window.OneSignal && window.OneSignal.User && typeof window.OneSignal.User.addTag === 'function') { window.OneSignal.User.addTag(k, v); return; } if (window.OneSignalDeferred && Array.isArray(window.OneSignalDeferred)) { window.OneSignalDeferred.push(function (OS) { try { if (OS && OS.User && typeof OS.User.addTag === 'function') OS.User.addTag(k, v); } catch (e) { } }); } }
-        function removeNotificationTag(k) { const n = getNativeOneSignal(); if (n && n.User && typeof n.User.removeTag === 'function') { n.User.removeTag(k); return; } if (window.OneSignal && window.OneSignal.User && typeof window.OneSignal.User.removeTag === 'function') { window.OneSignal.User.removeTag(k); return; } if (window.OneSignalDeferred && Array.isArray(window.OneSignalDeferred)) { window.OneSignalDeferred.push(function (OS) { try { if (OS && OS.User && typeof OS.User.removeTag === 'function') OS.User.removeTag(k); } catch (e) { } }); } }
-        function initWebNotifications() { if (notificationsInitialized) return; try { window.OneSignalDeferred = window.OneSignalDeferred || []; window.OneSignalDeferred.push(async function (OS) { try { await OS.init({ appId: ONESIGNAL_APP_ID, allowLocalhostAsSecureOrigin: true, notifyButton: { enable: false } }); notificationsInitialized = true; setupAdminNotifications(); } catch (e) { console.warn('Web notif v16 failed:', e); } }); } catch (e) { console.warn('Web notif bootstrap failed:', e); } }
-        function initNativeNotifications() { if (notificationsInitialized) return true; const n = getNativeOneSignal(); if (!n) return false; try { if (typeof n.initialize === 'function') n.initialize(ONESIGNAL_APP_ID); else if (typeof n.startInit === 'function' && typeof n.endInit === 'function') { n.startInit(ONESIGNAL_APP_ID); n.endInit(); } else return false; notificationsInitialized = true; setupAdminNotifications(); return true; } catch (e) { console.warn('Native notif failed:', e); return false; } }
-        function initNotifications() { if (!isNativeApp()) { initWebNotifications(); return; } if (initNativeNotifications()) return; if (!waitingForNativeNotifications) { waitingForNativeNotifications = true; document.addEventListener('deviceready', initNativeNotifications, { once: true }); setTimeout(initNativeNotifications, 1500); } }
-        function setupAdminNotifications() { if (isAdmin && !isUserView) addNotificationTag("user_type", "admin"); else removeNotificationTag("user_type"); }
-
-        // ─── PETALS ───────────────────────────────────────────
-        function spawnPetals() {
-            const c = document.getElementById('introPetals'); if (!c) return;
-            const colors = ['#C4848A', '#C9A86C', '#E8D5B0', '#F2D9D9'];
-            for (let i = 0; i < 18; i++) {
-                const p = document.createElement('div'); p.className = 'petal';
-                p.style.cssText = `left:${Math.random() * 100}%;top:-10px;background:${colors[Math.floor(Math.random() * colors.length)]};width:${4 + Math.random() * 6}px;height:${4 + Math.random() * 6}px;animation-duration:${3 + Math.random() * 4}s;animation-delay:${Math.random() * 3}s;`;
-                c.appendChild(p);
-            }
-        }
-
-        // ─── BOOT ─────────────────────────────────────────────
-        window.onload = () => {
-            spawnPetals(); calcExperience(); initSigWa();
-            syncData(); renderDays();
-            try { initNotifications(); } catch (e) { console.warn('Notifications init skipped:', e); }
-            if (adminPass) { isAdmin = true; updateAppMode(); }
-            setInterval(() => { if (currentDay) renderGrid(currentDay); }, 60000);
+                <button class="btn btn-secondary" onclick="closeSheet()">Fechar</button>
+            `;
         };
     </script>
 </body>
