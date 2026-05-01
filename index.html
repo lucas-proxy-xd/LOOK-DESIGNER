@@ -86,6 +86,20 @@ header{padding:48px 0 32px;text-align:center;position:relative;}
 /* ══ SECTION LABEL ══════════════════════════════════════════════ */
 .section-label{font-size:.5rem;letter-spacing:5px;font-weight:700;color:var(--gold);text-transform:uppercase;text-align:center;margin-bottom:20px;opacity:0;animation:fadeUp 1s 4s var(--ease) forwards;}
 
+/* ══ NAVEGAÇÃO PÚBLICA ═══════════════════════════════════════════ */
+.public-main-wrap{margin-bottom:28px;}
+.public-main-label{font-size:.5rem;letter-spacing:5px;font-weight:700;color:var(--rose);text-transform:uppercase;text-align:center;margin-bottom:14px;}
+.public-main-nav{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.public-main-btn{padding:16px 14px;border-radius:20px;border:1.5px solid rgba(196,132,138,.14);background:rgba(255,255,255,.9);display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;box-shadow:var(--shadow);transition:all .35s var(--ease);}
+.public-main-btn:hover{transform:translateY(-3px);box-shadow:var(--shadow-deep);border-color:rgba(201,168,108,.3);}
+.public-main-btn.active{background:linear-gradient(135deg,var(--ink) 0%,var(--deep-rose) 58%,var(--gold) 100%);border-color:transparent;box-shadow:0 20px 40px rgba(139,79,85,.24);}
+.public-main-ico{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--blush),rgba(201,168,108,.18));font-size:20px;flex-shrink:0;transition:all .35s var(--ease);}
+.public-main-btn.active .public-main-ico{background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);}
+.public-main-copy{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.public-main-copy strong{font-size:.72rem;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--ink);white-space:nowrap;}
+.public-main-copy small{font-size:.62rem;color:var(--text-lt);}
+.public-main-btn.active .public-main-copy strong,.public-main-btn.active .public-main-copy small{color:rgba(255,255,255,.92);}
+
 /* ══ SERVIÇOS (Abas públicas) ════════════════════════════════════ */
 .services-section{margin:32px 0 0;}
 .services-tabs{display:flex;gap:10px;overflow-x:auto;padding:4px 0 20px;scrollbar-width:none;}
@@ -158,6 +172,8 @@ header{padding:48px 0 32px;text-align:center;position:relative;}
 .proc-carousel-dot{width:7px;height:7px;border-radius:50%;background:rgba(196,132,138,.25);transition:all .2s;}
 .proc-carousel-dot.active{background:var(--rose);transform:scale(1.2);}
 .proc-carousel-count{position:absolute;bottom:8px;right:12px;background:rgba(42,20,20,.5);color:#fff;font-size:.5rem;letter-spacing:2px;text-transform:uppercase;padding:4px 8px;border-radius:999px;backdrop-filter:blur(6px);}
+
+.booking-section{display:none;}
 
 /* ══ DAY PICKER ═════════════════════════════════════════════════ */
 .day-picker-wrap{position:relative;margin:0 -20px;display:flex;align-items:center;}
@@ -386,6 +402,14 @@ input[type=range]{width:100%;accent-color:var(--rose);height:4px;cursor:pointer;
 .form-input:focus,.form-textarea:focus{border-color:var(--rose);}
 .form-textarea{min-height:80px;resize:vertical;line-height:1.6;}
 .form-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.proc-tags-list{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;}
+.proc-tag-card{background:var(--cream);border:1px solid var(--border);border-radius:12px;padding:12px;}
+.proc-tag-inline{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;}
+.proc-tag-empty{padding:14px;border:1px dashed rgba(196,132,138,.24);border-radius:12px;background:rgba(255,255,255,.72);font-size:.72rem;color:var(--text-lt);text-align:center;}
+.proc-tag-remove{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:white;color:#c94848;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.proc-tag-remove:hover{background:#ffeaea;border-color:#e57373;}
+.proc-tag-add{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;background:white;color:var(--rose);border:1px dashed rgba(196,132,138,.38);border-radius:11px;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.proc-tag-add:hover{background:var(--blush);border-color:var(--rose);}
 .form-divider{font-size:.5rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--text-lt);padding:12px 0 8px;border-top:1px solid var(--border);margin-top:4px;}
 .btn-row-form{display:flex;gap:9px;padding-top:16px;border-top:1px solid var(--border);margin-top:4px;}
 .btn-primary-sm{display:inline-flex;align-items:center;gap:6px;padding:11px 18px;background:linear-gradient(135deg,var(--rose),var(--deep-rose));color:white;border:none;border-radius:11px;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(196,132,138,.3);transition:all .2s;}
@@ -426,6 +450,12 @@ input:checked + .toggle-slider:before{transform:translateX(18px);}
 .loading-dot{width:7px;height:7px;border-radius:50%;background:var(--rose);animation:dotB .8s ease-in-out infinite;}
 .loading-dot:nth-child(2){animation-delay:.15s;}.loading-dot:nth-child(3){animation-delay:.3s;}
 @keyframes dotB{0%,80%,100%{transform:scale(.7);opacity:.4;}40%{transform:scale(1);opacity:1;}}
+
+@media (max-width:390px){
+  .public-main-nav{grid-template-columns:1fr;}
+  .proc-tag-inline{grid-template-columns:1fr;}
+  .proc-tag-remove{width:100%;}
+}
 </style>
 </head>
 <body>
@@ -489,6 +519,11 @@ input:checked + .toggle-slider:before{transform:translateX(18px);}
     <div class="hero-brand">Look Designer</div>
   </div>
 
+  <div class="public-main-wrap">
+    <div class="public-main-label">✦ Explore a experiência LOOK ✦</div>
+    <div class="public-main-nav" id="publicMainNav"></div>
+  </div>
+
   <!-- SERVIÇOS (abas de procedimentos) -->
   <div class="services-section" id="servicesSection" style="display:none;">
     <div class="section-label" style="opacity:1;">✦ Nossos Serviços ✦</div>
@@ -498,14 +533,38 @@ input:checked + .toggle-slider:before{transform:translateX(18px);}
     <div class="srv-panel" id="srvPanel">
       <div class="srv-panel-empty"><div class="srv-panel-empty-icon">✦</div><p>Selecione uma categoria acima</p></div>
     </div>
+  </div>
+
+  <div class="booking-section" id="bookingSection">
+    <!-- AGENDAMENTO -->
+    <div class="section-label" style="opacity:1;">✦ Escolha sua data ✦</div>
+    <div class="day-picker-wrap">
+      <button class="scroll-arrow left" onclick="scrollDays(-1)">‹</button>
+      <div class="day-scroller" id="dayScroller"></div>
+      <button class="scroll-arrow right" onclick="scrollDays(1)">›</button>
     </div>
 
-  <!-- AGENDAMENTO -->
-  <div class="section-label">✦ Escolha sua data ✦</div>
-  <div class="day-picker-wrap">
-    <button class="scroll-arrow left" onclick="scrollDays(-1)">‹</button>
-    <div class="day-scroller" id="dayScroller"></div>
-    <button class="scroll-arrow right" onclick="scrollDays(1)">›</button>
+    <!-- GRID DE HORÁRIOS -->
+    <section id="gridSection">
+      <div class="grid-head">
+        <div class="grid-date" id="gridDate"></div>
+        <button class="back-btn" onclick="closeGrid()">← Voltar</button>
+      </div>
+      <div id="multiSelectBar">
+        <span id="selCount">0 selecionados</span>
+        <div style="display:flex;gap:8px">
+          <button class="cancel-sel" onclick="clearSelection()" style="background:#eee;color:#666;">Limpar</button>
+          <button onclick="selectAll()" style="background:var(--gold);color:white;">✓ Tudo</button>
+          <button onclick="blockSelected()">🔒 Bloquear</button>
+          <button onclick="freeSelected()">🔓 Liberar</button>
+        </div>
+      </div>
+      <div class="slots" id="slotsContainer"></div>
+      <div id="logPanel">
+        <div class="log-title">✦ Registros do Sistema</div>
+        <div id="logEntries"></div>
+      </div>
+    </section>
   </div>
 
   <!-- PAINEL ADMIN -->
@@ -526,28 +585,6 @@ input:checked + .toggle-slider:before{transform:translateX(18px);}
     </div>
     <div style="text-align:center;margin-top:4px;">
       <button class="nav-btn" onclick="logoutAdmin()" style="color:var(--rose);font-size:.65rem;padding:10px 20px;">Sair do painel</button>
-    </div>
-  </section>
-
-  <!-- GRID DE HORÁRIOS -->
-  <section id="gridSection">
-    <div class="grid-head">
-      <div class="grid-date" id="gridDate"></div>
-      <button class="back-btn" onclick="closeGrid()">← Voltar</button>
-    </div>
-    <div id="multiSelectBar">
-      <span id="selCount">0 selecionados</span>
-      <div style="display:flex;gap:8px">
-        <button class="cancel-sel" onclick="clearSelection()" style="background:#eee;color:#666;">Limpar</button>
-        <button onclick="selectAll()" style="background:var(--gold);color:white;">✓ Tudo</button>
-        <button onclick="blockSelected()">🔒 Bloquear</button>
-        <button onclick="freeSelected()">🔓 Liberar</button>
-      </div>
-    </div>
-    <div class="slots" id="slotsContainer"></div>
-    <div id="logPanel">
-      <div class="log-title">✦ Registros do Sistema</div>
-      <div id="logEntries"></div>
     </div>
   </section>
 
@@ -668,10 +705,12 @@ let systemLogs = [];
 let adminPass = localStorage.getItem('look_admin_pass') || "";
 let isAdmin = false, isUserView = false;
 let currentDay = "", selectedSlots = new Set();
+let publicMainTab = 'catalogo', abaPublicaAtiva = '';
 
 // CMS State
 let ABAS = [], PROCS = [];
 let abaAtiva = null, procFotos = [], imgPend = [], imgAtivaIdx = 0;
+let procTagsDraft = [];
 let confirmCb = null, selectedDur = 0;
 let cmsMediaPend = null, cmsMediaTipo = 'video';
 let cmsAjustePos = 50, cmsAjusteAlt = 420;
@@ -698,6 +737,34 @@ function mediaImageUrl(url,v='card'){if(!url)return'';const T={card:'f_auto,q_au
 
 function parseFotos(raw){if(!raw)return[];if(Array.isArray(raw))return raw.filter(Boolean);const t=String(raw).trim();if(!t)return[];if(t.startsWith('[')){try{const a=JSON.parse(t);return Array.isArray(a)?a.filter(Boolean):[];}catch{return t?[t]:[]; }}return[t];}
 function serializeFotos(list){const urls=list.map(f=>typeof f==='string'?f:f?.url).filter(Boolean);return urls.length===0?'':urls.length===1?urls[0]:JSON.stringify(urls);}
+function normalizeProcTag(tag){
+  if(!tag)return null;
+  if(typeof tag==='string'||typeof tag==='number'){
+    const valor=String(tag).trim();
+    return valor?{id:makeId('tag'),label:'Observação',tipo:'texto',valor}:null;
+  }
+  const tipo=['texto','marcador','real'].includes(tag.tipo)?tag.tipo:'texto';
+  const label=String(tag.label||'').trim();
+  const valor=String(tag.valor||'').trim();
+  if(!label&&!valor)return null;
+  return{id:String(tag.id||makeId('tag')).trim(),label,tipo,valor};
+}
+function parseProcTags(raw){
+  if(!raw)return[];
+  if(Array.isArray(raw))return raw.map(normalizeProcTag).filter(Boolean);
+  const txt=String(raw).trim();
+  if(!txt)return[];
+  if(txt.startsWith('[')){
+    try{return JSON.parse(txt).map(normalizeProcTag).filter(Boolean);}catch{}
+  }
+  return[{id:makeId('tag'),label:'Observação',tipo:'texto',valor:txt}];
+}
+function serializeProcTags(list){
+  const tags=(list||[]).map(normalizeProcTag).filter(t=>t&&t.valor);
+  return tags.length?JSON.stringify(tags.map(({id,label,tipo,valor})=>({id,label,tipo,valor}))):'';
+}
+function getProcTagValue(tag){return tag?.tipo==='real'?formatarValor(tag.valor):String(tag?.valor||'').trim();}
+function getProcTagLabel(tag){return String(tag?.label||'').trim()||'Informação';}
 function formatarValor(v){if(!v)return'';const s=String(v).trim();return/^R\s?\$/.test(s)?s:'R$ '+s;}
 
 function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
@@ -773,7 +840,7 @@ async function initApp(){
   // Carrega tudo em paralelo
   await Promise.all([syncData(), loadAbas(), loadProcs(), loadMediaConfig()]);
   renderServicesTabs();
-  if(ABAS.length)document.getElementById('servicesSection').style.display='block';
+  setPublicMainTab(publicMainTab);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -789,7 +856,7 @@ async function loadAbas(){
 async function loadProcs(){
   try{
     const d=await gasCall({aba:'PROCEDIMENTOS'});
-    PROCS=(d||[]).map(r=>{const fotos=parseFotos(r.col8||'');return{id:r.col14||r.rowId||makeId('proc'),aba:r.col1||'',nome:r.col2||'',descricao:r.col3||'',valor:r.col4||'',duracao:r.col5||'',fixacao:r.col6||'',indicado:r.col7||'',imagem:fotos[0]||'',fotos,imgPosY:parseInt(r.col9||'50'),imgAltura:parseInt(r.col10||'145'),temManut:r.col11==='true',manutPrazo:r.col12||'',manutValor:r.col13||''};}).filter(p=>p.nome);
+    PROCS=(d||[]).map(r=>{const fotos=parseFotos(r.col8||'');return{id:r.col14||r.rowId||makeId('proc'),aba:r.col1||'',nome:r.col2||'',descricao:r.col3||'',valor:r.col4||'',duracao:r.col5||'',fixacao:r.col6||'',tags:parseProcTags(r.col7||''),imagem:fotos[0]||'',fotos,imgPosY:parseInt(r.col9||'50'),imgAltura:parseInt(r.col10||'145'),temManut:r.col11==='true',manutPrazo:r.col12||'',manutValor:r.col13||''};}).filter(p=>p.nome);
   }catch{if(!PROCS.length)PROCS=[];}
   cacheWrite(CACHE.procs,PROCS);
 }
@@ -838,8 +905,8 @@ function toggleSound(){const v=document.getElementById('heroVideo');v.muted=!v.m
 //  CMS — GUARDAR NO GAS
 // ════════════════════════════════════════════════════════════
 async function saveAbas(){await gasCall({action:'setAbas',dados:JSON.stringify(ABAS.map(a=>[a.id,a.nome,a.emoji]))});cacheWrite(CACHE.abas,ABAS);}
-async function saveProcs(){await gasCall({action:'setProcs',dados:JSON.stringify(PROCS.map(p=>[p.aba,p.nome,p.descricao,p.valor,p.duracao,p.fixacao,p.indicado,serializeFotos(p.fotos||parseFotos(p.imagem)),p.imgPosY??50,p.imgAltura??145,p.temManut?'true':'false',p.manutPrazo||'',p.manutValor||'',p.id||makeId('proc')]))});cacheWrite(CACHE.procs,PROCS);}
-async function saveProcSingle(proc,editing){const action=editing?'updateProc':'addProc';const payload={...proc,imagem:serializeFotos(proc.fotos||parseFotos(proc.imagem))};return gasCall({action,dado:JSON.stringify(payload)});}
+async function saveProcs(){await gasCall({action:'setProcs',dados:JSON.stringify(PROCS.map(p=>[p.aba,p.nome,p.descricao,p.valor,p.duracao,p.fixacao,serializeProcTags(p.tags||parseProcTags(p.indicado||'')),serializeFotos(p.fotos||parseFotos(p.imagem)),p.imgPosY??50,p.imgAltura??145,p.temManut?'true':'false',p.manutPrazo||'',p.manutValor||'',p.id||makeId('proc')]))});cacheWrite(CACHE.procs,PROCS);}
+async function saveProcSingle(proc,editing){const action=editing?'updateProc':'addProc';const payload={...proc,indicado:serializeProcTags(proc.tags||parseProcTags(proc.indicado||'')),imagem:serializeFotos(proc.fotos||parseFotos(proc.imagem))};return gasCall({action,dado:JSON.stringify(payload)});}
 async function deleteProc(id){return gasCall({action:'deleteProc',id});}
 async function renameProcAba(old,neu){return gasCall({action:'renameProcAba',oldName:old,newName:neu});}
 async function deleteAbaProcs(nome){return gasCall({action:'deleteAbaProcs',abaNome:nome});}
@@ -860,10 +927,45 @@ async function persistMedia(tipo,url,posY,alt){
 // ════════════════════════════════════════════════════════════
 //  SERVICES — PÚBLICO
 // ════════════════════════════════════════════════════════════
+function renderPublicMainNav(){
+  const wrap=document.getElementById('publicMainNav');if(!wrap)return;
+  wrap.innerHTML=`<button class="public-main-btn" data-tab="catalogo" onclick="setPublicMainTab('catalogo')">
+      <span class="public-main-ico">✦</span>
+      <span class="public-main-copy"><strong>Catálogo</strong><small>${PROCS.length} serviço${PROCS.length!==1?'s':''} no studio</small></span>
+    </button>
+    <button class="public-main-btn" data-tab="agendamento" onclick="setPublicMainTab('agendamento')">
+      <span class="public-main-ico">🗓</span>
+      <span class="public-main-copy"><strong>Agendamento</strong><small>Escolha data e horário</small></span>
+    </button>`;
+}
+
+function refreshPublicMainSections(){
+  const catalog=document.getElementById('servicesSection');
+  const booking=document.getElementById('bookingSection');
+  if(catalog)catalog.style.display=(publicMainTab==='catalogo'&&ABAS.length)?'block':'none';
+  if(booking)booking.style.display=publicMainTab==='agendamento'?'block':'none';
+}
+
+function setPublicMainTab(tab){
+  publicMainTab=tab==='agendamento'?'agendamento':'catalogo';
+  document.querySelectorAll('.public-main-btn').forEach(btn=>btn.classList.toggle('active',btn.getAttribute('data-tab')===publicMainTab));
+  refreshPublicMainSections();
+  if(publicMainTab==='catalogo'&&ABAS.length){
+    const alvo=ABAS.some(a=>a.nome===abaPublicaAtiva)?abaPublicaAtiva:ABAS[0].nome;
+    if(alvo)showServico(alvo);
+  }
+}
+
 function renderServicesTabs(){
   const wrap=document.getElementById('servicesTabs');
-  if(!ABAS.length){wrap.innerHTML='';document.getElementById('servicesSection').style.display='none';return;}
-  document.getElementById('servicesSection').style.display='block';
+  const panel=document.getElementById('srvPanel');
+  renderPublicMainNav();
+  if(!ABAS.length){
+    wrap.innerHTML='';
+    panel.innerHTML=`<div class="srv-panel-empty"><div class="srv-panel-empty-icon">✦</div><p>Cadastre categorias para montar seu catálogo.</p></div>`;
+    refreshPublicMainSections();
+    return;
+  }
   wrap.innerHTML=ABAS.map(a=>{
     const cnt=PROCS.filter(p=>p.aba===a.nome).length;
     return `<div class="srv-tab" data-aba="${a.nome}" onclick="showServico('${a.nome}')">
@@ -872,9 +974,13 @@ function renderServicesTabs(){
       <div class="srv-tab-cnt">${cnt} serviço${cnt!==1?'s':''}</div>
     </div>`;
   }).join('');
+  if(!ABAS.some(a=>a.nome===abaPublicaAtiva))abaPublicaAtiva=ABAS[0].nome;
+  refreshPublicMainSections();
+  if(publicMainTab==='catalogo'&&abaPublicaAtiva)showServico(abaPublicaAtiva);
 }
 
 function showServico(nome){
+  abaPublicaAtiva=nome;
   document.querySelectorAll('.srv-tab').forEach(t=>t.classList.toggle('active',t.getAttribute('data-aba')===nome));
   const panel=document.getElementById('srvPanel');
   const procs=PROCS.filter(p=>p.aba===nome);
@@ -902,11 +1008,15 @@ function verProcDetalhe(idx){
 
   const precoHtml=(p.valor||p.temManut)?`<div class="proc-preco-grid">${p.valor?`<div class="proc-preco-box primary"><div class="proc-preco-label">Valor da sessão</div><div class="proc-preco-value">${formatarValor(p.valor)}</div></div>`:''}${p.temManut?`<div class="proc-preco-box secondary"><div class="proc-preco-label">Manutenção</div><div class="proc-preco-value">${p.manutValor?formatarValor(p.manutValor):'Consultar'}</div>${p.manutPrazo?`<div style="font-size:.6rem;color:var(--text-lt);margin-top:2px;">🔄 ${p.manutPrazo}</div>`:''}</div>`:''}</div>`:'';
 
-  const infos=[p.duracao?{icon:'⏱',label:'Duração',val:p.duracao}:null,p.fixacao?{icon:'📅',label:'Duração do efeito',val:p.fixacao}:null,p.indicado?{icon:'💡',label:'Indicado para',val:p.indicado}:null].filter(Boolean);
+  const tags=(p.tags||parseProcTags(p.indicado||'')).map(normalizeProcTag).filter(Boolean);
+  const badgeTags=tags.filter(t=>t.tipo==='marcador');
+  const infoTags=tags.filter(t=>t.tipo!=='marcador').map(t=>({icon:t.tipo==='real'?'💰':'✦',label:getProcTagLabel(t),val:getProcTagValue(t)}));
+  const infos=[p.duracao?{icon:'⏱',label:'Duração',val:p.duracao}:null,p.fixacao?{icon:'📅',label:'Duração do efeito',val:p.fixacao}:null,...infoTags].filter(Boolean);
   const infosHtml=infos.length?`<div class="proc-info-table">${infos.map(info=>`<div class="proc-info-row"><span class="proc-info-icon">${info.icon}</span><span class="proc-info-label">${info.label}</span><span class="proc-info-val">${info.val}</span></div>`).join('')}</div>`:'';
+  const badgesHtml=badgeTags.length?`<div class="proc-detail-badges">${badgeTags.map(tag=>`<div class="proc-detail-badge">${tag.label?tag.label+': ':''}${tag.valor}</div>`).join('')}</div>`:'';
 
   const panel=document.getElementById('srvPanel');
-  panel.innerHTML=`${galeriaHtml}<div class="proc-detail-nome">${p.nome}</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><div style="width:24px;height:1.5px;background:var(--rose);border-radius:2px;"></div><span style="font-size:.55rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text-lt);">${p.aba}</span></div><p class="proc-detail-texto">${p.descricao}</p>${precoHtml}${infosHtml}<button class="btn-voltar-proc" onclick="showServico('${p.aba}')">← Voltar</button>`;
+  panel.innerHTML=`${galeriaHtml}<div class="proc-detail-nome">${p.nome}</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><div style="width:24px;height:1.5px;background:var(--rose);border-radius:2px;"></div><span style="font-size:.55rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text-lt);">${p.aba}</span></div><p class="proc-detail-texto">${p.descricao}</p>${badgesHtml}${precoHtml}${infosHtml}<button class="btn-voltar-proc" onclick="showServico('${p.aba}')">← Voltar</button>`;
   ativarCarouselProc();
   setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}),50);
 }
@@ -982,8 +1092,9 @@ function removerProcAdmin(chave){
 }
 
 function abrirFormProcAdmin(idx){
-  procFotos=[];imgPend=[];imgAtivaIdx=0;
+  procFotos=[];imgPend=[];imgAtivaIdx=0;procTagsDraft=[];
   const p=idx>=0?PROCS[idx]:null;
+  procTagsDraft=(p?.tags||parseProcTags(p?.indicado||'')).map(normalizeProcTag).filter(Boolean);
   document.getElementById('sheetTitle').textContent=p?'Editar Procedimento':'Novo Procedimento';
   document.getElementById('sheetSub').textContent=abaAtiva?`${abaAtiva.emoji} ${abaAtiva.nome}`:'';
 
@@ -998,10 +1109,8 @@ function abrirFormProcAdmin(idx){
       <div class="form-row"><label class="form-label">💰 Valor (R$)</label><input class="form-input" id="fpValor" value="${p?p.valor:''}" placeholder="R$ 150,00"></div>
       <div class="form-row"><label class="form-label">⏱ Duração</label><input class="form-input" id="fpDur" value="${p?p.duracao:''}" placeholder="2h30"></div>
     </div>
-    <div class="form-cols">
-      <div class="form-row"><label class="form-label">📅 Efeito</label><input class="form-input" id="fpFix" value="${p?p.fixacao:''}" placeholder="3-4 semanas"></div>
-      <div class="form-row"><label class="form-label">💡 Indicado</label><input class="form-input" id="fpInd" value="${p?p.indicado:''}" placeholder="Uso diário"></div>
-    </div>
+    <div class="form-row"><label class="form-label">📅 Efeito</label><input class="form-input" id="fpFix" value="${p?p.fixacao:''}" placeholder="3-4 semanas"></div>
+    <div class="form-row"><label class="form-label">🏷 Tags personalizadas</label><div id="procTagsEditor"></div></div>
     <div class="form-divider">Manutenção</div>
     <div class="toggle-wrap"><div><div class="toggle-info-title">Tem manutenção?</div><div class="toggle-info-sub">Ative para informar prazo e valor</div></div><label class="toggle-switch"><input type="checkbox" id="fpTemManut" onchange="onToggleManut()"${p&&p.temManut?' checked':''}><span class="toggle-slider"></span></label></div>
     <div id="boxManut" style="display:${p&&p.temManut?'block':'none'};">
@@ -1019,8 +1128,56 @@ function abrirFormProcAdmin(idx){
     document.getElementById('fpPosY').value=posY;document.getElementById('fpAlt').value=alt;
     renderGaleriaAdmin();
   }
+  renderProcTagsEditor();
 
   document.getElementById('sheetActions').innerHTML=`<button id="btnSalvarProc" class="btn btn-primary" onclick="salvarProcAdmin()">Salvar Procedimento</button><button class="btn btn-secondary" onclick="${abaAtiva?'entrarAbaAdmin("'+abaAtiva.id+'")':'voltarServicosSheet()'}">Cancelar</button>`;
+}
+
+function renderProcTagsEditor(){
+  const wrap=document.getElementById('procTagsEditor');if(!wrap)return;
+  const items=procTagsDraft.map((tag,i)=>`
+    <div class="proc-tag-card">
+      <div class="form-row" style="margin-bottom:8px;">
+        <label class="form-label">Nome da tag</label>
+        <input class="form-input" value="${tag.label||''}" placeholder="Ex: Ideal para, Acabamento, Entrada..." oninput="updateProcTagField(${i},'label',this.value)">
+      </div>
+      <div class="proc-tag-inline">
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-label">Tipo</label>
+          <select class="form-select" onchange="updateProcTagField(${i},'tipo',this.value)">
+            <option value="texto"${tag.tipo==='texto'?' selected':''}>Texto</option>
+            <option value="marcador"${tag.tipo==='marcador'?' selected':''}>Marcador</option>
+            <option value="real"${tag.tipo==='real'?' selected':''}>Valor em real</option>
+          </select>
+        </div>
+        <div class="form-row" style="margin-bottom:0;">
+          <label class="form-label">Conteúdo</label>
+          <input class="form-input" value="${tag.valor||''}" placeholder="${tag.tipo==='real'?'R$ 45,00':'Ex: Natural'}" oninput="updateProcTagField(${i},'valor',this.value)">
+        </div>
+        <button type="button" class="proc-tag-remove" onclick="removeProcTag(${i})" title="Remover tag">x</button>
+      </div>
+    </div>`).join('');
+  wrap.innerHTML=`<div class="proc-tags-list">${items||'<div class="proc-tag-empty">Adicione tags livres para destacar texto, marcador ou valores extras.</div>'}</div><button type="button" class="proc-tag-add" onclick="addProcTag()">+ Nova tag</button>`;
+}
+
+function addProcTag(){
+  procTagsDraft.push({id:makeId('tag'),label:'',tipo:'texto',valor:''});
+  renderProcTagsEditor();
+}
+
+function removeProcTag(idx){
+  procTagsDraft.splice(idx,1);
+  renderProcTagsEditor();
+}
+
+function updateProcTagField(idx,key,val){
+  if(!procTagsDraft[idx])return;
+  procTagsDraft[idx][key]=val;
+  if(key==='tipo')renderProcTagsEditor();
+}
+
+function collectProcTags(){
+  return procTagsDraft.map(normalizeProcTag).filter(tag=>tag&&tag.valor);
 }
 
 function onToggleManut(){const on=document.getElementById('fpTemManut').checked;document.getElementById('boxManut').style.display=on?'block':'none';}
@@ -1072,12 +1229,12 @@ async function salvarProcAdmin(){
     const temManut=document.getElementById('fpTemManut').checked;
     const ei=document.getElementById('editProcIdx').value;
     const atual=ei!==''&&ei>=0?PROCS[parseInt(ei)]:null;
-    const obj={id:atual?.id||makeId('proc'),aba:abaAtiva.nome,nome,descricao:desc,valor:document.getElementById('fpValor').value.trim(),duracao:document.getElementById('fpDur').value.trim(),fixacao:document.getElementById('fpFix').value.trim(),indicado:document.getElementById('fpInd').value.trim(),imagem:fotos[0]||'',fotos,imgPosY:posY,imgAltura:alt,temManut,manutPrazo:document.getElementById('fpManutPrazo').value.trim(),manutValor:document.getElementById('fpManutValor').value.trim()};
+    const obj={id:atual?.id||makeId('proc'),aba:abaAtiva.nome,nome,descricao:desc,valor:document.getElementById('fpValor').value.trim(),duracao:document.getElementById('fpDur').value.trim(),fixacao:document.getElementById('fpFix').value.trim(),tags:collectProcTags(),imagem:fotos[0]||'',fotos,imgPosY:posY,imgAltura:alt,temManut,manutPrazo:document.getElementById('fpManutPrazo').value.trim(),manutValor:document.getElementById('fpManutValor').value.trim()};
     if(ei!==''&&ei>=0)PROCS[parseInt(ei)]=obj;else PROCS.push(obj);
     await saveProcSingle(obj,ei!==''&&ei>=0);
     cacheWrite(CACHE.procs,PROCS);
     renderServicesTabs();
-    if(document.getElementById('servicesSection'))document.getElementById('servicesSection').style.display='block';
+    refreshPublicMainSections();
     toast(ei!==''?'Atualizado!':'Criado!','ok');
     entrarAbaAdmin(abaAtiva.id);
   }catch(e){toast('Erro: '+e.message,'err');}
